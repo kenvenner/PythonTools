@@ -1,7 +1,7 @@
 '''
 @author:   Ken Venner
 @contact:  ken@venerllc.com
-@version:  1.03
+@version:  1.04
 
 Library of tools used in finding matches - used by kvcsv and kvxls
 '''
@@ -11,13 +11,17 @@ import logging
 logger = logging.getLogger(__name__)
 
 #global variables
-AppVersion = '1.03'
+AppVersion = '1.04'
 
 # this class is used to take a row and data and determine if it matches a minimal requirement
 
 # utility used to create a new consolidate key that is a multi-field key
-def build_multifield_key( rowdict, dictkeys, joinchar='|' ):
-    return joinchar.join( [rowdict[key] for key in dictkeys] )
+def build_multifield_key( rowdict, dictkeys, joinchar='|', debug=False ):
+    if not dictkeys:  raise
+    if debug:
+        print('build_multifield_key:dictkeys:', dictkeys)
+        print('build_multifield_key:rowdict:', rowdict)
+    return joinchar.join( [str(rowdict[key]) for key in dictkeys] )
 
 # the warning message string for optiondict concerns
 def badoption_msg(func, val, val2):
