@@ -1,7 +1,7 @@
 '''
 @author:   Ken Venner
 @contact:  ken@venerllc.com
-@version:  1.08
+@version:  1.09
 
 Library of tools used to process XLS/XLSX files
 '''
@@ -18,7 +18,7 @@ import logging
 logger = logging.getLogger(__name__)
 
 # global variables
-AppVersion = '1.08'
+AppVersion = '1.09'
 
 # ---- UTILITY FUNCTIONS ------------------------------
 
@@ -72,12 +72,12 @@ def getExcelCellValue( excelDict, row, col_name, debug=False ):
     else:
         return excelDict['s'].cell(row, col).value
         
-# routine to get a cell
+# routine to set a cell value
 def setExcelCellValue( excelDict, row, col_name, value, debug=False ):
     if debug:
-        print('getExcelCellValue:excelDict:', excelDict)
-        print('getExcelCellValue:row:', row)
-        print('getExcelCellValue:col_name:', col_name)
+        print('setExcelCellValue:excelDict:', excelDict)
+        print('setExcelCellValue:row:', row)
+        print('setExcelCellValue:col_name:', col_name)
 
     # determine the col # we are using but doing a header lookup
     col = excelDict['header'].index(col_name) + excelDict['sheetmincol']
@@ -85,6 +85,44 @@ def setExcelCellValue( excelDict, row, col_name, value, debug=False ):
     # get cell value
     if excelDict['xlsxfiletype']:
         excelDict['s'].cell(row=row+1, column=col+1, value=value)
+    else:
+        print('kvxls:setExcelCellValue:feature not supported on xls file - only XLSX')
+        raise
+
+# routine to get a cell fill pattern - returns the (solid,rgb) values
+def getExcelCellPatternFill( excelDict, row, col_name, debug=False ):
+    if debug:
+        print('setExcelCellPatternFill:excelDict:', excelDict)
+        print('setExcelCellPatternFill:row:', row)
+        print('setExcelCellPatternFill:col_name:', col_name)
+
+    # determine the col # we are using but doing a header lookup
+    col = excelDict['header'].index(col_name) + excelDict['sheetmincol']
+    
+    # get cell value
+    if excelDict['xlsxfiletype']:
+        cellFill = excelDict['s'].cell(row=row+1, column=col+1).fill
+        return cellFill.solid, cellFill.fgColor.rgb
+    else:
+        print('kvxls:setExcelCellValue:feature not supported on xls file - only XLSX')
+        raise
+
+# routine to set a cell fill pattern
+def setExcelCellPatternFill( excelDict, row, col_name, fgColor, fill_type="solid", debug=False ):
+    if debug:
+        print('setExcelCellPatternFill:excelDict:', excelDict)
+        print('setExcelCellPatternFill:row:', row)
+        print('setExcelCellPatternFill:col_name:', col_name)
+
+    # determine the col # we are using but doing a header lookup
+    col = excelDict['header'].index(col_name) + excelDict['sheetmincol']
+    
+    # get cell value
+    if excelDict['xlsxfiletype']:
+        if not fill_type:
+            excelDict['s'].cell(row=row+1, column=col+1).fill = openpyxl.styles.PatternFill(fill_type=None)
+        else:
+            excelDict['s'].cell(row=row+1, column=col+1).fill = openpyxl.styles.PatternFill(fill_type, fgColor=fgColor)
     else:
         print('kvxls:setExcelCellValue:feature not supported on xls file - only XLSX')
         raise

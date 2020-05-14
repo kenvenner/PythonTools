@@ -1,7 +1,7 @@
 '''
 @author:   Ken Venner
 @contact:  ken@venerllc.com
-@version:  1.07
+@version:  1.08
 
 Library of tools used to read and write CSV files
 '''
@@ -14,7 +14,7 @@ import logging
 logger = logging.getLogger(__name__)
 
 # version number
-AppVersion = '1.07'
+AppVersion = '1.08'
 
 
 # read in the CSV and create a dictionary to the records
@@ -88,7 +88,7 @@ def readcsv2dict_with_header( csvfile, dictkeys, dupkeyfail=False, noshowwarning
 # based on one or more key fields
 # assumes the first line of the CSV file is the header/defintion of the CSV
 def readcsv2dict( csvfile, dictkeys, dupkeyfail=False, noshowwarning=False, headerlc=False, encoding='LATIN-1', debug=False ):
-    results, header = readcsv2dict_with_header( csvfile, dictkeys, dupkeyfail=dupkeyfail, noshowwarning=noshowwarning, headerlc=headerlc, encoding=encoding, debug=debug )
+    results, header, dupcnt = readcsv2dict_with_header( csvfile, dictkeys, dupkeyfail=dupkeyfail, noshowwarning=noshowwarning, headerlc=headerlc, encoding=encoding, debug=debug )
     return results
 
 

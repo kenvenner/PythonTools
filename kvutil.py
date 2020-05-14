@@ -1,7 +1,7 @@
 '''
 @author:   Ken Venner
 @contact:  ken@venerllc.com
-@version:  1.24
+@version:  1.25
 
 Library of tools used in general by KV
 '''
@@ -18,7 +18,7 @@ import logging
 logger = logging.getLogger(__name__)
 
 # set the module version number
-AppVersion = '1.24'
+AppVersion = '1.25'
 
 
 # import ast
@@ -105,6 +105,15 @@ def kv_parse_command_line( optiondictconfig, debug=False ):
             elif optiondictconfig[key]['type'] == 'date':
                 optiondict[key] = datetime_from_str( value )
                 if debug: print('type date')
+            elif optiondictconfig[key]['type'] == 'inlist':
+                # value must be from a predefined list of acceptable values
+                if not 'valid' in optiondictconfig[key]:
+                    print('missing optiondictconfig setting [valid] for key:', key)
+                    sys.exit(1)
+                if value not in optiondictconfig[key]['valid']:
+                    print('value:', value, ':not in defined list of valid values:', optiondictconfig[key]['valid'])
+                    sys.exit(1)
+                if debug: print('type inlist')
             else:
                 # user set a type but we don't know what to do with this type
                 optiondict[key] = value
@@ -200,6 +209,7 @@ def kv_parse_command_line_display( optiondictconfig, optiondict={}, debug=False 
 
 
 # return the filename that is max or min for a given query (UT)
+# default is to return the MIN filematch
 def filename_maxmin( file_glob, reverse=False ):
     # pull the list of files
     filelist = glob.glob( file_glob )
