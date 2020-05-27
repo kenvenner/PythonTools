@@ -1,7 +1,7 @@
 '''
 @author:   Ken Venner
 @contact:  ken@venerllc.com
-@version:  1.04
+@version:  1.05
 
 Library of tools used in finding matches - used by kvcsv and kvxls
 '''
@@ -11,16 +11,20 @@ import logging
 logger = logging.getLogger(__name__)
 
 #global variables
-AppVersion = '1.04'
+AppVersion = '1.05'
 
 # this class is used to take a row and data and determine if it matches a minimal requirement
 
 # utility used to create a new consolidate key that is a multi-field key
 def build_multifield_key( rowdict, dictkeys, joinchar='|', debug=False ):
-    if not dictkeys:  raise
+    if not dictkeys:
+        logger.error('missing dictkeys')
+        raise
     if debug:
         print('build_multifield_key:dictkeys:', dictkeys)
         print('build_multifield_key:rowdict:', rowdict)
+    logger.debug('dictkeys:%s', dictkeys)
+    logger.debug('rowdict:%s', rowdict)
     return joinchar.join( [str(rowdict[key]) for key in dictkeys] )
 
 # the warning message string for optiondict concerns
@@ -38,7 +42,7 @@ def badoptiondict_check( func, optiondict, badoptiondict, noshowwarning=False, d
 
     # check to see if we should raise an error if we find problems
     if dieonbadoption and warnings:
-        raise
+        raise 'badoption found'
     
     # now return the warnings
     return warnings
@@ -149,6 +153,7 @@ class MatchRow(object):
 
                 # debugging
                 if debug: print('not val:', blankfmt % blankcount )
+                logger.debug('not val:%s', blankfmt % blankcount )
                 # no value in this field - create a new value and save
                 remapped.append( blankfmt % blankcount )
                 # increment the counter
@@ -158,6 +163,7 @@ class MatchRow(object):
                 
                 # debugging
                 if debug: print('xlatdict:val:', val, ':xladict:', self._xlatdict[val])
+                logger.debug('xlatdict:val:%s:xladict:%s', val, self._xlatdict[val])
                 # coverts directly
                 remapped.append(self._xlatdict[val])
             elif self.nocase and val.lower() in self._xlatdict_lower:
@@ -165,12 +171,14 @@ class MatchRow(object):
                 
                 # debugging
                 if debug: print('nocase:xlatdict:val:', val, ':xladict_lower:', self._xlatdict_lower[val.lower()])
+                logger.debug('nocase:xlatdict:val:%s:xladict_lower:%s', val, self._xlatdict_lower[val.lower()])
                 # lower case value converts - but use the _xlatdict - because that points to the proper result
                 # the xlatdict_lower has lower case key and lower case result
                 remapped.append(self._xlatdict[val.lower()])
             else:
                 # debugging
                 if debug: print('val:', val )
+                logger.debug('val:%s', val )
                 # just take the value we got
                 remapped.append(val)
 
@@ -187,6 +195,7 @@ class MatchRow(object):
         # debugging
         if debug:
             print('_unique_values:data:', data)
+        logger.debug('data:%s', data)
             
         # step through the list of values provided
         for val in data:
@@ -214,14 +223,22 @@ class MatchRow(object):
             print('req_cols:', self._req_cols)
             print('data:', data)
             print('rowcount:', self.rowcount)
+            print('maxrows:', self.maxrows)
             print('nocase:', self.nocase)
+
+        logger.debug('xlatdict:%s', self._xlatdict)
+        logger.debug('req_cols:%s', self._req_cols)
+        logger.debug('data:%s', data)
+        logger.debug('rowcount:%s', self.rowcount)
+        logger.debug('nocase:%s', self.nocase)
             
         # some upfront tests
         if self.rowcount > self.maxrows:
-            if debug:  print('rowcount > maxrows - end/raise')
+            if debug:  print('rowcount > maxrows - set variables and return None')
+            logger.debug('rowcount > maxrows - set variables and return None')
             self.search_failed = True
             self.search_exceeded = True
-            self.error_msg = 'Row count [%s] exceeded maximum row of [%s]' % (self.rowcount, self.maxrows)
+            self.error_msg = 'Max search row count [%s] exceeded at row [%s]' % (self.maxrows, self.rowcount)
             return None
         
         # initialize what we need to match on
@@ -232,12 +249,14 @@ class MatchRow(object):
             # if this is blank get next value - no work to do here
             if not val:
                 if debug: print('skip val as blank')
+                logger.debug('skip val as blank')
                 continue
             
             # if we are nocase and this is a string - we want to be lower case
             if self.nocase and isinstance(val, str):
                 val = val.lower()
                 if debug: print('convert to lower case:', val)
+                logger.debug('convert to lower case:%s', val)
 
             # << might add back in the converstion of \r or \r\n to \n
 
@@ -252,6 +271,7 @@ class MatchRow(object):
                 self._header_row.append(val)
                 # debugging
                 if debug: print('increment match_count for val:', val)
+                logger.debug('increment match_count for val:%s', val)
             elif val in self._xlatdict and self._xlatdict[val] in self._match_count:
                 self._match_count[self._xlatdict[val]] += 1
                 # debugging
@@ -260,8 +280,10 @@ class MatchRow(object):
                 self._match_count[self._xlatdict_lower[val]] += 1
                 # debugging
                 if debug: print('increment match_count for val:', val, ':xlatdict_lower[val]:',self._xlatdict_lower[val] )
+                logger.debug('increment match_count for val:%s:xlatdict_lower[val]:%s', val, self._xlatdict_lower[val] )
             else:
                 # debugging
+                logger.debug('no match val:%s', val)
                 if debug:
                     print('no match val:', val)
                     if val in self._xlatdict:
@@ -272,19 +294,24 @@ class MatchRow(object):
 
         # debugging
         if debug:  print('_match_count:', self._match_count)
+        logger.debug('_match_count:%s', self._match_count)
         
         # count the number of column matches we got
         for col in self._req_cols:
             if self.nocase and self._match_count[col.lower()]:
                 self._match_columns += 1
                 if debug:  print('increment on col.lower:', col, ':match_columns:', self._match_columns )
+                logger.debug('increment on col.lower:%s:match_columns:%s', col, self._match_columns )
             elif not self.nocase and self._match_count[col]:
                 self._match_columns += 1
                 if debug:  print('increment on col:', col, ':match_columns:', self._match_columns)
+                logger.debug('increment on col:%s:match_columns:%s', col, self._match_columns)
 
         # debugging
         if debug: print('match_columns:', self._match_columns)
         if debug: print('len(req_cols):', len(self._req_cols))
+        logger.debug('match_columns:%s', self._match_columns)
+        logger.debug('len(req_cols):%d', len(self._req_cols))
         
         # now check if the count is the same
         if self._match_columns == len(self._req_cols):

@@ -4,6 +4,13 @@ import unittest
 import re
 import os
 
+# logging
+import kvlogger
+config=kvlogger.get_config('t_kvmatch.log')
+kvlogger.dictConfig(config)
+logger=kvlogger.getLogger(__name__)
+
+
 rowdict = { 'Company' : 'Test', 'Wine' : 'Yummy', 'Price' : 10.00 }
 
 record = ['Col1','Col2','Col3']
@@ -18,7 +25,11 @@ badoptiondict = {
     'uniquecolumn'   : 'unique_column',
     'uniquecolumns'  : 'unique_column',
     'unique_columns' : 'unique_column',
+    'nowarning'      : 'no_warnings',
+    'nowarnings'     : 'no_warnings',
+    'no_warning'     : 'no_warnings',
 }
+xlatdict = {}
 
 class TestKVMatch(unittest.TestCase):
 
@@ -26,9 +37,8 @@ class TestKVMatch(unittest.TestCase):
         self.assertEqual( kvmatch.build_multifield_key( rowdict, ['Company'] ), 'Test' )
     def test_build_multifield_key_p02_multiplestrings(self):
         self.assertEqual( kvmatch.build_multifield_key( rowdict, ['Company','Wine'] ), 'Test|Yummy' )
-    def test_build_multifield_key_f01_numbers(self):
-        with self.assertRaises(Exception) as context:
-            kvmatch.build_multifield_key( rowdict, ['Company','Price'] )
+    def test_build_multifield_key_p03_string_number(self):
+        self.assertEqual( kvmatch.build_multifield_key( rowdict, ['Company','Price'] ), 'Test|10.0' )
     def test_build_multifield_key_f01_missing_key(self):
         with self.assertRaises(Exception) as context:
             kvmatch.build_multifield_key( rowdict, ['Company','Missing'] )
@@ -37,6 +47,9 @@ class TestKVMatch(unittest.TestCase):
         self.assertEqual( len( kvmatch.badoptiondict_check( 'test_badoptiondict_check_p01_bad_key', {'no_case' : True}, badoptiondict, True)), 1)
     def test_badoptiondict_check_f01_no_bad_key(self):
         self.assertEqual( len( kvmatch.badoptiondict_check( 'test_badoptiondict_check_f01_no_bad_key', {'nocase' : True}, badoptiondict , True)), 0)
+    def test_badoptiondict_check_f01_missing_key_die(self):
+        with self.assertRaises(Exception) as context:
+            kvmatch.badoptiondict_check( 'test_badoptiondict_check_p01_bad_key', {'no_case' : True}, badoptiondict, True, dieonbadoption=True )
 
         
     def test_init_p01_simple(self):

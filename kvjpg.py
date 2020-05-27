@@ -1,3 +1,12 @@
+'''
+@author:   Ken Venner
+@contact:  ken@venerllc.com
+@version:  1.07
+
+Library of tools used to process JPG image files
+'''
+
+
 import piexif
 import datetime
 import glob
@@ -5,8 +14,13 @@ import sys
 import os
 import re
 
+# logging
+import logging
+logger = logging.getLogger(__name__)
+
+
 # global variables
-AppVersion = '1.06'
+AppVersion = '1.07'
 
 debug = False
 
@@ -36,6 +50,10 @@ def parse_optiondict_timedelta( timedeltastr, debug=False ):
         print('range_str:',range_str)
         print('range_str[0]:', range_str[0])
         print('len:', len(range_str))
+    logger.debug('range_str:%s',range_str)
+    logger.debug('range_str[0]:%s', range_str[0])
+    logger.debug('len:%d', len(range_str))
+
     # parse up what was passed in
     if len(range_str)==2:
         pic_range=range(int(range_str[0]),int(range_str[1]))
@@ -57,6 +75,15 @@ def parse_date_from_filename( filename, debug=False ):
         print('s',s)
         if s:  print('s.group0:', s.group(0))
         if s:  print('s.group1:', s.group(1))
+    logger.debug('filename:%s',filename)
+    logger.debug('m',m)
+    if m:
+        logger.debug('m.group0:%s' ,m.group(0))
+        logger.debug('m.group1:%s' ,m.group(1))
+    logger.debug('s',s)
+    if s:
+        logger.debug('s.group0:%s', s.group(0))
+        logger.debug('s.group1:%s', s.group(1))
 
     # check for match on date in filename
     if m:
@@ -78,14 +105,18 @@ def parse_cleanup_filename( filename, debug=False ):
     if debug:
         print('parse_cleanup_filename:dirname:', dirname)
         print('parse_cleanup_filename:basename:', basename)
+    logger.debug('dirname:%s', dirname)
+    logger.debug('basename:%s', basename)
     # make dirname normal path
     dirname = os.path.normpath(dirname)
     # remove CNT in the basename string if it exists
     basename = re.sub( cntstrre, '', basename )
     if debug:  print('parse_cleanup_filename:basename-post-cnt:', basename)
+    logger.debug('basename-post-cnt:%s', basename)
     # remove DATESTR in the basename string if it exists
     basename = re.sub( datestrre, '', basename )
     if debug:  print('parse_cleanup_filename:basename-post-date:', basename)
+    logger.debug('basename-post-date:%s', basename)
     # return results
     return ( dirname, basename )
 
@@ -106,6 +137,12 @@ def datetime_offset_for_matching_filename( filename_row, re_filename, timedelta_
         print('datetime_offset_for_matching_filename:timedelta_offset:', timedelta_offset)
         print('datetime_offset_for_matching_filename:filerange:', filerange)
         print('datetime_offset_for_matching_filename:filename_row[1]:', filename_row[1])
+    logger.debug('filename_row:%s', filename_row)
+    logger.debug('re_filename:%s', re_filename)
+    logger.debug('timedelta_offset:%s', timedelta_offset)
+    logger.debug('filerange:%s', filerange)
+    logger.debug('filename_row[1]:%s', filename_row[1])
+
     m = re.search( re_filename, filename_row[1] )
     if m:
         picture = int(m.group(1))
@@ -113,12 +150,16 @@ def datetime_offset_for_matching_filename( filename_row, re_filename, timedelta_
             print('datetime_offset_for_matching_filename:filename-match: true')
             print('datetime_offset_for_matching_filename:picture:', picture)
             print('datetime_offset_for_matching_filename:filename_row[0]-before:', filename_row[0])
+        logger.debug('filename-match: true')
+        logger.debug('picture:%s', picture)
+        logger.debug('filename_row[0]-before:%s', filename_row[0])
             
         if picture == filerange or picture in filerange:
             # filename match - change the timedate record by offset
             filename_row[0] += timedelta_offset
             if debug:
                 print('datetime_offset_for_matching_filename:filename_row[0]-after:', filename_row[0])
+            logger.debug('filename_row[0]-after:%s', filename_row[0])
                 
         
 # display all exif attributes for the file passed in
@@ -246,5 +287,5 @@ if __name__ == '__main__':
     print(type(jpgdate))
     print(jpgdate)
     sys.exit()
-    
 
+#eof

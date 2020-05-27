@@ -1,7 +1,7 @@
 '''
 @author:   Ken Venner
 @contact:  ken@venerllc.com
-@version:  1.25
+@version:  1.29
 
 Library of tools used in general by KV
 '''
@@ -18,7 +18,7 @@ import logging
 logger = logging.getLogger(__name__)
 
 # set the module version number
-AppVersion = '1.25'
+AppVersion = '1.29'
 
 
 # import ast
@@ -53,21 +53,58 @@ def kv_parse_command_line( optiondictconfig, debug=False ):
     # debug
     if debug:  print('kv_parse_command_line:sys.argv:', sys.argv)
     if debug:  print('kv_parse_command_line:optiondictconfig:', optiondictconfig)
-    
+    logger.debug('sys.argv: %s', sys.argv)
+    logger.debug('optiondictconfig: %s', optiondictconfig)
+
+    # default a set of basic config values - so we don't need to put them in each app
+    defaultdictconfig = {
+        'debug' : {
+            'value' : False,
+            'type'  : 'bool',
+            'description' : 'defines if we are running in debug mode',
+        },
+        'verbose' : {
+            'value' : 1,
+            'type'  : 'int',
+            'description' : 'defines the display level for print messages',
+        },
+        'log_level' : {
+            'value' : 'INFO',
+            'type'  : 'inlist',
+            'valid' : ['DEBUG','INFO','WARNING','ERROR','CRITICAL'],
+            'description' : 'defines the overall logging level for all handlers',
+        },
+        'log_level_console' : {
+            'value' : 'INFO',
+            'type'  : 'inlist',
+            'valid' : ['DEBUG','INFO','WARNING','ERROR','CRITICAL'],
+            'description' : 'defines the logging level for console handlers',
+        },
+        'log_level_file' : {
+            'value' : 'INFO',
+            'type'  : 'inlist',
+            'valid' : ['DEBUG','INFO','WARNING','ERROR','CRITICAL'],
+            'description' : 'defines the logging level for file handlers',
+        },
+        'log_file'  : {
+            'value' : None,
+            'description' : 'defines the name of the log file',
+        },
+    }
+                
+        
     # create the dictionary - and populate values
     optiondict = {}
     for key in optiondictconfig:
         if 'value' in optiondictconfig[key]:
             # the user specified a value value
             optiondict[key] = optiondictconfig[key]['value']
+            # debugging
+            logger.debug('assigning [%s] value from optiondictconfig:%s', key, optiondict[key])
         else:
             # no value option - set to None
             optiondict[key] = None
 
-    # possibly add in here some logging attributes that we can pass in
-    # loglevel
-    # logfile
-    
     # read in the command line options that we care about
     for argpos in range(1,len(sys.argv)):
         # get the argument and split it into key and value
@@ -75,56 +112,75 @@ def kv_parse_command_line( optiondictconfig, debug=False ):
 
         # debug
         if debug:  print('kv_parse_command_line:sys.argv[',argpos,']:',sys.argv[argpos])
+        logger.debug('sys.argv[%s]:%s',argpos,sys.argv[argpos])
 
         # skip this if the key is not populated
         if not key:
             if debug:  print('kv_parse_command_line:key-not-populated-skipping-arg')
+            logger.debug('key-not-populated-with-value-skipping-arg')
             continue
-        
+
+        # logic to bring in "default/implied optiondict values if key passed is not part of app definition
+        if key not in optiondict and key in defaultdictconfig:
+            if debug:  print('kv_parse_command_line:key-not-in-optiondictconfig-but-in-defaultoptiondictconfig:', key)
+            logger.debug('key-not-in-optiondictconfig-but-in-defaultoptiondictconfig:%s', key)
+            # copy over this default into optiondict
+            optiondictconfig[key]= defaultdictconfig[key].copy()
+            # tag the defaultdictconfig that we used this key
+            defaultdictconfig['applied'] = True
+            # set the value
+            if 'value' in defaultdictconfig[key]:
+                optiondict[key] = defaultdictconfig[key]['value']
+            else:
+                optiondict[key] = None
+                
         # action on this command line
         if key in optiondict:
+            # debug message on type
+            if 'type' in optiondictconfig[key]:
+                if debug:  print('type:', optiondictconfig[key]['type'])
+                logger.debug('key:%stype:%s', key,optiondictconfig[key]['type'])
+                
             if 'type' not in optiondictconfig[key]:
                 # user did not specify the type of this option
                 optiondict[key] = value
                 if debug: print('type not in optiondictconfig[key]')
             elif optiondictconfig[key]['type'] == 'bool':
                 optiondict[key] = bool(strtobool(value))
-                if debug: print('type bool')
             elif optiondictconfig[key]['type'] == 'int':
                 optiondict[key] = int(value)
-                if debug: print('type int')
             elif optiondictconfig[key]['type'] == 'float':
                 optiondict[key] = float(value)
-                if debug: print('type float')
             elif optiondictconfig[key]['type'] == 'dir':
                 optiondict[key] = os.path.normpath(value)
-                if debug: print('type dir')
             elif optiondictconfig[key]['type'] == 'liststr':
                 optiondict[key] = value.split(',')
-                if debug: print('type liststr')
             elif optiondictconfig[key]['type'] == 'date':
                 optiondict[key] = datetime_from_str( value )
-                if debug: print('type date')
             elif optiondictconfig[key]['type'] == 'inlist':
                 # value must be from a predefined list of acceptable values
                 if not 'valid' in optiondictconfig[key]:
                     print('missing optiondictconfig setting [valid] for key:', key)
-                    sys.exit(1)
+                    logger.error('missing optiondictconfig setting [valid] for key:%s', key)
+                    raise Exception('missing optiondictconfig setting [valid] for key:%s', key)
                 if value not in optiondictconfig[key]['valid']:
                     print('value:', value, ':not in defined list of valid values:', optiondictconfig[key]['valid'])
-                    sys.exit(1)
-                if debug: print('type inlist')
+                    logger.error('invalid value passed in for [%s]:%s',key,value)
+                    logger.error('list of valid values are:%s',  optiondictconfig[key]['valid'])
+                    raise Exception('invalid value passed in for [%s]:%s',key,value)
+                optiondict[key] = value
             else:
                 # user set a type but we don't know what to do with this type
                 optiondict[key] = value
-                if debug: print('type not known')
+                if debug: print('type not known:', type)
+                logger.debug('type unknown:%s', type)
         elif key == 'help':
             # user asked for help - display help and then exit
             kv_parse_command_line_display( optiondictconfig, debug=False )
             sys.exit()
         elif debug:
             print('kv_parse_command_line:unknown-option:', key)
-
+            logger.info('unknown option:%s', key)
     # test for required fields being populated
     missingoption = []
     for key in optiondictconfig:
@@ -142,12 +198,14 @@ def kv_parse_command_line( optiondictconfig, debug=False ):
         print('-'*80)
         print(errmsg)
         print('')
+        logger.debug(errmsg)
         raise Exception(errmsg)
         # sys.exit(1)
     
     # debug when we are done
     if debug:  print('kv_parse_command_line:optiondict:', optiondict)
-
+    logger.debug('optiondict:%s', optiondict)
+    
     # return what we created
     return optiondict
 
@@ -166,12 +224,14 @@ def kv_parse_command_line_display( optiondictconfig, optiondict={}, debug=False 
 
     # predefined number ranges by type
     nextcounter = {
-        'None' : 2,
-        'dir' : 100,
-        'int'  : 200,
-        'float' : 300, 
-        'bool' : 400,
-        'date' : 500,
+        'None'    : 2,
+        'dir'     : 100,
+        'int'     : 200,
+        'float'   : 300, 
+        'bool'    : 400,
+        'date'    : 500,
+        'liststr' : 600,
+        'inlist'  : 700,
     }        
 
     opt2sort = []
@@ -480,26 +540,28 @@ def read_list_from_file_lines( filename, stripblank=False, trim=False, encoding=
 # time for the OS to release the blocking issue and then delete
 #
 # optional input:
-#    callfrom - string used to display - usually the name of module.function()
+#    calledfrom - string used to display - usually the name of module.function()
 #    debug - bool defines if we display duggging print statements
 #    maxretry - int - number of times we try to delete and then give up (default: 20)
 #
-def remove_filename(filename,callfrom='',debug=False,maxretry=20):
+def remove_filename(filename,calledfrom='',debug=False,maxretry=20):
+    logger.debug('remove:%s:calledfrom:%s:maxretry:%d',filename,calledfrom,maxretry)
     cnt=0
-    if callfrom:  callfrom += ':'
+    if calledfrom:  calledfrom += ':'
     while os.path.exists(filename):
         cnt += 1
-        if debug: print(callfrom, filename, ':exists:try to remove:cnt:', cnt)
+        if debug: print(calledfrom, filename, ':exists:try to remove:cnt:', cnt)
+        logger.debug('%s:%s:exists:try to remove:cnt:%d', calledfrom, filename, cnt)
         try:
             os.remove(filename) # try to remove it directly
-#        except OSError as e: # originally just checked for OSError - we now check for all exceptions`
         except Exception as e:
-            if debug: print(callfrom, 'errno:', e.errno, ':ENOENT:', errno.ENOENT)
+            if debug: print(calledfrom, 'errno:', e.errno, ':ENOENT:', errno.ENOENT)
+            logger.debug('%s:errno:%d:%ENOENT:%s', calledfrom, e.errno, errno.ENOENT)
             if e.errno == errno.ENOENT: # file doesn't exist
                 return
-            if debug: print(callfrom, filename,':', str(e))
+            if debug: print(calledfrom, filename,':', str(e))
             if cnt > maxretry:
-                print(callfrom, filename, ':raise error - exceed maxretry attempts:', maxretry)
+                print(calledfrom, filename, ':raise error - exceed maxretry attempts:', maxretry)
                 raise e
         except WinError as f:
             print('catch WinError:', str(f))
@@ -509,26 +571,26 @@ def remove_filename(filename,callfrom='',debug=False,maxretry=20):
 # time for the OS to release the blocking issue and then delete
 #
 # optional input:
-#    callfrom - string used to display - usually the name of module.function()
+#    calledfrom - string used to display - usually the name of module.function()
 #    debug - bool defines if we display duggging print statements
 #    maxretry - int - number of times we try to delete and then give up (default: 20)
 #
-def remove_dir(dirname,callfrom='',debug=False,maxretry=20):
+def remove_dir(dirname,calledfrom='',debug=False,maxretry=20):
     cnt=0
-    if callfrom:  callfrom += ':'
+    if calledfrom:  calledfrom += ':'
     while os.path.exists(dirname):
         cnt += 1
-        if debug: print(callfrom, dirname, ':exists:try to remove:cnt:', cnt)
+        if debug: print(calledfrom, dirname, ':exists:try to remove:cnt:', cnt)
         try:
             os.rmdir(dirname) # try to remove it directly
 #        except OSError as e: # originally just checked for OSError - we now check for all exceptions`
         except Exception as e:
-            if debug: print(callfrom, 'errno:', e.errno, ':ENOENT:', errno.ENOENT)
+            if debug: print(calledfrom, 'errno:', e.errno, ':ENOENT:', errno.ENOENT)
             if e.errno == errno.ENOENT: # file doesn't exist
                 return
-            if debug: print(callfrom, dirname,':', str(e))
+            if debug: print(calledfrom, dirname,':', str(e))
             if cnt > maxretry:
-                print(callfrom, dirname, ':raise error - exceed maxretry attempts:', maxretry)
+                print(calledfrom, dirname, ':raise error - exceed maxretry attempts:', maxretry)
                 raise e
         except WinError as f:
             print('catch WinError:', str(f))
@@ -557,6 +619,11 @@ def datetime_from_str( value ):
             return datetime.datetime.strptime(value, datefmt)
 
     raise
+
+
+# return the function name of the function that called this
+def functionName(callBackNumber=1):
+    return sys._getframe(callBackNumber).f_code.co_name
 
 
 

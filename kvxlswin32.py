@@ -1,7 +1,7 @@
 '''
 @author:   Ken Venner
 @contact:  ken@venerllc.com
-@version:  1.01
+@version:  1.02
 
 Library of tools used on WINDOWS machines to automate working with XLS/XLSX files
 '''
@@ -16,7 +16,7 @@ import logging
 logger = logging.getLogger(__name__)
 
 # global variables
-AppVersion = '1.01'
+AppVersion = '1.02'
 
 # -------- REFRESH DATA IN EXCEL AUTOMATION -------------------------
 
@@ -28,6 +28,8 @@ def refreshExcel( xlsfile, debug=False ):
     if debug:
         print('kvxls:refreshExcel:xlsfile:', xlsfile)
         print('kvxls:refreshExcel:xlsfileabs:', xlsfileabs)
+    logger.debug('xlsfile:', xlsfile)
+    logger.debug('xlsfileabs:', xlsfileabs)
         
     Xlsx = win32com.client.DispatchEx('Excel.Application')
     Xlsx.DisplayAlerts = False

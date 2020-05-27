@@ -5,18 +5,64 @@ import os
 import sys
 import datetime
 
-# set the module version number
-AppVersion = '1.12'
 
+# logging
+import kvlogger
+config=kvlogger.get_config('t_kvutil.log')
+kvlogger.dictConfig(config)
+logger=kvlogger.getLogger(__name__)
+
+# set the module version number
+AppVersion = '1.14'
+
+# global variables
+tst_filename='t_kvutil_tst'
+tst_ext_range=4
 
 # utility to create/set/update commmand line passed in parameters
 def set_argv( position, value ):
     for pos in range(len(sys.argv),position+1):
         sys.argv.append('arg%02d'%pos)
     sys.argv[position] = value
+
+def generate_test_filenames( startfilename='t_kvutil_tst', ext_range=4):
+    fname_list = []
+    for i in range(ext_range):
+        fname_list.append('{}.{:03d}'.format(startfilename, i))
+
+    return fname_list
+
+def file_teardown(  startfilename='t_kvutil_tst', ext_range=4):
+    logger.info('removing files:%s:%d', startfilename,ext_range)
+    print('removing files:%s:%d', startfilename,ext_range)
+    for fname in generate_test_filenames( startfilename, ext_range ):
+        if os.path.exists(fname):
+            os.remove(fname)
+
+def file_setup(  startfilename='t_kvutil_tst', ext_range=4):
+    logger.info('creating files:%s:%d', startfilename,ext_range)
+    print('creating files:%s:%d', startfilename,ext_range)
+    for fname in generate_test_filenames( startfilename, ext_range ):
+        if not os.path.exists(fname):
+            with open( fname, 'w' ) as t:
+                pass
+        
+        
         
 # test class
 class TestKVUtilFilenames(unittest.TestCase):
+    # set up features
+    @classmethod
+    def setUpClass(cls):
+        file_setup( tst_filename, tst_ext_range )
+
+    # tear down features
+    @classmethod
+    def tearDownClass(cls):
+        file_teardown( tst_filename, tst_ext_range )
+
+
+    # command line parsing
     def test_kv_parse_command_line_p01_config_none(self):
         optiondictconfig = { 'test1' : { } }
         set_argv(1,'invalid=invalid') # push value onto command line (string)
@@ -25,15 +71,7 @@ class TestKVUtilFilenames(unittest.TestCase):
         optiondictconfig = { 'test1' : { 'value' : 12 } }
         set_argv(1,'invalid=invalid') # push value onto command line (string)
         self.assertEqual(kvutil.kv_parse_command_line( optiondictconfig ), {'test1': 12} )
-    def test_kv_parse_command_line_p03_config_set_type_int(self):
-        optiondictconfig = { 'test1' : { 'value' : 12, 'type' : 'int' } }
-        set_argv(1,'test1=15') # push value onto command line (string)
-        self.assertEqual(kvutil.kv_parse_command_line( optiondictconfig ), {'test1': 15} )
-    def test_kv_parse_command_line_p04_config_set_type_float(self):
-        optiondictconfig = { 'test1' : { 'value' : 12, 'type' : 'float' } }
-        set_argv(1,'test1=15') # push value onto command line (string)
-        self.assertEqual(kvutil.kv_parse_command_line( optiondictconfig ), {'test1': 15.0} )
-    def test_kv_parse_command_line_p05_config_set_type_bool(self):
+    def test_kv_parse_command_line_p03_config_set_type_bool(self):
         optiondictconfig = { 'test1' : { 'value' : False, 'type' : 'bool' } }
         set_argv(1,'test1=yes') # push value onto command line (string)
         self.assertEqual(kvutil.kv_parse_command_line( optiondictconfig ), {'test1': True} )
@@ -47,6 +85,20 @@ class TestKVUtilFilenames(unittest.TestCase):
         self.assertEqual(kvutil.kv_parse_command_line( optiondictconfig ), {'test1': False} )
         set_argv(1,'test1=0') # push value onto command line (string)
         self.assertEqual(kvutil.kv_parse_command_line( optiondictconfig ), {'test1': False} )
+    def test_kv_parse_command_line_p04_config_set_type_int(self):
+        optiondictconfig = { 'test1' : { 'value' : 12, 'type' : 'int' } }
+        set_argv(1,'test1=15') # push value onto command line (string)
+        self.assertEqual(kvutil.kv_parse_command_line( optiondictconfig ), {'test1': 15} )
+    def test_kv_parse_command_line_p05_config_set_type_float(self):
+        optiondictconfig = { 'test1' : { 'value' : 12, 'type' : 'float' } }
+        set_argv(1,'test1=15.25') # push value onto command line (string)
+        self.assertEqual(kvutil.kv_parse_command_line( optiondictconfig ), {'test1': 15.25} )
+        set_argv(1,'test1=-15.25') # push value onto command line (string)
+        self.assertEqual(kvutil.kv_parse_command_line( optiondictconfig ), {'test1': -15.25} )
+        set_argv(1,'test1=15') # push value onto command line (string)
+        self.assertEqual(kvutil.kv_parse_command_line( optiondictconfig ), {'test1': 15.0} )
+        set_argv(1,'test1=.001') # push value onto command line (string)
+        self.assertEqual(kvutil.kv_parse_command_line( optiondictconfig ), {'test1': 0.001} )
     def test_kv_parse_command_line_p06_config_set_type_dir(self):
         optiondictconfig = { 'outdir' : { 'type' : 'dir' } }
         set_argv(1,'outdir=c:/temp') # push value onto command line (string)
@@ -55,60 +107,121 @@ class TestKVUtilFilenames(unittest.TestCase):
         optiondictconfig = { 'names' : { 'type' : 'liststr' } }
         set_argv(1,'names=ken,debbie,bob,jill') # push value onto command line (string)
         self.assertEqual(kvutil.kv_parse_command_line( optiondictconfig ), {'names': ['ken','debbie','bob','jill']} )
-    def test_kv_parse_command_line_p08_config_set_type_date(self):
+        set_argv(1,'names=ken') # push value onto command line (string)
+        self.assertEqual(kvutil.kv_parse_command_line( optiondictconfig ), {'names': ['ken']} )
+    def test_kv_parse_command_line_p08_config_set_type_date_slashes(self):
         optiondictconfig = { 'onlygtdate' : { 'type' : 'date' } }
         set_argv(1,'onlygtdate=01/01/2019') # push value onto command line (string)
+        self.assertEqual(kvutil.kv_parse_command_line( optiondictconfig ), {'onlygtdate': datetime.datetime(2019,1,1)} )
+        set_argv(1,'onlygtdate=1/1/2019') # push value onto command line (string)
+        self.assertEqual(kvutil.kv_parse_command_line( optiondictconfig ), {'onlygtdate': datetime.datetime(2019,1,1)} )
+        set_argv(1,'onlygtdate=01/01/19') # push value onto command line (string)
         self.assertEqual(kvutil.kv_parse_command_line( optiondictconfig ), {'onlygtdate': datetime.datetime(2019,1,1)} )
     def test_kv_parse_command_line_p09_config_set_type_date_dashes(self):
         optiondictconfig = { 'onlygtdate' : { 'type' : 'date' } }
         set_argv(1,'onlygtdate=01-01-2019') # push value onto command line (string)
         self.assertEqual(kvutil.kv_parse_command_line( optiondictconfig ), {'onlygtdate': datetime.datetime(2019,1,1)} )
-    def test_kv_parse_command_line_p10_config_required(self):
+        set_argv(1,'onlygtdate=1-1-2019') # push value onto command line (string)
+        self.assertEqual(kvutil.kv_parse_command_line( optiondictconfig ), {'onlygtdate': datetime.datetime(2019,1,1)} )
+        set_argv(1,'onlygtdate=01-01-19') # push value onto command line (string)
+        self.assertEqual(kvutil.kv_parse_command_line( optiondictconfig ), {'onlygtdate': datetime.datetime(2019,1,1)} )
+    def test_kv_parse_command_line_p10_config_set_type_date_YMD(self):
+        optiondictconfig = { 'onlygtdate' : { 'type' : 'date' } }
+        set_argv(1,'onlygtdate=2019-01-01') # push value onto command line (string)
+        self.assertEqual(kvutil.kv_parse_command_line( optiondictconfig ), {'onlygtdate': datetime.datetime(2019,1,1)} )
+        set_argv(1,'onlygtdate=20190101') # push value onto command line (string)
+        self.assertEqual(kvutil.kv_parse_command_line( optiondictconfig ), {'onlygtdate': datetime.datetime(2019,1,1)} )
+    def test_kv_parse_command_line_p11_config_set_type_inlist(self):
+        optiondictconfig = { 'log_level' : { 'inlist' : 'date', 'valid' : ['DEBUG','INFO','WARNING','ERROR','CRITICAL'] } }
+        set_argv(1,'log_level=DEBUG') # push value onto command line (string)
+        self.assertEqual(kvutil.kv_parse_command_line( optiondictconfig ), {'log_level': 'DEBUG'} )
+    def test_kv_parse_command_line_p12_config_required(self):
         optiondictconfig = { 'test1' : { 'required' : True, 'type' : 'bool' }, 'AppVersion' : { 'value' : '1.01' } }
         set_argv(1,'test1=0') # push value onto command line (string)
         self.assertEqual(kvutil.kv_parse_command_line( optiondictconfig ), {'test1': False, 'AppVersion' : '1.01'} )
+    def test_kv_parse_command_line_p13_config_default_config(self):
+        optiondictconfig = { 'AppVersion' : { 'value' : '1.01' } }
+        set_argv(1,'log_level=DEBUG') # push value onto command line (string)
+        self.assertEqual(kvutil.kv_parse_command_line( optiondictconfig ), {'log_level': 'DEBUG', 'AppVersion' : '1.01'} )
+
     def test_kv_parse_command_line_f01_config_required_missing(self):
         with self.assertRaises(Exception) as context:
             optiondictconfig = { 'test1' : { 'required' : True, 'type' : 'bool' }, 'AppVersion' : { 'value' : '1.01' } }
             kvutil.kv_parse_command_line( optiondictconfig )
-    def test_kv_parse_command_line_f02_config_set_type_int_bad01(self):
-        with self.assertRaises(Exception) as context:
-            optiondictconfig = { 'test1' : { 'value' : 12, 'type' : 'int' } }
-            set_argv(1,'test1=ken') # push value onto command line (string)
-            kvutil.kv_parse_command_line( optiondictconfig )
-    def test_kv_parse_command_line_f03_config_set_type_int_bad02(self):
-        with self.assertRaises(Exception) as context:
-            optiondictconfig = { 'test1' : { 'value' : 12, 'type' : 'int' } }
-            set_argv(1,'test1=True') # push value onto command line (string)
-            kvutil.kv_parse_command_line( optiondictconfig )
-    def test_kv_parse_command_line_f04_config_set_type_int_bad03(self):
-        with self.assertRaises(Exception) as context:
-            optiondictconfig = { 'test1' : { 'value' : 12, 'type' : 'int' } }
-            set_argv(1,'test1=1.67') # push value onto command line (string)
-            kvutil.kv_parse_command_line( optiondictconfig )
-    def test_kv_parse_command_line_f05_config_set_type_date_bad01(self):
-        with self.assertRaises(Exception) as context:
-            optiondictconfig = { 'onlygtdate' : { 'type' : 'date' } }
-            set_argv(1,'onlygtdate=01:01:2019') # push value onto command line (string)
-            kvutil.kv_parse_command_line( optiondictconfig )
-    def test_kv_parse_command_line_f06_config_set_type_bool_bad01(self):
+    def test_kv_parse_command_line_f02_config_set_type_bool_bad01(self):
         with self.assertRaises(Exception) as context:
             optiondictconfig = { 'boolfield' : { 'type' : 'bool' } }
             set_argv(1,'boolfield=01:01:2019') # push value onto command line (string)
             kvutil.kv_parse_command_line( optiondictconfig )
-    def test_kv_parse_command_line_f07_config_set_type_float_bad01(self):
+    def test_kv_parse_command_line_f03_config_set_type_int_bad01(self):
+        with self.assertRaises(Exception) as context:
+            optiondictconfig = { 'test1' : { 'value' : 12, 'type' : 'int' } }
+            set_argv(1,'test1=ken') # push value onto command line (string)
+            kvutil.kv_parse_command_line( optiondictconfig )
+    def test_kv_parse_command_line_f04_config_set_type_int_bad02(self):
+        with self.assertRaises(Exception) as context:
+            optiondictconfig = { 'test1' : { 'value' : 12, 'type' : 'int' } }
+            set_argv(1,'test1=True') # push value onto command line (string)
+            kvutil.kv_parse_command_line( optiondictconfig )
+    def test_kv_parse_command_line_f05_config_set_type_int_bad03(self):
+        with self.assertRaises(Exception) as context:
+            optiondictconfig = { 'test1' : { 'value' : 12, 'type' : 'int' } }
+            set_argv(1,'test1=1.67') # push value onto command line (string)
+            kvutil.kv_parse_command_line( optiondictconfig )
+    def test_kv_parse_command_line_f06_config_set_type_float_bad01(self):
         with self.assertRaises(Exception) as context:
             optiondictconfig = { 'floatfield' : { 'type' : 'float' } }
             set_argv(1,'floatfield=string') # push value onto command line (string)
             kvutil.kv_parse_command_line( optiondictconfig )
+    def test_kv_parse_command_line_f07_config_set_type_float_bad02(self):
+        with self.assertRaises(Exception) as context:
+            optiondictconfig = { 'floatfield' : { 'type' : 'float' } }
+            set_argv(1,'floatfield=2019-01-01') # push value onto command line (string)
+            kvutil.kv_parse_command_line( optiondictconfig )
+    def test_kv_parse_command_line_f08_config_set_type_date_bad01(self):
+        with self.assertRaises(Exception) as context:
+            optiondictconfig = { 'onlygtdate' : { 'type' : 'date' } }
+            set_argv(1,'onlygtdate=01:01:2019') # push value onto command line (string)
+            kvutil.kv_parse_command_line( optiondictconfig )
+    def test_kv_parse_command_line_f09_config_set_type_date_bad02(self):
+        with self.assertRaises(Exception) as context:
+            optiondictconfig = { 'onlygtdate' : { 'type' : 'date' } }
+            set_argv(1,'onlygtdate=13-01-2019') # push value onto command line (string)
+            kvutil.kv_parse_command_line( optiondictconfig )
+    def test_kv_parse_command_line_f10_config_set_type_date_bad03(self):
+        with self.assertRaises(Exception) as context:
+            optiondictconfig = { 'onlygtdate' : { 'type' : 'date' } }
+            set_argv(1,'onlygtdate=12-32-2019') # push value onto command line (string)
+            kvutil.kv_parse_command_line( optiondictconfig )
+    def test_kv_parse_command_line_f11_config_set_type_date_bad04(self):
+        with self.assertRaises(Exception) as context:
+            optiondictconfig = { 'onlygtdate' : { 'type' : 'date' } }
+            set_argv(1,'onlygtdate=string') # push value onto command line (string)
+            kvutil.kv_parse_command_line( optiondictconfig )
+    def test_kv_parse_command_line_f12_config_set_type_inlist_bad01(self):
+        with self.assertRaises(Exception) as context:
+            optiondictconfig = { 'AppVersion' : { 'value' : '1.01' } }
+            set_argv(1,'log_level=NOTINLIST') # push value onto command line (string)
+            kvutil.kv_parse_command_line( optiondictconfig )
+    def test_kv_parse_command_line_f12_config_set_type_inlist_bad01(self):
+        with self.assertRaises(Exception) as context:
+            optiondictconfig = { 'no_valid_defined' : { 'value' : '1.01', 'type' : 'inlist' } }
+            set_argv(1,'no_valid_defined=fail') # push value onto command line (string)
+            kvutil.kv_parse_command_line( optiondictconfig )
 
+    # hashmap setting
     def test_set_when_not_set_p01_key2_not_exist(self):
         self.assertEqual(kvutil.set_when_not_set( { 'key1' : { 'key3' : 'value3'} }, 'key1', 'key2', 'value2' ), True )
 
-    def test_filename_maxmin_p01_pm_forward(self):
-        self.assertEqual(kvutil.filename_maxmin( 'kv*.py' ), 'kvcsv.py')
-    def test_filename_maxmin_p02_pm_reverse(self):
-        self.assertEqual(kvutil.filename_maxmin( 'kv*.py', reverse=True ), 'kvxls.py' )
+    # min/max filename
+    def test_filename_maxmin_p01_forward(self):
+        self.assertEqual(kvutil.filename_maxmin( tst_filename+'*' ), '{}.{:03d}'.format(tst_filename, 0))
+    def test_filename_maxmin_p02_reverse(self):
+        self.assertEqual(kvutil.filename_maxmin(  tst_filename+'*', reverse=True ), '{}.{:03d}'.format(tst_filename, range(tst_ext_range)[-1]) )
+    def test_filename_maxmin_p03_nofiles(self):
+        self.assertEqual(kvutil.filename_maxmin( 'no'+tst_filename+'*' ), None)
+
+
 
     def test_filename_split_p01_filename_only(self):
         self.assertEqual(kvutil.filename_split('filename.ext'), ('.','filename', '.ext'))
@@ -131,39 +244,40 @@ class TestKVUtilFilenames(unittest.TestCase):
         self.assertEqual(kvutil.filename_list( 'ken/ken.txt', None, None ), ['ken/ken.txt']) 
     def test_filename_list_p03_simple_filename_nopath(self):
         self.assertEqual(kvutil.filename_list( 'ken/ken.txt', None, None, strippath=True ), ['ken.txt']) 
-    def test_filename_list_p04_simple_filelist(self):
+    def test_filename_list_p04_simple_filenamelist(self):
         self.assertEqual(kvutil.filename_list( None, ['ken.txt','ken2.txt'], None, None ), ['ken.txt','ken2.txt']) 
-    def test_filename_list_p05_simple_filename_filelist(self):
+    def test_filename_list_p05_simple_filename_filenamelist(self):
         self.assertEqual(kvutil.filename_list( 'ken3.txt', ['ken.txt','ken2.txt'], None, None ), ['ken.txt','ken2.txt','ken3.txt']) 
     def test_filename_list_p06_simple_fileglob(self):
-        self.assertEqual(kvutil.filename_list( None, None, 'kvcsv.*', None ), ['kvcsv.py']) 
+        self.assertEqual(kvutil.filename_list( None, None, 'kvutil.*', None ), ['kvutil.py']) 
     def test_filename_list_p06_simple_fileglob_dir(self):
-        self.assertEqual(kvutil.filename_list( None, None, '..\\tools\\kvcsv.*', None ), ['..\\tools\\kvcsv.py']) 
+        self.assertEqual(kvutil.filename_list( None, None, '..\\tools\\kvutil.*', None ), ['..\\tools\\kvutil.py']) 
     def test_filename_list_p06_simple_fileglob_dir_notpath(self):
-        self.assertEqual(kvutil.filename_list( None, None, '..\\tools\\kvcsv.*', True ), ['kvcsv.py']) 
+        self.assertEqual(kvutil.filename_list( None, None, '..\\tools\\kvutil.*', True ), ['kvutil.py']) 
 
 
-    def test_file_proper_p01_simple_filename(self):
+    def test_filename_proper_p01_simple_filename(self):
         self.assertEqual(kvutil.filename_proper( 'ken.txt' ), os.path.normpath('./ken.txt') )
-    def test_file_proper_p02_abspath_filename(self):
+    def test_filename_proper_p02_abspath_filename(self):
         self.assertEqual(kvutil.filename_proper( os.environ.get('USERPROFILE')+'/Dropbox/LinuxShare/PerlPlay/templates/ken.txt' ), os.path.normpath( os.environ.get('USERPROFILE')+'/Dropbox/LinuxShare/PerlPlay/templates/ken.txt') )
-    def test_file_proper_p03_relpath_filename(self):
+    def test_filename_proper_p03_relpath_filename(self):
         self.assertEqual(kvutil.filename_proper( '../../PerlPlay/templates/ken.txt' ), os.path.normpath('../../PerlPlay/templates/ken.txt') )
-    def test_file_proper_p04_filename_dir(self):
+    def test_filename_proper_p04_filename_dir(self):
         self.assertEqual(kvutil.filename_proper( 'ken.txt', dir='./' ), os.path.normpath('./ken.txt') )
-    def test_file_proper_p05_filename_dir_write_check(self):
+    def test_filename_proper_p05_filename_dir_write_check(self):
         self.assertEqual(kvutil.filename_proper( 'ken.txt', dir='./', write_check=True ), os.path.normpath('./ken.txt') )
-    def test_file_proper_p06_filename_dir_create_dir(self):
+    def test_filename_proper_p06_filename_dir_create_dir(self):
         self.assertEqual(kvutil.filename_proper( 'ken.txt', dir='./createdir', create_dir=True ), os.path.normpath('./createdir/ken.txt') )
         os.rmdir('./createdir')  #remove folder that was created
-    def test_file_proper_p07_filename_dir_create_absdir(self):
+    def test_filename_proper_p07_filename_dir_create_absdir(self):
         self.assertEqual(kvutil.filename_proper( 'ken.txt', dir='c:/createdir/level2', create_dir=True ), os.path.normpath('c:/createdir/level2/ken.txt') )
         os.rmdir('c:/createdir/level2')  #remove folder that was created
         os.rmdir('c:/createdir')  #remove folder that was created
-    def test_file_proper_f01_abspath_filename(self):
+    def test_filename_proper_f01_abspath_filename(self):
         with self.assertRaises(Exception) as context:
             kvutil.filename_proper( 'C:/Users/ken/Dropbox/LinuxShare/PerlPlay/templates/missingdir/ken.txt' )
         #self.assertTrue('This is broken' in context.exception)
+
 
     def test_filename_unique_p01_filename(self):
         self.assertEqual(kvutil.filename_unique('uniquefname.txt'), os.path.normpath('./uniquefname.txt'))
@@ -173,8 +287,14 @@ class TestKVUtilFilenames(unittest.TestCase):
     def test_filename_unique_po3_filedict_cnt(self):
         self.assertEqual(kvutil.filename_unique( { 'base_filename' : 't_kvcsvtest', 'file_ext' : '.csv', 'overwrite' : True, 'forceuniq' : True } ), 't_kvcsvtestv01.csv')
     def test_filename_unique_p04_filename_exists(self):
-        self.assertEqual(kvutil.filename_unique('kev_tsv.pm'), os.path.normpath('./kev_tsvv01.pm'))
+        self.assertEqual(kvutil.filename_unique('{}.{:03d}'.format(tst_filename, 0)), os.path.normpath('{}v01.{:03d}'.format(tst_filename, 0)))
+
         
+
+    def test_cloudpath_p01_dropbox(self):
+        self.assertEqual(kvutil.cloudpath('Dropbox/LinuxShare/python/tools'), os.path.normpath( os.environ.get('USERPROFILE')+'/Dropbox/LinuxShare/python/tools'))
+        
+
 
     def test_slurp_p01_simple(self):
         filename  = 't_kvutil_slurp_test.txt'
@@ -189,6 +309,8 @@ class TestKVUtilFilenames(unittest.TestCase):
         self.assertEqual(kvutil.slurp(filename), fullstr)
         # now remove the temporary file
         kvutil.remove_filename(filename)
+
+        
 
     def test_read_list_from_file_lines_p01_simple(self):
         filename  = 't_kvutil_RLFF_test.txt'
@@ -223,6 +345,9 @@ class TestKVUtilFilenames(unittest.TestCase):
         kvutil.remove_filename(filename)
 
 
+    # def test_remove_filename - no test cases created for this function yet
+    # def test_remove_dir - no test cases created for this function yet
+
     def test_datetime_from_str_p01_zero_padded(self):
         self.assertEqual(kvutil.datetime_from_str('01/01/19'), datetime.datetime(2019, 1, 1) )
         self.assertEqual(kvutil.datetime_from_str('01/01/2019'), datetime.datetime(2019, 1, 1) )
@@ -247,7 +372,9 @@ class TestKVUtilFilenames(unittest.TestCase):
             kvutil.datetime_from_str('1/1/20019')
 
         
-
+    # def test_loggingAppStart_p01_something(self):
+    # def test_scriptinfo_p01_something(self):
+    
 
 if __name__ == '__main__':
     unittest.main()

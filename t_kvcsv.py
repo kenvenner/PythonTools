@@ -1,10 +1,20 @@
+import kvutil
+
 import kvcsv
 import kvmatch
-import kvutil
+
 import unittest
 
 import os
 
+
+# logging
+import kvlogger
+config=kvlogger.get_config('t_kvcsv.log')
+kvlogger.dictConfig(config)
+logger=kvlogger.getLogger(__name__)
+
+# set up data that is used by these tests
 filename = kvutil.filename_unique( { 'base_filename' : 't_kvcsvtest', 'file_ext' : '.csv', 'uniqtype' : 'datecnt', 'overwrite' : True, 'forceuniq' : True } )
 
 rowdict = { 'Company' : 'Test', 'Wine' : 'Yummy', 'Price' : 10.00 }
@@ -25,43 +35,67 @@ records = [
 
 req_cols = ['Company', 'Wine']
 
+# overall setup and tear down functions
+def file_setup(cls):
+    pass
+
+def file_teardown(cls):
+    pass
+
+
 # Testing class
 class TestKVCsv(unittest.TestCase):
+    # executed on each test
+    def setUp(self):
+        # remove the file if it exists - calling with the name of the function that called us
+        kvutil.remove_filename(filename,kv.functionName(2), debug=False)
 
+    # executed at the end of all tests - cleans up the environment
+    @classmethod
+    def tearDownClass(cls):
+        kvutil.remove_filename(filename,kv.functionName(), debug=False)
+
+        
     def test_writelist2csv_p01_simple(self):
-        kvutil.remove_filename(filename,'test_writelist2csv_p01_simple', debug=False)
         kvcsv.writelist2csv( filename, records )
         self.assertTrue( os.path.exists(filename), 'Did not create filename:' + filename )
     def test_writelist2csv_p02_missing_dict_elements(self):
-        kvutil.remove_filename(filename,'test_writelist2csv_p02_missing_dict_elements', debug=False)
-        templist = [i for i in records]
+        templist = records[:]
         del templist[1]['Company']
         del templist[1]['LastSeen']
         del templist[1]['Type']
         kvcsv.writelist2csv( filename, templist )
         self.assertTrue( os.path.exists(filename), 'Did not create filename:' + filename )
     def test_writelist2csv_p03_too_many_dict_elements(self):
-        kvutil.remove_filename(filename,'test_writelist2csv_p03_too_many_dict_elements', debug=False)
-        templist = [i for i in records]
+        templist = records[:]
         templist[1]['AddFld1'] = 'AddFld1'
         templist[1]['AddFld2'] = 'AddFld2'
         kvcsv.writelist2csv( filename, templist )
         self.assertTrue( os.path.exists(filename), 'Did not create filename:' + filename )
+    def test_writelist2csv_p04_dictkeys(self):
+        kvcsv.writelist2csv( filename, records, req_cols )
+        self.assertTrue( os.path.exists(filename), 'Did not create filename:' + filename )
+    def test_writelist2csv_p05_noheader(self):
+        kvcsv.writelist2csv( filename, records, header=False )
+        self.assertTrue( os.path.exists(filename), 'Did not create filename:' + filename )
 
     def test_readcsv2list_p01_simple(self):
-        kvutil.remove_filename(filename,'', debug=False) 
         kvcsv.writelist2csv( filename, records )
         result = kvcsv.readcsv2list( filename )
         self.assertEqual( result[0], records[0])
         self.assertEqual( len(result), len(records) )
+    def test_readcsv2list_p02_headerlc(self):
+        kvcsv.writelist2csv( filename, records )
+        result = kvcsv.readcsv2list( filename, headerlc=True )
+        self.assertEqual( len(result), len(records) )
+        for key in records[0]:
+            self.assertEqual( result[0][key.lower()], records[0][key] )
 
     def test_readcsv2dict_p01_simple(self):
-        kvutil.remove_filename(filename,'', debug=False) 
         kvcsv.writelist2csv( filename, records )
         mydict = kvcsv.readcsv2dict( filename, ['Company','Wine'] )
         self.assertEqual(mydict[ kvmatch.build_multifield_key( records[0], ['Company','Wine'] )], records[0])
     def test_readcsv2dict_f01_duplicatekey(self):
-        kvutil.remove_filename(filename,'', debug=False) 
         templist = records[:]
         templist.append(templist[0])
         templist.append(templist[1])
@@ -70,37 +104,31 @@ class TestKVCsv(unittest.TestCase):
             kvcsv.readcsv2dict( filename, ['Company','Wine'], True, True )
 
     def test_readcsv2list_findheader_p01_simple(self):
-        kvutil.remove_filename(filename,'', debug=False) 
         kvcsv.writelist2csv( filename, records )
         result = kvcsv.readcsv2list_findheader( filename, req_cols, debug=False )
         self.assertEqual(result[0], records[0])
         self.assertEqual( len(result), len(records) )
     def test_readcsv2list_findheader_p02_col_header(self):
-        kvutil.remove_filename(filename,'', debug=False) 
         kvcsv.writelist2csv( filename, records )
         result = kvcsv.readcsv2list_findheader( filename, req_cols, optiondict={ 'col_header' : True }, debug=False )
         self.assertEqual(result[0], records[0])
         self.assertEqual( len(result), len(records) )
     def test_readcsv2list_findheader_p03_save_row(self):
-        kvutil.remove_filename(filename,'', debug=False) 
         kvcsv.writelist2csv( filename, records )
         result = kvcsv.readcsv2list_findheader( filename, req_cols, optiondict={ 'save_row' : True }, debug=False )
         self.assertEqual(result[0]['XLSRow'], 2)
         self.assertEqual( len(result), len(records) )
     def test_readcsv2list_findheader_p04_no_header(self):
-        kvutil.remove_filename(filename,'', debug=False) 
         kvcsv.writelist2csv( filename, records )
         result = kvcsv.readcsv2list_findheader( filename, req_cols, optiondict={ 'no_header' : True }, debug=False )
         self.assertEqual(result[1], list(records[0].values()))
         self.assertEqual( len(result), len(records)+1 )
     def test_readcsv2list_findheader_p05_no_header_col_aref(self):
-        kvutil.remove_filename(filename,'', debug=False) 
         kvcsv.writelist2csv( filename, records )
         result = kvcsv.readcsv2list_findheader( filename, req_cols, col_aref=list(records[0].keys()), optiondict={ 'no_header' : True }, debug=False )
         self.assertEqual(result[1], records[0])
         self.assertEqual( len(result), len(records)+1 )
     def test_readcsv2list_findheader_p06_header_deep(self):
-        kvutil.remove_filename(filename, 'test_readcsv2list_findheader_p06_header_deep', debug=False)
         kvcsv.writelist2csv( filename, records )
         # put blank lines at the top of the file
         flds = len( records[0].keys() )
@@ -121,7 +149,6 @@ class TestKVCsv(unittest.TestCase):
         self.assertEqual(result[0], records[0])
         self.assertEqual( len(result), len(records) )
     def test_readcsv2list_findheader_p07_header_deep_start_row(self):
-        kvutil.remove_filename(filename, 'test_readcsv2list_findheader_p07_header_deep_start_row', debug=False)
         kvcsv.writelist2csv( filename, records )
         # put blank lines at the top of the file
         flds = len( records[0].keys() )
@@ -142,7 +169,6 @@ class TestKVCsv(unittest.TestCase):
         self.assertEqual(result[0], records[0])
         self.assertEqual( len(result), len(records) )
     def test_readcsv2list_findheader_p08_header_deep_aref_result(self):
-        kvutil.remove_filename(filename, 'test_readcsv2list_findheader_p08_header_deep_aref_result', debug=False)
         kvcsv.writelist2csv( filename, records )
         # put blank lines at the top of the file
         flds = len( records[0].keys() )
@@ -217,10 +243,4 @@ class TestKVCsv(unittest.TestCase):
 
 
 if __name__ == '__main__':
-    try:
-        # preventive removal - just in case
-        kvutil.remove_filename(filename,'main-start')        
-        unittest.main()
-    finally:
-        # make sure we clean up as we exit
-        kvutil.remove_filename(filename,'main-finally')        
+    unittest.main()

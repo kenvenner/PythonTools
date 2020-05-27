@@ -1,7 +1,7 @@
 '''
 @author:   Ken Venner
 @contact:  ken@venerllc.com
-@version:  1.09
+@version:  1.10
 
 Library of tools used to process XLS/XLSX files
 '''
@@ -18,7 +18,28 @@ import logging
 logger = logging.getLogger(__name__)
 
 # global variables
-AppVersion = '1.09'
+AppVersion = '1.10'
+
+#----- OPTIONS ---------------------------------------
+# debug
+# dupkeyfail
+# data_only
+# req_cols
+# col_aref
+# xlat_dict
+# dictkeys
+#
+# optiondict:
+# col_header
+# no_header
+# aref_result
+# saverow
+# start_row
+# sheetname
+# sheetrow
+# dateflds
+
+
 
 # ---- UTILITY FUNCTIONS ------------------------------
 
@@ -35,6 +56,8 @@ def _extract_excel_row_into_list(xlsxfiletype, s, row, colstart, colmax, debug=F
     if debug:
         print('_extract_excel_row_into_list:row:', row)
         print('_extract_excel_row_into_list:xlsxfiletype:', xlsxfiletype)
+    logger.debug('row: %s', row)
+    logger.debug('xlsxfiletype:%s', xlsxfiletype)
     
     # clear the row
     rowdata = []
@@ -49,6 +72,7 @@ def _extract_excel_row_into_list(xlsxfiletype, s, row, colstart, colmax, debug=F
             
         # debugging
         if debug:  print('row:', row, ':col:', col, ':cValue:', cValue)
+        logger.debug('row:%s:col:%s:cValue:%s', row, col, cValue)
             
         # add this value to the array that will be used to determine if this is header
         rowdata.append(cValue)
@@ -62,6 +86,9 @@ def getExcelCellValue( excelDict, row, col_name, debug=False ):
         print('getExcelCellValue:excelDict:', excelDict)
         print('getExcelCellValue:row:', row)
         print('getExcelCellValue:col_name:', col_name)
+    logger.debug('excelDict:%s', excelDict)
+    logger.debug('row:%s', row)
+    logger.debug('col_name:%s', col_name)
 
     # determine the col # we are using but doing a header lookup
     col = excelDict['header'].index(col_name) + excelDict['sheetmincol']
@@ -78,6 +105,9 @@ def setExcelCellValue( excelDict, row, col_name, value, debug=False ):
         print('setExcelCellValue:excelDict:', excelDict)
         print('setExcelCellValue:row:', row)
         print('setExcelCellValue:col_name:', col_name)
+    logger.debug('excelDict:%s', excelDict)
+    logger.debug('row:%s', row)
+    logger.debug('col_name:%s', col_name)
 
     # determine the col # we are using but doing a header lookup
     col = excelDict['header'].index(col_name) + excelDict['sheetmincol']
@@ -86,6 +116,7 @@ def setExcelCellValue( excelDict, row, col_name, value, debug=False ):
     if excelDict['xlsxfiletype']:
         excelDict['s'].cell(row=row+1, column=col+1, value=value)
     else:
+        logger.error('feature not supported on xls file - only XLSX')
         print('kvxls:setExcelCellValue:feature not supported on xls file - only XLSX')
         raise
 
@@ -95,6 +126,9 @@ def getExcelCellPatternFill( excelDict, row, col_name, debug=False ):
         print('setExcelCellPatternFill:excelDict:', excelDict)
         print('setExcelCellPatternFill:row:', row)
         print('setExcelCellPatternFill:col_name:', col_name)
+    logger.debug('excelDict:%s', excelDict)
+    logger.debug('row:%s', row)
+    logger.debug('col_name:%s', col_name)
 
     # determine the col # we are using but doing a header lookup
     col = excelDict['header'].index(col_name) + excelDict['sheetmincol']
@@ -104,6 +138,7 @@ def getExcelCellPatternFill( excelDict, row, col_name, debug=False ):
         cellFill = excelDict['s'].cell(row=row+1, column=col+1).fill
         return cellFill.solid, cellFill.fgColor.rgb
     else:
+        logger.error('feature not supported on xls file - only XLSX')
         print('kvxls:setExcelCellValue:feature not supported on xls file - only XLSX')
         raise
 
@@ -113,6 +148,9 @@ def setExcelCellPatternFill( excelDict, row, col_name, fgColor, fill_type="solid
         print('setExcelCellPatternFill:excelDict:', excelDict)
         print('setExcelCellPatternFill:row:', row)
         print('setExcelCellPatternFill:col_name:', col_name)
+    logger.debug('excelDict:%s', excelDict)
+    logger.debug('row:%s', row)
+    logger.debug('col_name:%s', col_name)
 
     # determine the col # we are using but doing a header lookup
     col = excelDict['header'].index(col_name) + excelDict['sheetmincol']
@@ -124,6 +162,7 @@ def setExcelCellPatternFill( excelDict, row, col_name, fgColor, fill_type="solid
         else:
             excelDict['s'].cell(row=row+1, column=col+1).fill = openpyxl.styles.PatternFill(fill_type, fgColor=fgColor)
     else:
+        logger.error('feature not supported on xls file - only XLSX')
         print('kvxls:setExcelCellValue:feature not supported on xls file - only XLSX')
         raise
         
@@ -169,6 +208,11 @@ def readxls_findheader( xlsfile, req_cols, xlatdict={}, optiondict={}, col_aref=
         print('xlatdict:', xlatdict)
         print('optiondict:', optiondict)
         print('col_aref:', col_aref)
+    logger.debug('req_cols:%s', req_cols)
+    logger.debug('xlatdict:%s', xlatdict)
+    logger.debug('optiondict:%s', optiondict)
+    logger.debug('col_aref:%s', col_aref)
+
 
     # set flags
     col_header  = False  # if true - we take the first row of the file as the header
@@ -216,13 +260,22 @@ def readxls_findheader( xlsfile, req_cols, xlatdict={}, optiondict={}, col_aref=
         print('start_row:', start_row)
         print('save_row:', save_row)
         print('optiondict:', optiondict)
-        
+    logger.debug('col_header:%s', col_header)
+    logger.debug('aref_result:%s', aref_result)
+    logger.debug('no_header:%s', no_header)
+    logger.debug('start_row:%s', start_row)
+    logger.debug('save_row:%s', save_row)
+    logger.debug('optiondict:%s', optiondict)
+
     # build object that will be used for record matching
     p = kvmatch.MatchRow( req_cols, xlatdict, optiondict )
 
     # determine what filetype we have here
     xlsxfiletype = xlsfile.endswith('.xlsx') or xlsfile.endswith('.xlsm')
 
+    # debugging
+    logger.debug('xlsxfiletype:%s', xlsxfiletype)
+    
     # Load in the workbook (set the data_only=True flag to get the value on the formula)
     if xlsxfiletype:
         # XLSX file
@@ -238,6 +291,7 @@ def readxls_findheader( xlsfile, req_cols, xlatdict={}, optiondict={}, col_aref=
 
     # debugging
     if debug:  print('sheetNames:', sheetNames)
+    logger.debug('sheetNames:%s', sheetNames)
 
     # get the sheet we are going to work with
     if 'sheetname' in optiondict:
@@ -249,6 +303,7 @@ def readxls_findheader( xlsfile, req_cols, xlatdict={}, optiondict={}, col_aref=
 
     # debugging
     if debug:  print('sheetName:', sheetName)
+    logger.debug('sheetName:%s', sheetName)
 
     # create a workbook sheet object - using the name to get to the right sheet
     if xlsxfiletype:
@@ -271,6 +326,9 @@ def readxls_findheader( xlsfile, req_cols, xlatdict={}, optiondict={}, col_aref=
         print('sheettitle:', sheettitle)
         print('sheetmaxrow:', sheetmaxrow)
         print('sheetmaxcol:', sheetmaxcol)
+    logger.debug('sheettitle:%s', sheettitle)
+    logger.debug('sheetmaxrow:%s', sheetmaxrow)
+    logger.debug('sheetmaxcol:%s', sheetmaxcol)
         
 
     # ------------------------------- HEADER START ------------------------------
@@ -286,13 +344,16 @@ def readxls_findheader( xlsfile, req_cols, xlatdict={}, optiondict={}, col_aref=
         if not col_aref:
             aref_result = True
             if debug:  print('no_header:no col_aref:set aref_result to true')
+            logger.debug('no_header:no col_aref:set aref_result to true')
             
         # debug
         if debug:  print('no_header:start_row:', start_row)
+        logger.debug('no_header:start_row:%d', start_row)
         
     else:
         # debug
         if debug: print('find_header:start_row:', start_row)
+        logger.debug('find_header:start_row:%d', start_row)
         
         # look for the header in the file
         for row in range(start_row, sheetmaxrow):
@@ -306,18 +367,29 @@ def readxls_findheader( xlsfile, req_cols, xlatdict={}, optiondict={}, col_aref=
                 row_header = row
                 # debugging
                 if debug: print('header_1strow:',header)
+                logger.debug('header_1strow:%s',header)
                 # break out of this loop we are done
                 break
 
             # have not found the header yet - so look
             if debug:  print('looking for header at row:', row)
+            logger.debug('looking for header at row:%d', row)
 
             # Search to see if this row is the header
             if p.matchRowList( rowdata, debug=debug ) or p.search_exceeded:
                 # determine if we found the header
                 if p.search_exceeded:
+                    # debugging
+                    if debug: print('maxrows_search_exceeded:',p.error_msg)
+                    logger.debug('maxrows in search exceeded:%s',p.error_msg)
                     # did not find the header
-                    raise
+                    raise Exception(p.error_msg)
+                elif p.search_failed:
+                    # debugging
+                    if debug: print('search_failed:',p.error_msg)
+                    logger.debug('search_failed:%s',p.error_msg)
+                    # did not find the header
+                    raise Exception(p.error_msg)
                 else:
                     # set the row_header
                     row_header = row
@@ -325,19 +397,24 @@ def readxls_findheader( xlsfile, req_cols, xlatdict={}, optiondict={}, col_aref=
                     header = p._data_mapped
                     # debugging
                     if debug: print('header_found:',header)
+                    logger.debug('header_found:%s',header)
                     # break out of the loop
                     break
+            elif debug:
+                print('no match found loop again')
 
 
     # ------------------------------- HEADER END ------------------------------
 
     # debug
     if debug:  print('exitted header find loop')
+    logger.debug('exitted header find loop')
     
     # user wants to define/override the column headers rather than read them in
     if col_aref:
         # debugging
         if debug:  print('copying col_aref into header')
+        logger.debug('copying col_aref into header')
         # copy over the values - and determine if we need to fill in more header values
         header = col_aref[:]
         # user defined the row definiton - make sure they passed in enough values to fill the row
@@ -350,6 +427,7 @@ def readxls_findheader( xlsfile, req_cols, xlatdict={}, optiondict={}, col_aref=
         header = p.remappedRow(header)
         # debug
         if debug: print('col_aref:header:', header)
+        logger.debug('col_aref:header:%s', header)
 
     # ------------------------------- OBJECT DEFINITION ------------------------------
     excelDict = {
@@ -398,10 +476,15 @@ def chgsheet_findheader( excelDict, req_cols, xlatdict={}, optiondict={}, col_ar
         print('xlatdict:', xlatdict)
         print('optiondict:', optiondict)
         print('col_aref:', col_aref)
+    logger.debug('req_cols:%s', req_cols)
+    logger.debug('xlatdict:%s', xlatdict)
+    logger.debug('optiondict:%s', optiondict)
+    logger.debug('col_aref:%s', col_aref)
 
 
     # check to see if we are actually changing anyting - if not return back what was sent in
     if 'sheetname' in optiondict and excelDict['sheetName'] == optiondict['sheetname']:
+        logger.debug('nothing changed - return what was sent in')
         return excelDict
 
     # set flags
@@ -450,6 +533,12 @@ def chgsheet_findheader( excelDict, req_cols, xlatdict={}, optiondict={}, col_ar
         print('start_row:', start_row)
         print('save_row:', save_row)
         print('optiondict:', optiondict)
+    logger.debug('col_header:%s', col_header)
+    logger.debug('aref_result:%s', aref_result)
+    logger.debug('no_header:%s', no_header)
+    logger.debug('start_row:%s', start_row)
+    logger.debug('save_row:%s', save_row)
+    logger.debug('optiondict:%s', optiondict)
         
     # build object that will be used for record matching
     p = kvmatch.MatchRow( req_cols, xlatdict, optiondict )
@@ -463,6 +552,7 @@ def chgsheet_findheader( excelDict, req_cols, xlatdict={}, optiondict={}, col_ar
 
     # debugging
     if debug:  print('sheetNames:', sheetNames)
+    logger.debug('sheetNames:%s', sheetNames)
 
     # get the sheet we are going to work with
     if 'sheetname' in optiondict:
@@ -474,6 +564,7 @@ def chgsheet_findheader( excelDict, req_cols, xlatdict={}, optiondict={}, col_ar
 
     # debugging
     if debug:  print('sheetName:', sheetName)
+    logger.debug('sheetName:%s', sheetName)
 
     # create a workbook sheet object - using the name to get to the right sheet
     if xlsxfiletype:
@@ -496,6 +587,9 @@ def chgsheet_findheader( excelDict, req_cols, xlatdict={}, optiondict={}, col_ar
         print('sheettitle:', sheettitle)
         print('sheetmaxrow:', sheetmaxrow)
         print('sheetmaxcol:', sheetmaxcol)
+    logger.debug('sheettitle:%s', sheettitle)
+    logger.debug('sheetmaxrow:%s', sheetmaxrow)
+    logger.debug('sheetmaxcol:%s', sheetmaxcol)
         
 
     # ------------------------------- HEADER START ------------------------------
@@ -511,13 +605,16 @@ def chgsheet_findheader( excelDict, req_cols, xlatdict={}, optiondict={}, col_ar
         if not col_aref:
             aref_result = True
             if debug:  print('no_header:no col_aref:set aref_result to true')
+            logger.debug('no_header:no col_aref:set aref_result to true')
             
         # debug
         if debug:  print('no_header:start_row:', start_row)
+        logger.debug('no_header:start_row:%d', start_row)
         
     else:
         # debug
         if debug: print('find_header:start_row:', start_row)
+        logger.debug('find_header:start_row:%d', start_row)
         
         # look for the header in the file
         for row in range(start_row, sheetmaxrow):
@@ -531,11 +628,13 @@ def chgsheet_findheader( excelDict, req_cols, xlatdict={}, optiondict={}, col_ar
                 row_header = row
                 # debugging
                 if debug: print('header_1strow:',header)
+                logger.debug('header_1strow:%s',header)
                 # break out of this loop we are done
                 break
 
             # have not found the header yet - so look
             if debug:  print('looking for header at row:', row)
+            logger.debug('looking for header at row:%d', row)
 
             # Search to see if this row is the header
             if p.matchRowList( rowdata, debug=debug ) or p.search_exceeded:
@@ -550,6 +649,7 @@ def chgsheet_findheader( excelDict, req_cols, xlatdict={}, optiondict={}, col_ar
                     header = p._data_mapped
                     # debugging
                     if debug: print('header_found:',header)
+                    logger.debug('header_found:%s',header)
                     # break out of the loop
                     break
 
@@ -558,11 +658,13 @@ def chgsheet_findheader( excelDict, req_cols, xlatdict={}, optiondict={}, col_ar
 
     # debug
     if debug:  print('exitted header find loop')
+    logger.debug('exitted header find loop')
     
     # user wants to define/override the column headers rather than read them in
     if col_aref:
         # debugging
         if debug:  print('copying col_aref into header')
+        logger.debug('copying col_aref into header')
         # copy over the values - and determine if we need to fill in more header values
         header = col_aref[:]
         # user defined the row definiton - make sure they passed in enough values to fill the row
@@ -575,6 +677,7 @@ def chgsheet_findheader( excelDict, req_cols, xlatdict={}, optiondict={}, col_ar
         header = p.remappedRow(header)
         # debug
         if debug: print('col_aref:header:', header)
+        logger.debug('col_aref:header:%s', header)
 
     # ------------------------------- OBJECT DEFINITION ------------------------------
     excelDict = {
@@ -597,7 +700,7 @@ def chgsheet_findheader( excelDict, req_cols, xlatdict={}, optiondict={}, col_ar
     return excelDict
 
 
-# ---------- EXTRACT DATA FRMO EXCEL  ----------------------
+# ---------- EXTRACT DATA FROM EXCEL  ----------------------
 #
 # coding structure - build one generic (INTERNAL) function that does all the various things
 # with passed in variables that are all optional
@@ -623,6 +726,9 @@ def chgsheet_findheader( excelDict, req_cols, xlatdict={}, optiondict={}, col_ar
 #   ignore_blank_row - if enabled, if the row read has no data - we don't put the data into the extracted list
 #   ignore_not_fill - not sure what this one is
 #
+#   dateflds - array of fields in xls that convert to a date
+#   save_row - flag defines if we should save the row number
+#
 #   required_fields_populated - checking logic to assure that all required fields have data with optional
 #     required_fld_swap - a dict that says if key is not populated - check the value tied to that key to see if it is populated
 #
@@ -638,7 +744,11 @@ def readxls2list_findheader( xlsfile, req_cols, xlatdict={}, optiondict={}, col_
     if debug: print('xlatdict:', xlatdict)
     if debug: print('optiondict:', optiondict)
     if debug: print('col_aref:', col_aref)
-
+    logger.debug('req_cols:%s', req_cols)
+    logger.debug('xlatdict:%s', xlatdict)
+    logger.debug('optiondict:%s', optiondict)
+    logger.debug('col_aref:%s', col_aref)
+    
     # set flags
     col_header  = False  # if true - we take the first row of the file as the header
     no_header   = False  # if true - there are no headers read - we either return 
@@ -648,8 +758,9 @@ def readxls2list_findheader( xlsfile, req_cols, xlatdict={}, optiondict={}, col_
     start_row   = 0      # if passed in - we start the search at this row (starts at 1 or greater)
 
     # call the routine that opens the XLS and returns back the excelDict
-    excelDict = readxls_findheader( xlsfile, req_cols, xlatdict, optiondict, col_aref, debug )
-
+    # (missing data_only attribute between optiondict and debug)
+    excelDict = readxls_findheader( xlsfile, req_cols, xlatdict, optiondict, col_aref, debug=debug )
+    
     # pull in passed values from optiondict
     if 'col_header'  in optiondict: col_header  = optiondict['col_header']
     if 'aref_result' in optiondict: aref_result = optiondict['aref_result']
@@ -666,6 +777,12 @@ def readxls2list_findheader( xlsfile, req_cols, xlatdict={}, optiondict={}, col_
         print('start_row:', start_row)
         print('save_row:', save_row)
         print('optiondict:', optiondict)
+    logger.debug('col_header:%s', col_header)
+    logger.debug('aref_result:%s', aref_result)
+    logger.debug('no_header:%s', no_header)
+    logger.debug('start_row:%s', start_row)
+    logger.debug('save_row:%s', save_row)
+    logger.debug('optiondict:%s', optiondict)
 
     # expand out all the values that came from excelDict
     xlsxfiletype = excelDict['xlsxfiletype']
@@ -681,7 +798,14 @@ def readxls2list_findheader( xlsfile, req_cols, xlatdict={}, optiondict={}, col_
     row_header = excelDict['row_header']
     header = excelDict['header']
     start_row = excelDict['start_row']
-    
+
+    # if we don't have a header we must set the aref_result flag
+    if not header and not aref_result:
+        if debug: print('setting aref_results because there is no header')
+        logger.debug('setting aref_results becaus there is no header')
+        
+        aref_result = True
+        
     # debugging
     if debug:
         print('sheettitle:', sheettitle)
@@ -701,21 +825,29 @@ def readxls2list_findheader( xlsfile, req_cols, xlatdict={}, optiondict={}, col_
             # we want to return the data we read
             rowdict = rowdata
             if debug:  print('saving as array')
+            logger.debug('saving as array')
             
             # optionally add the XLSRow attribute to this dictionary (not here right now
             if save_row:
                 rowdict.append( row + 1 )
                 if debug: print('append row to record')
+                logger.debug('append row to record')
 
         else:
+            if debug:
+                print('saving as dict')
+                print('header:',header)
+                print('rowdata:', rowdata)
+            logger.debug('saving as dict:header:%s:rowdata:%s', header,rowdata)
+
             # we found the header so now build up the records
             rowdict = dict(zip(header,rowdata))
-            if debug:  print('saving as dict')
 
             # optionally add the XLSRow attribute to this dictionary (not here right now
             if save_row:
                 rowdict['XLSRow'] = row + 1
                 if debug: print('add column XLSRow with row to record')
+                logger.debug('add column XLSRow with row to record')
                 
             # do field manipulations here - date - but only on XLS not XLSX files
             if not xlsxfiletype:
@@ -724,10 +856,12 @@ def readxls2list_findheader( xlsfile, req_cols, xlatdict={}, optiondict={}, col_
                         if fld in rowdict:
                             rowdict[fld] = xldate_to_datetime(rowdict[fld])
                             if debug: print('xldate conversion on:', fld)
+                            logger.debug('xldate conversion on:%s', fld)
 
         # add this dictionary to the results
         results.append(rowdict)
         if debug:  print('append rowdict to results')
+        logger.debug('append rowdict to results')
 
     # ------------------------------- RECORDS END ------------------------------
 
@@ -743,6 +877,7 @@ def readxls2dict_findheader( xlsfile, dictkeys, req_cols=[], xlatdict={}, option
 
     # validate we have proper input
     if not dictkeys:
+        logger.error('kvxls:readxls2dict_findheader:dictkeys not populated - program error')
         print('kvxls:readxls2dict_findheader:dictkeys not populated - program error')
         raise
 
@@ -754,6 +889,7 @@ def readxls2dict_findheader( xlsfile, dictkeys, req_cols=[], xlatdict={}, option
     results = {}
 
     # debugging
+    logger.debug('dictkeys:%s', dictkeys)
     if debug:
         print('readxls2dict_findheader:dictkeys:', dictkeys)
         input('press enter')
@@ -762,10 +898,11 @@ def readxls2dict_findheader( xlsfile, dictkeys, req_cols=[], xlatdict={}, option
     if isinstance(dictkeys, str):
         dictkeys = [dictkeys]
         if debug:  print('readxls2dict_findheader:converted dictkeys from string to list')
+        logger.debug('converted dictkeys from string to list')
         
     # debugging
-    if debug:
-        print('readxls2dict_findheader:reading in xls as a list first')
+    if debug:  print('readxls2dict_findheader:reading in xls as a list first')
+    logger.debug('reading in xls as a list first')
     
     # read in the data from the file
     resultslist = readxls2list_findheader( xlsfile, req_cols, xlatdict=xlatdict, optiondict=optiondict, col_aref=col_aref, debug=debug )
@@ -774,6 +911,8 @@ def readxls2dict_findheader( xlsfile, dictkeys, req_cols=[], xlatdict={}, option
     if debug:
         print('readxls2dict_findheader:xls data is in an array - now convert to a dictionary')
         print('readxls2dict_findheader:dictkeys:', dictkeys)
+    logger.debug('xls data is in an array - now convert to a dictionary')
+    logger.debug('dictkeys:%s', dictkeys)
 
     
     # convert to a dictionary based on keys provided
@@ -782,6 +921,8 @@ def readxls2dict_findheader( xlsfile, dictkeys, req_cols=[], xlatdict={}, option
         if debug:
             print('rowdict:', rowdict)
             print('dictkeys:', dictkeys)
+        logger.debug('rowdict:%s', rowdict)
+        logger.debug('dictkeys:%s', dictkeys)
         reckey = kvmatch.build_multifield_key(rowdict, dictkeys)
         # do we fail if we see the same key multiple times?
         if dupkeyfail:
@@ -794,6 +935,7 @@ def readxls2dict_findheader( xlsfile, dictkeys, req_cols=[], xlatdict={}, option
 
     # fail if we found dupkeys
     if dupkeys:
+        logger.error('duplicate key failure:%s', ','.join(dupkeys))
         print('readxls2dict:duplicate key failure:', ','.join(dupkeys))
         raise
 
@@ -825,10 +967,20 @@ def writelist2xls( xlsfile, data, col_aref=None, optiondict={}, debug=False ):
     xlsxfiletype = xlsfile.endswith('.xlsx') or xlsfile.endswith('.xlsm')
 
     # change settings based on user input
-    if 'sheet_name' in optiondict:  sheet_name = optiondict['sheet_name']
-    if 'no_header' in optiondict:  no_header = optiondict['no_header']
-    if isinstance(data[0], list):  aref_result = True
-    
+    if 'sheet_name' in optiondict:   sheet_name  = optiondict['sheet_name']
+    if 'no_header' in optiondict:    no_header   = optiondict['no_header']
+    if 'aref_result' in optiondict:  aref_result = optiondict['aref_result']
+
+    # set this value if the record we get is a list not a dictionary
+    if isinstance(data[0], list):    aref_result = True
+
+    # debugging
+    if debug:
+        print('sheet_name:', sheet_name)
+        print('no_header:', no_header)
+        print('aref_result:', aref_result)
+        print('xlsxfiletype:', xlsxfiletype)
+        
     # validate we have columns defined - or create one if we can
     if not col_aref:
         if aref_result:
@@ -839,9 +991,9 @@ def writelist2xls( xlsfile, data, col_aref=None, optiondict={}, debug=False ):
             col_aref = list(data[0].keys())
 
     # debuging
-    if debug:
-        print('col_aref:', col_aref)
-        
+    if debug: print('col_aref:', col_aref)
+    logger.debug('col_aref:%s', col_aref)
+
     # Create a new workbook
     if xlsxfiletype:
         # XLSX file
@@ -875,19 +1027,26 @@ def writelist2xls( xlsfile, data, col_aref=None, optiondict={}, debug=False ):
     # now step through the data itself
     for record in data:
         # output this row of data
-        for xlscol in range(0,len(col_aref)):
-            # determine the value - based on how the records are structured
-            if aref_result:
-                value = record[xlscol]
-            else:
-                value = record[col_aref[xlscol]]
+        if col_aref and len(col_aref):
+            for xlscol in range(0,len(col_aref)):
+                # determine the value - based on how the records are structured
+                if aref_result:
+                    value = record[xlscol]
+                else:
+                    value = record[col_aref[xlscol]]
                 
-            # could put a feature in here to convert the value to a string before storing
-            if xlsxfiletype:
-                d = ws.cell(row=xlsrow+1, column=xlscol+1, value=value)
-            else:
-                d = ws.write(xlsrow, xlscol, value)
-
+                # could put a feature in here to convert the value to a string before storing
+                if xlsxfiletype:
+                    d = ws.cell(row=xlsrow+1, column=xlscol+1, value=value)
+                else:
+                    d = ws.write(xlsrow, xlscol, value)
+        elif aref_result:
+            for xlscol in range(0,len(record)):
+                if xlsxfiletype:
+                    d = ws.cell(row=xlsrow+1, column=xlscol+1, value=record[xlscol])
+                else:
+                    d = ws.write(xlsrow, xlscol, record[xlscol])
+                
         # done with this row - increment counter
         xlsrow += 1
         

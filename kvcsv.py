@@ -1,7 +1,7 @@
 '''
 @author:   Ken Venner
 @contact:  ken@venerllc.com
-@version:  1.08
+@version:  1.09
 
 Library of tools used to read and write CSV files
 '''
@@ -14,7 +14,7 @@ import logging
 logger = logging.getLogger(__name__)
 
 # version number
-AppVersion = '1.08'
+AppVersion = '1.09'
 
 
 # read in the CSV and create a dictionary to the records
@@ -40,7 +40,7 @@ def readcsv2dict_with_noheader( csvfile, dictkeys, header, dupkeyfail=False, nos
     # fail if we found dupkeys
     if dupkeys:
         # log this issue
-        logger.info('readcsv2dict:v%s:file:%s:duplicate key failure:keys:%s',AppVersion, csvfile,','.join(dupkeys) )
+        logger.warn('readcsv2dict:v%s:file:%s:duplicate key failure:keys:%s',AppVersion, csvfile,','.join(dupkeys) )
         # display message if the user wants this displayed
         if not noshowwarning:
             print('readcsv2dict:duplicate key failure:', ','.join(dupkeys))
@@ -59,9 +59,11 @@ def readcsv2dict_with_header( csvfile, dictkeys, dupkeyfail=False, noshowwarning
         reader = csv.reader(csv_file)
         header = reader.__next__()
         if debug: print('header-before:', header)
+        logger.debug('header-before:%s', header)
         if headerlc:
             header = [x.lower() for x in header]
             if debug: print('header-after:', header)
+            logger.debug('header-after:%s', header)
         for row in reader:
             rowdict = dict(zip(header,row))
             reckey = kvmatch.build_multifield_key(rowdict, dictkeys)
@@ -76,7 +78,7 @@ def readcsv2dict_with_header( csvfile, dictkeys, dupkeyfail=False, noshowwarning
     # fail if we found dupkeys
     if dupkeys:
         # log this issue
-        logger.info('readcsv2dict:v%s:file:%s:duplicate key failure:keys:%s',AppVersion, csvfile,','.join(dupkeys) )
+        logger.warn('readcsv2dict:v%s:file:%s:duplicate key failure:keys:%s',AppVersion, csvfile,','.join(dupkeys) )
         # display message if the user wants this displayed
         if not noshowwarning:
             print('readcsv2dict:duplicate key failure:', ','.join(dupkeys))
@@ -102,9 +104,11 @@ def readcsv2list_with_header( csvfile, headerlc=False, encoding='LATIN-1', debug
         reader = csv.reader(csv_file)
         header = reader.__next__()
         if debug: print('header-before:', header)
+        logger.debug('header-before:%s', header)
         if headerlc:
             header = [x.lower() for x in header]
             if debug: print('header-after:', header)
+            logger.debug('header-after:%s', header)
         for row in reader:
             rowdict = dict(zip(header,row))
             # create/update the dictionary
@@ -159,7 +163,12 @@ def readcsv2list_findheader( csvfile, req_cols, xlatdict={}, optiondict={}, col_
     if debug: print('xlatdict:', xlatdict)
     if debug: print('optiondict:', optiondict)
     if debug: print('col_aref:', col_aref)
+    logger.debug('req_cols:%s', req_cols)
+    logger.debug('xlatdict:%s', xlatdict)
+    logger.debug('optiondict:%s', optiondict)
+    logger.debug('col_aref:%s', col_aref)
 
+    
     # set flags
     col_header  = False  # if true - we take the first row of the file as the header
     no_header   = False  # if true - there are no headers read - we either return 
@@ -219,23 +228,28 @@ def readcsv2list_findheader( csvfile, req_cols, xlatdict={}, optiondict={}, col_
         if not col_aref:
             aref_result = True
             if debug:  print('no_header:no col_aref:set aref_result to true')
+            logger.debug('no_header:no col_aref:set aref_result to true')
             
         # debug
         if debug:  print('no_header:start_row:', start_row)
+        logger.debug('no_header:start_row:%d', start_row)
         
     elif col_header:
         # extract the header as the first line in the file
         header = reader.__next__()
         row_header = 0 
-        if debug: print('header_1strow:',header)
+        if debug: print('col_header:header_1strow:',header)
+        logger.debug('col_header:header_1strow:%s',header)
     else:
         # debug
         if debug: print('find_header:start_row:', start_row)
+        logger.debug('find_header:start_row:%d', start_row)
         
         # get to the start_row record
         for next_row in range(0,start_row):
             line = reader.__next__()
             if debug: print('skipping line:', line)
+            logger.debug('skipping line:%s', line)
 
         # counting row just to provide feedback
         row = start_row
@@ -247,6 +261,7 @@ def readcsv2list_findheader( csvfile, req_cols, xlatdict={}, optiondict={}, col_
             
             # have not found the header yet - so look
             if debug:  print('looking for header at row:', row)
+            logger.debug('looking for header at row:%d', row)
 
             # Search to see if this row is the header
             if p.matchRowList( rowdata, debug=debug ) or p.search_exceeded:
@@ -263,6 +278,7 @@ def readcsv2list_findheader( csvfile, req_cols, xlatdict={}, optiondict={}, col_
                     header = p._data_mapped
                     # debugging
                     if debug: print('header_found:',header)
+                    logger.debug('header_found:%s',header)
                     # break out of the loop
                     break
 
@@ -271,11 +287,13 @@ def readcsv2list_findheader( csvfile, req_cols, xlatdict={}, optiondict={}, col_
 
     # debug
     if debug:  print('exitted header find loop')
+    logger.debug('exitted header find loop')
     
     # user wants to define/override the column headers rather than read them in
     if col_aref:
         # debugging
         if debug:  print('copying col_aref into header')
+        logger.debug('copying col_aref into header')
         # copy over the values - and determine if we need to fill in more header values
         header = col_aref[:]
         # user defined the row definiton - make sure they passed in enough values to fill the row
@@ -291,6 +309,7 @@ def readcsv2list_findheader( csvfile, req_cols, xlatdict={}, optiondict={}, col_
         header = p.remappedRow(header)
         # debug
         if debug: print('col_aref:header:', header)
+        logger.debug('col_aref:header:%s', header)
 
     # ------------------------------- RECORDS START ------------------------------
 
@@ -298,6 +317,7 @@ def readcsv2list_findheader( csvfile, req_cols, xlatdict={}, optiondict={}, col_
     for rowdata in reader:
 
         if debug: print('rowdata:', rowdata)
+        logger.debug('rowdata:%s', rowdata)
 
         # determine what we are returning
         if aref_result:
@@ -305,25 +325,30 @@ def readcsv2list_findheader( csvfile, req_cols, xlatdict={}, optiondict={}, col_
             # we want to return the data we read
             rowdict = rowdata
             if debug:  print('saving as array')
+            logger.debug('saving as array')
             
             # optionally add the XLSRow attribute to this dictionary (not here right now
             if save_row:
                 rowdict.append( row + 1 )
                 if debug: print('append row to record')
+                logger.debug('append row to record')
 
         else:
             # we found the header so now build up the records
             rowdict = dict(zip(header,rowdata))
             if debug:  print('saving as dict')
+            logger.debug('saving as dict')
 
             # optionally add the XLSRow attribute to this dictionary (not here right now
             if save_row:
                 rowdict['XLSRow'] = row + 1
                 if debug: print('add column XLSRow with row to record')
+                logger.debug('add column XLSRow with row to record')
                 
         # add this dictionary to the results
         results.append(rowdict)
         if debug:  print('append rowdict to results')
+        logger.debug('append rowdict to results')
 
     # ------------------------------- RECORDS END ------------------------------
 
