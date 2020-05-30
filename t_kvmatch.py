@@ -1,6 +1,7 @@
 import kvmatch
 import unittest
 
+import datetime
 import re
 import os
 
@@ -11,7 +12,7 @@ kvlogger.dictConfig(config)
 logger=kvlogger.getLogger(__name__)
 
 
-rowdict = { 'Company' : 'Test', 'Wine' : 'Yummy', 'Price' : 10.00 }
+rowdict = { 'Company' : 'Test', 'Wine' : 'Yummy', 'Price' : 10.00, 'ProcessDate' : datetime.datetime(2020, 1, 1, 0, 0)}
 
 record = ['Col1','Col2','Col3']
 nonrecord = ['bad1','bad2','bad3']
@@ -29,7 +30,7 @@ badoptiondict = {
     'nowarnings'     : 'no_warnings',
     'no_warning'     : 'no_warnings',
 }
-xlatdict = {}
+
 
 class TestKVMatch(unittest.TestCase):
 
@@ -39,6 +40,8 @@ class TestKVMatch(unittest.TestCase):
         self.assertEqual( kvmatch.build_multifield_key( rowdict, ['Company','Wine'] ), 'Test|Yummy' )
     def test_build_multifield_key_p03_string_number(self):
         self.assertEqual( kvmatch.build_multifield_key( rowdict, ['Company','Price'] ), 'Test|10.0' )
+    def test_build_multifield_key_p04_string_date(self):
+        self.assertEqual( kvmatch.build_multifield_key( rowdict, ['Company','ProcessDate'] ), 'Test|2020-01-01 00:00:00' )
     def test_build_multifield_key_f01_missing_key(self):
         with self.assertRaises(Exception) as context:
             kvmatch.build_multifield_key( rowdict, ['Company','Missing'] )
@@ -59,18 +62,62 @@ class TestKVMatch(unittest.TestCase):
     def test_init_f01_no_req_col(self):
         with self.assertRaises(Exception) as context:
             kvmatch.MatchRow()
+    def test_init_f02_req_col_not_list(self):
+        with self.assertRaises(Exception) as context:
+            kvmatch.MatchRow('Col1')
+    def test_init_f03_xlatdict_not_dict(self):
+        with self.assertRaises(Exception) as context:
+            kvmatch.MatchRow(['Col1'], 'xlatdict')
+    def test_init_f04_optiondict_not_dict(self):
+        with self.assertRaises(Exception) as context:
+            kvmatch.MatchRow(['Col1'], optiondict='optiondict')
 
-    def test_init_p01_optiondict_warning(self):
+    def test_init_p01_init_optiondict_warning(self):
         self.assertIsInstance( kvmatch.MatchRow( ['Col1'], optiondict={'no_case' : True, 'no_warnings' : True} ), kvmatch.MatchRow )
-    def test_init_p02_optiondict_warning_returned_value(self):
+    def test_init_p02_init_optiondict_warning_returned_value(self):
         p = kvmatch.MatchRow( ['Col1'], optiondict={'no_case' : True, 'no_warnings' : True} )
         self.assertEqual( p.warning_msg[0], kvmatch.badoption_msg('kvmatch:MatchRow:__init__', 'no_case', badoptiondict['no_case']) )
-    def test_init_p03_warning_invalid_optiondict(self):
+    def test_init_p03_init_optiondict_warning_invalid_optiondict_nodie(self):
         tempdict = dict(badoptiondict)
         tempdict['no_warnings'] = True
         #print('tempdict:', tempdict)
         p = kvmatch.MatchRow( ['Col1'], optiondict=tempdict )
         self.assertEqual( len(p.warning_msg), len(badoptiondict.keys()))
+    def test_init_f01_init_optiondict_warning_invalid_optiondict_die(self):
+        tempdict = dict(badoptiondict)
+        tempdict['no_warnings'] = True
+        tempdict['dieonbadoption'] = True
+        #print('tempdict:', tempdict)
+        with self.assertRaises(Exception) as context:
+            p = kvmatch.MatchRow( ['Col1'], optiondict=tempdict )
+
+
+    def test_init_p01_init_optiondict_nocase(self):
+        p = kvmatch.MatchRow( ['Col1'], optiondict={'nocase' : True, 'no_warnings' : True} )
+        self.assertEqual( p.nocase, True )
+    def test_init_p01_init_optiondict_unique_column(self):
+        p = kvmatch.MatchRow( ['Col1'], optiondict={'unique_column' : True, 'no_warnings' : True} )
+        self.assertEqual( p.unique_column, True )
+    def test_init_p01_init_optiondict_maxrows(self):
+        p = kvmatch.MatchRow( ['Col1'], optiondict={'maxrows' : 2, 'no_warnings' : True} )
+        self.assertEqual( p.maxrows, 2 )
+    def test_init_p01_init_optiondict_dieonbadoption(self):
+        p = kvmatch.MatchRow( ['Col1'], optiondict={'dieonbadoption' : True, 'no_warnings' : True} )
+        self.assertEqual( p.dieonbadoption, True )
+
+
+    def test_init_p01_init_optiondict_xlat(self):
+        p = kvmatch.MatchRow( ['Col1'], xlat_dict )
+        self.assertEqual( p._xlatdict, xlat_dict )
+        self.assertEqual( p._xlatdict_lower, {} )
+    def test_init_p02_init_optiondict_xlat_nocase(self):
+        p = kvmatch.MatchRow( ['Col1'], xlat_dict, optiondict={'nocase': True} )
+        xlat_dict_lower = {x.lower():y for (x,y) in xlat_dict.items()}
+        self.assertEqual( p._xlatdict, xlat_dict_lower )
+        xlat_dict_lower = {x.lower():y.lower() for (x,y) in xlat_dict.items()}
+        self.assertEqual( p._xlatdict_lower, xlat_dict_lower )
+
+
 
     def test_remappedRow_p01_nothing(self):
         p = kvmatch.MatchRow( ['Col1'] )
@@ -83,11 +130,11 @@ class TestKVMatch(unittest.TestCase):
     def test_remappedRow_p03_xlat(self):
         p = kvmatch.MatchRow( kenlist, xlat_dict )
         self.assertEqual( p.remappedRow( record, debug=False ), kenlist )
-    def test_remappedRow_p03_xlat_mismatched_case(self):
+    def test_remappedRow_p04_xlat_mismatched_case(self):
         p = kvmatch.MatchRow( kenlist, xlat_dict )
         mismatch = kenlist[0:3] + record[-1:-1]
         self.assertEqual( p.remappedRow( record, debug=False ), mismatch )
-    def test_remappedRow_p04_xlatlower(self):
+    def test_remappedRow_p05_xlat_nocase(self):
         p = kvmatch.MatchRow( kenlist, xlat_dict_lower, {'nocase' : True} )
         self.assertEqual( p.remappedRow( record, debug=False ), kenlist )
 

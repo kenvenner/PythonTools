@@ -1,7 +1,7 @@
 '''
 @author:   Ken Venner
 @contact:  ken@venerllc.com
-@version:  1.09
+@version:  1.10
 
 Library of tools used to read and write CSV files
 '''
@@ -14,86 +14,54 @@ import logging
 logger = logging.getLogger(__name__)
 
 # version number
-AppVersion = '1.09'
+AppVersion = '1.10'
 
+# determine the max keys across a list of dictionaries
+def max_column_list( csvlist ):
+    fieldlist = []
+    for rec in csvlist:
+        for key in rec.keys():
+            if key not in fieldlist:
+                fieldlist.append(key)
+    return fieldlist
 
-# read in the CSV and create a dictionary to the records
-# based on one or more key fields
-# no header on this file - the header must be passed in
-def readcsv2dict_with_noheader( csvfile, dictkeys, header, dupkeyfail=False, noshowwarning=False, encoding='LATIN-1', debug=False ):
-    results  = {}
-    dupkeys  = []
-    dupcount = 0
-    with open(csvfile, mode='r', encoding=encoding) as csv_file:
-        reader = csv.reader(csv_file)
-        for row in reader:
-            rowdict = dict(zip(header,row))
-            reckey = kvmatch.build_multifield_key(rowdict, dictkeys)
-            # do we fail if we see the same key multiple times?
-            if reckey in results:
-                dupcount += 1
-                if dupkeyfail:
-                    # capture this key
-                    dupkeys.append(reckey)
-            # create/update the dictionary
-            results[reckey] = rowdict
-    # fail if we found dupkeys
-    if dupkeys:
-        # log this issue
-        logger.warn('readcsv2dict:v%s:file:%s:duplicate key failure:keys:%s',AppVersion, csvfile,','.join(dupkeys) )
-        # display message if the user wants this displayed
-        if not noshowwarning:
-            print('readcsv2dict:duplicate key failure:', ','.join(dupkeys))
-        raise ValueError('Duplicate key failure')
-    # return the results
-    return results, header, dupcount
-
-# read in the CSV and create a dictionary to the records
+# write out a list of dicts => record into a CSV
 # based on one or more key fields
 # assumes the first line of the CSV file is the header/defintion of the CSV
-def readcsv2dict_with_header( csvfile, dictkeys, dupkeyfail=False, noshowwarning=False, headerlc=False, encoding='LATIN-1', debug=False ):
-    results  = {}
-    dupkeys  = []
-    dupcount = 0
-    with open(csvfile, mode='r', encoding=encoding) as csv_file:
-        reader = csv.reader(csv_file)
-        header = reader.__next__()
-        if debug: print('header-before:', header)
-        logger.debug('header-before:%s', header)
-        if headerlc:
-            header = [x.lower() for x in header]
-            if debug: print('header-after:', header)
-            logger.debug('header-after:%s', header)
-        for row in reader:
-            rowdict = dict(zip(header,row))
-            reckey = kvmatch.build_multifield_key(rowdict, dictkeys)
-            # do we fail if we see the same key multiple times?
-            if reckey in results:
-                dupcount += 1
-                if dupkeyfail:
-                    # capture this key
-                    dupkeys.append(reckey)
-            # create/update the dictionary
-            results[reckey] = rowdict
-    # fail if we found dupkeys
-    if dupkeys:
-        # log this issue
-        logger.warn('readcsv2dict:v%s:file:%s:duplicate key failure:keys:%s',AppVersion, csvfile,','.join(dupkeys) )
-        # display message if the user wants this displayed
-        if not noshowwarning:
-            print('readcsv2dict:duplicate key failure:', ','.join(dupkeys))
-        raise ValueError('Duplicate key failure')
-    # return the results
-    return results, header, dupcount
+def writelist2csv( csvfile, csvlist, csvfields=None, mode='w', header=True, encoding='LATIN-1', maxcolumns=False, debug=False ):
+    # get the keys from the dictionary keys in the first value itself
+    if not csvfields:
+        csvfields = list( csvlist[0].keys() )
 
-# read in the CSV and create a dictionary to the records
+    # open the output file and write out the dictionary
+    with open(csvfile, mode=mode, newline='', encoding=encoding) as csv_file:
+        writer = csv.DictWriter(csv_file, fieldnames=csvfields, extrasaction='ignore')
+
+        if header:
+            writer.writeheader()
+        for row in csvlist:
+            writer.writerow(row)
+
+
+# write out a dict that is keyed => record into a CSV
 # based on one or more key fields
 # assumes the first line of the CSV file is the header/defintion of the CSV
-def readcsv2dict( csvfile, dictkeys, dupkeyfail=False, noshowwarning=False, headerlc=False, encoding='LATIN-1', debug=False ):
-    results, header, dupcnt = readcsv2dict_with_header( csvfile, dictkeys, dupkeyfail=dupkeyfail, noshowwarning=noshowwarning, headerlc=headerlc, encoding=encoding, debug=debug )
-    return results
+def writedict2csv( csvfile, csvdict, csvfields=None, mode='w', header=True, encoding='LATIN-1', maxcolumns=False, debug=False ):
+    # get the keys from the dictionary keys in the first value itself
+    if not csvfields:
+        csvfields = list( csvdict[ list( csvdict.keys() )[0] ].keys() )
+
+    # open the output file and write out the dictionary
+    with open(csvfile, mode=mode, newline='', encoding=encoding) as csv_file:
+        writer = csv.DictWriter(csv_file, fieldnames=csvfields, extrasaction='ignore')
+
+        if header:
+            writer.writeheader()
+        for row in csvdict.values():
+            writer.writerow(row)
 
 
+################################ READ #############################################
 
 # read in the CSV and create a dictionary to the records
 # based on one or more key fields
@@ -123,6 +91,105 @@ def readcsv2list( csvfile, headerlc=False, encoding='LATIN-1', debug=False ):
     results, header = readcsv2list_with_header( csvfile, headerlc, encoding, debug )
     return results
 
+
+            
+# read in the CSV and create a dictionary to the records
+# based on one or more key fields
+# assumes the first line of the CSV file is the header/defintion of the CSV
+def readcsv2dict_with_header( csvfile, dictkeys, dupkeyfail=False, noshowwarning=False, headerlc=False, encoding='LATIN-1', debug=False ):
+    results  = {}
+    dupkeys  = []
+    dupcount = 0
+    with open(csvfile, mode='r', encoding=encoding) as csv_file:
+        reader = csv.reader(csv_file)
+        header = reader.__next__()
+        if debug: print('header-before:', header)
+        logger.debug('header-before:%s', header)
+        if headerlc:
+            dictkeys = [x.lower() for x in dictkeys]
+            header = [x.lower() for x in header]
+            if debug: print('header-after:', header)
+            logger.debug('header-after:%s', header)
+        for row in reader:
+            rowdict = dict(zip(header,row))
+            reckey = kvmatch.build_multifield_key(rowdict, dictkeys)
+            # do we fail if we see the same key multiple times?
+            if reckey in results:
+                dupcount += 1
+                if dupkeyfail:
+                    # capture this key
+                    dupkeys.append(reckey)
+            # create/update the dictionary
+            results[reckey] = rowdict
+    # fail if we found dupkeys
+    if dupkeys:
+        # log this issue
+        logger.warning('readcsv2dict:v%s:file:%s:duplicate key failure:keys:%s',AppVersion, csvfile,','.join(dupkeys) )
+        # display message if the user wants this displayed
+        if not noshowwarning:
+            print('readcsv2dict:duplicate key failure:', ','.join(dupkeys))
+        raise ValueError('Duplicate key failure')
+    # return the results
+    return results, header, dupcount
+
+
+# read in the CSV and create a dictionary to the records
+# based on one or more key fields
+# assumes the first line of the CSV file is the header/defintion of the CSV
+def readcsv2dict( csvfile, dictkeys, dupkeyfail=False, noshowwarning=False, headerlc=False, encoding='LATIN-1', debug=False ):
+    results, header, dupcnt = readcsv2dict_with_header( csvfile, dictkeys, dupkeyfail=dupkeyfail, noshowwarning=noshowwarning, headerlc=headerlc, encoding=encoding, debug=debug )
+    return results
+
+
+
+
+
+
+# read in the CSV and create a dictionary to the records
+# based on one or more key fields
+# no header on this file - the header must be passed in
+def readcsv2dict_with_noheader( csvfile, dictkeys, header, dupkeyfail=False, noshowwarning=False, encoding='LATIN-1', debug=False ):
+    if not dictkeys:
+        logger.error('must pass in dictkeys')
+        raise Exception('must pass in dictkeys')
+    if not header:
+        logger.error('must pass in header')
+        raise Exception('must pass in header')
+    if not isinstance(header,list):
+        logger.error('header must be a list:%s',header)
+        raise Exception('header must be a list:%s',header)
+
+    
+    results  = {}
+    dupkeys  = []
+    dupcount = 0
+    with open(csvfile, mode='r', encoding=encoding) as csv_file:
+        reader = csv.reader(csv_file)
+        for row in reader:
+            rowdict = dict(zip(header,row))
+            reckey = kvmatch.build_multifield_key(rowdict, dictkeys)
+            # do we fail if we see the same key multiple times?
+            if reckey in results:
+                dupcount += 1
+                if dupkeyfail:
+                    # capture this key
+                    dupkeys.append(reckey)
+            # create/update the dictionary
+            results[reckey] = rowdict
+    # fail if we found dupkeys
+    if dupkeys:
+        # log this issue
+        logger.warning('readcsv2dict:v%s:file:%s:duplicate key failure:keys:%s',AppVersion, csvfile,','.join(dupkeys) )
+        # display message if the user wants this displayed
+        if not noshowwarning:
+            print('readcsv2dict:duplicate key failure:', ','.join(dupkeys))
+        raise ValueError('Duplicate key failure')
+    # return the results
+    return results, header, dupcount
+
+
+
+################ FINDHEADER ############################
 
 # coding structure - build one generic (INTERNAL) function that does all the various things
 # with passed in variables that are all optional
@@ -168,6 +235,10 @@ def readcsv2list_findheader( csvfile, req_cols, xlatdict={}, optiondict={}, col_
     logger.debug('optiondict:%s', optiondict)
     logger.debug('col_aref:%s', col_aref)
 
+    # check type
+    if col_aref and not isinstance(col_aref,list):
+        logger.error('col_aref must be list:%s', col_aref)
+        raise Exception('col_aref not a list')
     
     # set flags
     col_header  = False  # if true - we take the first row of the file as the header
@@ -190,9 +261,9 @@ def readcsv2list_findheader( csvfile, req_cols, xlatdict={}, optiondict={}, col_
         'arefresult'     : 'aref_result',
         'arefresults'    : 'aref_result',
         'aref_results'   : 'aref_result',
-        'saverow'        : 'saverow',
-        'saverows'       : 'saverow',
-        'save_rows'      : 'saverow',
+        'saverow'        : 'save_row',
+        'saverows'       : 'save_row',
+        'save_rows'      : 'save_row',
     }
 
     # check what got passed in
@@ -266,21 +337,20 @@ def readcsv2list_findheader( csvfile, req_cols, xlatdict={}, optiondict={}, col_
             # Search to see if this row is the header
             if p.matchRowList( rowdata, debug=debug ) or p.search_exceeded:
                 # determine if we found the header
-                if p.search_exceeded:
-                    # close the file we opened
-                    csv_file.close()
-                    # did not find the header - raise error
-                    raise
-                else:
-                    # set the row_header
-                    row_header = row
-                    # found the header grab the output
-                    header = p._data_mapped
-                    # debugging
-                    if debug: print('header_found:',header)
-                    logger.debug('header_found:%s',header)
-                    # break out of the loop
-                    break
+                # set the row_header
+                row_header = row
+                # found the header grab the output
+                header = p._data_mapped
+                # debugging
+                if debug: print('header_found:',header)
+                logger.debug('header_found:%s',header)
+                # break out of the loop
+                break
+            elif p.search_exceeded:
+                # close the file we opened
+                csv_file.close()
+                # did not find the header - raise error
+                raise Exception('header not found')
 
 
     # ------------------------------- HEADER END ------------------------------
@@ -362,153 +432,62 @@ def readcsv2list_findheader( csvfile, req_cols, xlatdict={}, optiondict={}, col_
     return results
 
 
-def readcsv2dict_findheader( csvfile, req_cols, xlatdict={}, optiondict={}, col_aref=None, debug=False, dupkeyfail=False ):
+def readcsv2dict_findheader( csvfile, req_cols, dictkeys, xlatdict={}, optiondict={}, col_aref=None, debug=False, dupkeyfail=False ):
 
-        # check for duplicate keys
+    # check inputs
+    if not dictkeys:
+        raise Exception('dictkeys must be populated')
+    elif not isinstance(dictkeys,list):
+        raise Exception('dictkeys must be a list:%s', dictkeys)
+
+    # debugging
+    if debug:
+        print('dictkeys:', dictkeys)
+        
+    # local variables
     dupkeys = []
+    dictresults={}
 
     # read in the data from the file
     results = readcsv2list_findheader( csvfile, req_cols, xlatdict=xlatdict, optiondict=optiondict, col_aref=col_aref, debug=debug )
 
+    # check processing
+    if 'no_header' in optiondict and optiondict['no_header'] and not col_aref:
+        raise Exception('invalid setting optiondict[no_header] and no col_aref')
+    if 'aref_result' in optiondict and optiondict['aref_result']:
+        raise Exception('invalid setting optiondict[aref_result]')
+    
+    if debug:
+        print('results:', results)
+        
     # convert to a dictionary based on keys provided
     for rowdict in results:
-        rowdict = dict(zip(header,row))
+        if debug:
+            print('dictkeys:', dictkeys)
+            print('rowdict:', rowdict)
+            
         reckey = kvmatch.build_multifield_key(rowdict, dictkeys)
         # do we fail if we see the same key multiple times?
         if dupkeyfail:
-            if reckey in results:
+            if reckey in dictresults:
                 # capture this key
                 dupkeys.append(reckey)
-            # create/update the dictionary
-            results[reckey] = rowdict
+
+        # create/update the dictionary
+        dictresults[reckey] = rowdict
 
     # fail if we found dupkeys
     if dupkeys:
         print('readcsv2dict:duplicate key failure:', ','.join(dupkeys))
-        raise
+        raise Exception('duplicate key failure:%s', dupkeys)
 
+    if debug:
+        print('dictresults:', dictresults)
+        
     # return the results
-    return results
+    return dictresults
 
 
-# write out a dict that is keyed => record into a CSV
-# based on one or more key fields
-# assumes the first line of the CSV file is the header/defintion of the CSV
-def writedict2csv( csvfile, csvdict, dictkeys=None, mode='w', header=True, encoding='LATIN-1', debug=False ):
-    # get the keys from the dictionary keys in the first value itself
-    if not dictkeys:
-        dictkeys = list( csvdict[ list( csvdict.keys() )[0] ].keys() )
-
-    # open the output file and write out the dictionary
-    with open(csvfile, mode=mode, newline='', encoding=encoding) as csv_file:
-        writer = csv.DictWriter(csv_file, fieldnames=dictkeys, extrasaction='ignore')
-
-        if header:
-            writer.writeheader()
-        for row in csvdict.values():
-            writer.writerow(row)
-
-# write out a list of dicts => record into a CSV
-# based on one or more key fields
-# assumes the first line of the CSV file is the header/defintion of the CSV
-def writelist2csv( csvfile, csvlist, dictkeys=None, mode='w', header=True, encoding='LATIN-1', debug=False ):
-    # get the keys from the dictionary keys in the first value itself
-    if not dictkeys:
-        dictkeys = list( csvlist[0].keys() )
-
-    # open the output file and write out the dictionary
-    with open(csvfile, mode=mode, newline='', encoding=encoding) as csv_file:
-        writer = csv.DictWriter(csv_file, fieldnames=dictkeys, extrasaction='ignore')
-
-        if header:
-            writer.writeheader()
-        for row in csvlist:
-            writer.writerow(row)
-
-
-
-# ---- ELIMINATE ------
-
-# read in the CSV and create a dictionary to the records
-# based on one or more key fields
-# assumes the first line of the CSV file is the header/defintion of the CSV
-def readcsv2list_findheader_old( csvfile, req_cols, xlatdict={}, optiondict={}, debug=False ):
-    results = []
-    # debugging
-    if debug: print('req_cols:', req_cols)
-    if debug: print('xlatdict:', xlatdict)
-    if debug: print('optiondict:', optiondict)
-    p = kvmatch.MatchRow( req_cols, xlatdict, optiondict )
-    with open(csvfile, mode='r') as csv_file:
-        reader = csv.reader(csv_file)
-        # look for the header
-        for row in reader:
-            if p.matchRowList( row, debug=debug ) or p.search_exceeded:
-                break
-        # determine if we found the header
-        if p.search_exceeded:
-            # did not find the header
-            raise
-        else:
-            # found the header grab the output
-            header = p._data_mapped
-            # debugging
-            if debug: print('header:',header)
-            
-        # step through the rest of the file
-        for row in reader:
-            rowdict = dict(zip(header,row))
-            results.append(rowdict)
-
-    # return the results
-    return results
-
-# read in the CSV and create a dictionary to the records
-# based on one or more key fields
-# assumes the first line of the CSV file is the header/defintion of the CSV
-def readcsv2dict_findheader_old( csvfile, dictkeys, req_cols, xlatdict={}, optiondict={}, debug=False, dupkeyfail=False ):
-    results = {}
-    dupkeys = []
-    with open(csvfile, mode='r') as csv_file:
-        reader = csv.reader(csv_file)
-    # debugging
-    if debug: print('req_cols:', req_cols)
-    if debug: print('xlatdict:', xlatdict)
-    if debug: print('optiondict:', optiondict)
-    p = kvmatch.MatchRow( req_cols, xlatdict, optiondict )
-    with open(csvfile, mode='r') as csv_file:
-        reader = csv.reader(csv_file)
-        # look for the header
-        for row in reader:
-            if p.matchRowList( row, debug=debug ) or p.search_exceeded:
-                break
-        # determine if we found the header
-        if p.search_exceeded:
-            # did not find the header
-            raise
-        else:
-            # found the header grab the output
-            header = p._data_mapped
-            # debugging
-            if debug: print('header:',header)
-            
-        # step through the rest of th efile
-        for row in reader:
-            rowdict = dict(zip(header,row))
-            reckey = kvmatch.build_multifield_key(rowdict, dictkeys)
-            # do we fail if we see the same key multiple times?
-            if dupkeyfail:
-                if reckey in results:
-                    # capture this key
-                    dupkeys.append(reckey)
-            # create/update the dictionary
-            results[reckey] = rowdict
-    # fail if we found dupkeys
-    if dupkeys:
-        print('readcsv2dict:duplicate key failure:', ','.join(dupkeys))
-        raise
-    # return the results
-    return results
 
 
 if __name__ == '__main__':

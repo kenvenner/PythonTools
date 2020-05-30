@@ -42,7 +42,7 @@ def badoptiondict_check( func, optiondict, badoptiondict, noshowwarning=False, d
 
     # check to see if we should raise an error if we find problems
     if dieonbadoption and warnings:
-        raise 'badoption found'
+        raise Exception('badoption found')
     
     # now return the warnings
     return warnings
@@ -52,6 +52,16 @@ def badoptiondict_check( func, optiondict, badoptiondict, noshowwarning=False, d
 class MatchRow(object):
     # set up the parser with input information
     def __init__(self, req_cols, xlatdict={}, optiondict={}):
+        # validate input types
+        if req_cols and not isinstance(req_cols, list):
+            raise Exception('req_cols must be a list:%s', req_cols)
+        if xlatdict and not isinstance(xlatdict,dict):
+            raise Exception('xlatdict must be a dict:%s', req_cols)
+        if optiondict and not isinstance(optiondict,dict):
+            raise Exception('optiondict must be a dict:%s', req_cols)
+            
+
+        # setup variables
         self._req_cols = req_cols[:]   # make sure we have a copy of this so it does not get changed on us
         self._xlatdict = {}            # xref dictionary with passed and (if nocase - lower case keys)
         self._xlatdict_lower = {}      # xref dictionary for lower case key and lower case value
@@ -79,6 +89,8 @@ class MatchRow(object):
         self.unique_column = False  # if true - we must have unqiue columns in the final result
         self.maxrows = 10   # max number of rows to check
         self.no_warnings = False  # if true - we supress sending out warning message
+        self.dieonbadoption = False # if true - we raise error on bad options
+        
         
         # create the list of misconfigured solutions
         badoptiondict = {
@@ -102,9 +114,11 @@ class MatchRow(object):
             self.maxrows = optiondict['maxrows']
         if 'no_warnings' in optiondict:
             self.no_warnings = optiondict['no_warnings']
+        if 'dieonbadoption' in optiondict:
+            self.dieonbadoption = optiondict['dieonbadoption']
             
         # check what got passed in
-        self.warning_msg = badoptiondict_check( 'kvmatch:MatchRow:__init__', optiondict, badoptiondict, self.no_warnings )
+        self.warning_msg = badoptiondict_check( 'kvmatch:MatchRow:__init__', optiondict, badoptiondict, self.no_warnings, self.dieonbadoption )
         
         # copy over the translations dictionary and add values if required
         for key in xlatdict:

@@ -1,7 +1,7 @@
 '''
 @author:   Ken Venner
 @contact:  ken@venerllc.com
-@version:  1.29
+@version:  1.30
 
 Library of tools used in general by KV
 '''
@@ -18,7 +18,7 @@ import logging
 logger = logging.getLogger(__name__)
 
 # set the module version number
-AppVersion = '1.29'
+AppVersion = '1.30'
 
 
 # import ast
@@ -554,17 +554,20 @@ def remove_filename(filename,calledfrom='',debug=False,maxretry=20):
         logger.debug('%s:%s:exists:try to remove:cnt:%d', calledfrom, filename, cnt)
         try:
             os.remove(filename) # try to remove it directly
+            logger.debug('%s:%s:removed on count:%d',calledfrom, filename, cnt)
         except Exception as e:
             if debug: print(calledfrom, 'errno:', e.errno, ':ENOENT:', errno.ENOENT)
-            logger.debug('%s:errno:%d:%ENOENT:%s', calledfrom, e.errno, errno.ENOENT)
+            logger.debug('%s:errno:%d:ENOENT:%d', calledfrom, e.errno, errno.ENOENT)
             if e.errno == errno.ENOENT: # file doesn't exist
                 return
             if debug: print(calledfrom, filename,':', str(e))
             if cnt > maxretry:
                 print(calledfrom, filename, ':raise error - exceed maxretry attempts:', maxretry)
+                logger.error('%s:%s:exceeded maxretry attempts:%d:raise error', calledfrom, filename, maxretry)
                 raise e
         except WinError as f:
             print('catch WinError:', str(f))
+            logger.debug('catch WinError:%s', str(f))
 
 # utility used to remove a folder - in windows sometimes we have a delay
 # in releasing the filehandle - this routine will loop a few times giving
