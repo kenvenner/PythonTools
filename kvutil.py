@@ -1,7 +1,7 @@
 '''
 @author:   Ken Venner
 @contact:  ken@venerllc.com
-@version:  1.30
+@version:  1.34
 
 Library of tools used in general by KV
 '''
@@ -18,8 +18,7 @@ import logging
 logger = logging.getLogger(__name__)
 
 # set the module version number
-AppVersion = '1.30'
-
+AppVersion = '1.34'
 
 # import ast
 #   and call bool(ast.literal_eval(value)) 
@@ -28,6 +27,9 @@ AppVersion = '1.30'
 #   expects options defined as key=value pair strings on the command line
 # input:
 #   optiondictconfig - key = variable, value = dict with keys ( value, type, descr, required )
+#   raise_error - bool flag - if true and we get a command line setting we don't know raise exception
+#   keymapdict - dictionary of misspelled command line values that are mapped to the official values
+#
 # return:
 #   optiondict - dictionary of values from config and command line
 #
@@ -46,13 +48,20 @@ AppVersion = '1.30'
 #     }
 # }
 #
-# optiondict = kv_parse_command_line( optiondictconfig )
+# keymapdict = {
+#     'working_dir' : 'workingdir',
+#     'dbg' : 'debug',
+# }
+#
+# optiondict = kv_parse_command_line( optiondictconfig, keymapdict=keymapdict )
 #
 #
-def kv_parse_command_line( optiondictconfig, debug=False ):
+def kv_parse_command_line( optiondictconfig, raise_error=False, keymapdict=None, debug=False ):
     # debug
     if debug:  print('kv_parse_command_line:sys.argv:', sys.argv)
     if debug:  print('kv_parse_command_line:optiondictconfig:', optiondictconfig)
+    # debugging
+    logger.debug('LOAD(v%s)%s', AppVersion, '-'*40)
     logger.debug('sys.argv: %s', sys.argv)
     logger.debug('optiondictconfig: %s', optiondictconfig)
 
@@ -120,6 +129,12 @@ def kv_parse_command_line( optiondictconfig, debug=False ):
             logger.debug('key-not-populated-with-value-skipping-arg')
             continue
 
+        # check to see if we should use the keymapping
+        if keymapdict:
+            if key in keymapdict and key not in optiondict and key not in defaultdictconfig:
+                logger.debug('remapping:%s:to:%s', key, keymapdict[key])
+                key = keymapdict[key]
+
         # logic to bring in "default/implied optiondict values if key passed is not part of app definition
         if key not in optiondict and key in defaultdictconfig:
             if debug:  print('kv_parse_command_line:key-not-in-optiondictconfig-but-in-defaultoptiondictconfig:', key)
@@ -160,11 +175,11 @@ def kv_parse_command_line( optiondictconfig, debug=False ):
             elif optiondictconfig[key]['type'] == 'inlist':
                 # value must be from a predefined list of acceptable values
                 if not 'valid' in optiondictconfig[key]:
-                    print('missing optiondictconfig setting [valid] for key:', key)
+                    if debug: print('missing optiondictconfig setting [valid] for key:', key)
                     logger.error('missing optiondictconfig setting [valid] for key:%s', key)
                     raise Exception('missing optiondictconfig setting [valid] for key:%s', key)
                 if value not in optiondictconfig[key]['valid']:
-                    print('value:', value, ':not in defined list of valid values:', optiondictconfig[key]['valid'])
+                    if debug:  print('value:', value, ':not in defined list of valid values:', optiondictconfig[key]['valid'])
                     logger.error('invalid value passed in for [%s]:%s',key,value)
                     logger.error('list of valid values are:%s',  optiondictconfig[key]['valid'])
                     raise Exception('invalid value passed in for [%s]:%s',key,value)
@@ -178,9 +193,13 @@ def kv_parse_command_line( optiondictconfig, debug=False ):
             # user asked for help - display help and then exit
             kv_parse_command_line_display( optiondictconfig, debug=False )
             sys.exit()
-        elif debug:
-            print('kv_parse_command_line:unknown-option:', key)
-            logger.info('unknown option:%s', key)
+        elif raise_error:
+            logger.error('unknown command line option:%s', key)
+            raise Exception('unknown command line option:%s', key)
+        else:
+            if debug:  print('kv_parse_command_line:unknown-option:', key)
+            logger.warning('unknown option:%s', key)
+            
     # test for required fields being populated
     missingoption = []
     for key in optiondictconfig:
@@ -195,10 +214,11 @@ def kv_parse_command_line( optiondictconfig, debug=False ):
         kv_parse_command_line_display( optiondictconfig, debug=False )
         errmsg = 'System exitted - missing required option(s):\n    ' + '\n    '.join(missingoption)
         # print('\n'.join(missingoption))
-        print('-'*80)
-        print(errmsg)
-        print('')
-        logger.debug(errmsg)
+        if debug:
+            print('-'*80)
+            print(errmsg)
+            print('')
+        logger.error(errmsg)
         raise Exception(errmsg)
         # sys.exit(1)
     
@@ -267,6 +287,25 @@ def kv_parse_command_line_display( optiondictconfig, optiondict={}, debug=False 
                 print('  ' + fld + '.'*(12-len(fld)) + ':', optiondictconfig[opt][fld])
         
 
+# define the filename used to create log files
+# that are based on the "day" the program starts running
+# generally used for short running tools
+# not used with tools that start and stay running
+def filename_log_day_of_month( filename, ext_override=None, path_override=None ):
+    file_path, base_filename, file_ext = filename_split( filename, path_blank=True )
+    if ext_override:
+            file_ext=ext_override
+    if file_ext[:1] != '.':
+        file_ext = '.' + file_ext
+    if path_override:
+        file_path = path_override
+    day_filename = '{}{:02d}'. format(base_filename, datetime.datetime.today().day)
+    logfilename = os.path.join(file_path, day_filename+file_ext)
+    if os.path.exists(logfilename):
+        if os.path.getmtime(logfilename) < (datetime.datetime.today() - datetime.timedelta(days=1)).timestamp():
+            # remove the file if it exists but has not been modified within the past 24 hours
+            remove_filename(logfilename)
+    return logfilename
 
 # return the filename that is max or min for a given query (UT)
 # default is to return the MIN filematch
@@ -284,15 +323,57 @@ def filename_maxmin( file_glob, reverse=False ):
     return sorted(filelist, reverse=reverse )[0]
 
 # create a filename from part of a filename
-def filename_create( filename=None, filepath=None, filename_base=None, filename_ext=None ):
-    return True
+#   pull apart the filenaem passed in (if passed in) and then fill in the various file parts based
+#   on the other attributes passed in
+def filename_create( filename=None, filename_path=None, filename_base=None, filename_ext=None, path_blank=False ):
+    # pull apart the filename passed in
+    if filename:
+        file_path, base_filename, file_ext = filename_split( filename, path_blank=path_blank )
+    else:
+        file_path = base_filename = file_ext = ''
+    if filename_ext:
+            file_ext=filename_ext
+    if file_ext and file_ext[:1] != '.':
+        # put the dot into the extension
+        file_ext = '.' + file_ext
+    if filename_path:
+        file_path = filename_path
+    if filename_base:
+        base_filename = filename_base
+    if filename_path:
+        file_path = filename_path
+    elif path_blank:
+        file_path = ''
+    return os.path.normpath(os.path.join(file_path, base_filename+file_ext))
 
 # split up a filename into parts (path, basename, extension) (UT)
-def filename_split( filename ):
+def filename_split( filename, path_blank=False ):
     filename2, file_ext = os.path.splitext(filename)
     base_filename = os.path.basename(filename2)
-    file_path     = os.path.normpath(os.path.dirname(filename2))
+    if path_blank:
+        file_path = os.path.dirname(filename2)
+    else:
+        file_path     = os.path.normpath(os.path.dirname(filename2))
     return (file_path, base_filename, file_ext)
+
+
+# function to get back a full list of broken up file path
+def filename_splitall(path):
+    allparts = []
+    while 1:
+        parts = os.path.split(path)
+        if parts[0] == path:  # sentinel for absolute paths
+            allparts.insert(0, parts[0])
+            break
+        elif parts[1] == path: # sentinel for relative paths
+            allparts.insert(0, parts[1])
+            break
+        else:
+            path = parts[0]
+            allparts.insert(0, parts[1])
+    return allparts
+
+
 
 # create a list of filenames given a name, a list of names or a glob
 def filename_list( filename, filenamelist, fileglob, strippath=False ):
@@ -330,18 +411,21 @@ def filename_proper( filename_full, dir=None, create_dir=False, write_check=Fals
             try:
                 os.makedirs( dir )
             except Exception as e:
-                print('kvutil:filename_proper:makedirs:%s' % e)
-                raise Exception('kvutil:filename_proper:makedirs:%s' % e)
+                if debug: print('kvutil:filename_proper:makedirs:%s' % e)
+                logger.error('makedirs:%s' % e)
+                raise Exception('kvutil:filename_proper:makedirs:%s', e)
         else:
             # needs to be created - option not enabled - raise an error
-            print('kvutil:filename_proper:directory does not exist:%s' % dir )
+            if debug: print('kvutil:filename_proper:directory does not exist:%s' % dir )
+            logger.error('directory does not exist:%s', dir )
             raise Exception('kvutil:filename_proper:directory does not exist:%s' % dir )
 
     # check to see if the directory is writeable if the flag is set
     if write_check:
         if not os.access( dir, os.W_OK ):
-            print('kvutil:filename_proper:directory is not writeable:%s' % dir )
-            raise('kvutil:filename_proper:directory is not writeable:%s' % dir )
+            if debug: print('kvutil:filename_proper:directory is not writeable:%s' % dir )
+            logger.error('directory is not writeable:%s', dir )
+            raise Exception('kvutil:filename_proper:directory is not writeable:%s' % dir )
     
     # build a full filename
     full_filename = os.path.join( dir, filename )
@@ -423,7 +507,8 @@ def filename_unique( filename=None, filename_href={} ):
 
     # check to see if we have and field issues
     if field_issues:
-        print('kvutil:filename_unique:missing values for:', ','.join(field_issues))
+        if debug:  print('kvutil:filename_unique:missing values for:', ','.join(field_issues))
+        logger.error('missing values for:%s', ','.join(field_issues))
         raise Exception('kvutil:filename_unique:missing values for:', ','.join(field_issues))
     
     # check that we have valid values
@@ -433,7 +518,8 @@ def filename_unique( filename=None, filename_href={} ):
 
     # check to see if we have and field issues
     if field_issues:
-        print('kvutil:filename_unique:invalid values for:', ','.join(field_issues))
+        if debug: print('kvutil:filename_unique:invalid values for:', ','.join(field_issues))
+        logger.error('invalid values for:%s', ','.join(field_issues))
         raise Exception('kvutil:filename_unique:invalid values for:', ','.join(field_issues))
 
     # create a filename if it does not exist
@@ -475,8 +561,9 @@ def filename_unique( filename=None, filename_href={} ):
 
         # test to see if we exceeded the max count and if so error out.
         if unique_counter >= default_options['maxcnt']:
-          print('kvutil:filename_unique:reached maximum count and not unique filename:', filename)
-          raise Exception('kvutil:filename_unique:reached maximum count and not unique filename:', filename)
+            if debug: print('kvutil:filename_unique:reached maximum count and not unique filename:', filename)
+            logger.error('reached maximum count and not unique filename:%d:%s', unique_counter, filename)
+            raise Exception('kvutil:filename_unique:reached maximum count and not unique filename:', filename)
 
     # debugging
     #print('file_unique:filename:final:', filename)
@@ -562,12 +649,12 @@ def remove_filename(filename,calledfrom='',debug=False,maxretry=20):
                 return
             if debug: print(calledfrom, filename,':', str(e))
             if cnt > maxretry:
-                print(calledfrom, filename, ':raise error - exceed maxretry attempts:', maxretry)
+                if debug: print(calledfrom, filename, ':raise error - exceed maxretry attempts:', maxretry)
                 logger.error('%s:%s:exceeded maxretry attempts:%d:raise error', calledfrom, filename, maxretry)
                 raise e
         except WinError as f:
-            print('catch WinError:', str(f))
-            logger.debug('catch WinError:%s', str(f))
+            if debug: print('catch WinError:', str(f))
+            logger.warning('catch WinError:%s', str(f))
 
 # utility used to remove a folder - in windows sometimes we have a delay
 # in releasing the filehandle - this routine will loop a few times giving
@@ -589,14 +676,18 @@ def remove_dir(dirname,calledfrom='',debug=False,maxretry=20):
 #        except OSError as e: # originally just checked for OSError - we now check for all exceptions`
         except Exception as e:
             if debug: print(calledfrom, 'errno:', e.errno, ':ENOENT:', errno.ENOENT)
+            logger.debug('%s:errno:%s:ENOENT:%s', calledfrom, e.errno, errno.ENOENT)
             if e.errno == errno.ENOENT: # file doesn't exist
                 return
             if debug: print(calledfrom, dirname,':', str(e))
+            logger.debug('%s:%s:%s', calledfrom, dirname, str(e))
             if cnt > maxretry:
-                print(calledfrom, dirname, ':raise error - exceed maxretry attempts:', maxretry)
+                if debug: print(calledfrom, dirname, ':raise error - exceed maxretry attempts:', maxretry)
+                logger.error('%s:%s:maxretry attempts:%d', calledfrom, dirname, maxretry)
                 raise e
         except WinError as f:
-            print('catch WinError:', str(f))
+            if debug: print('catch WinError:', str(f))
+            logger.warning('catch WinError:%s', str(f))
 
 
 # extract out a datetime value from a string if possible
@@ -621,7 +712,7 @@ def datetime_from_str( value ):
         if redate.match(value):
             return datetime.datetime.strptime(value, datefmt)
 
-    raise
+    raise Exception('Unable to convert to date time:%s', value)
 
 
 # return the function name of the function that called this

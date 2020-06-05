@@ -1,7 +1,7 @@
 '''
 @author:   Ken Venner
 @contact:  ken@venerllc.com
-@version:  1.07
+@version:  1.08
 
 Library of tools used to process JPG image files
 '''
@@ -20,7 +20,7 @@ logger = logging.getLogger(__name__)
 
 
 # global variables
-AppVersion = '1.07'
+AppVersion = '1.08'
 
 debug = False
 
@@ -62,7 +62,7 @@ def parse_optiondict_timedelta( timedeltastr, debug=False ):
     return(re_compile,timedelta,pic_range)
 
 # routine to pull the date from the filename rather than from the file
-def parse_date_from_filename( filename, debug=False ):
+def parse_date_from_filename( filename, defaultdate=defaultdatetime, debug=False ):
     # perform matching on filename
     m = re.search(datestrre, filename)
     s = re.search(cntstrre, filename)
@@ -70,17 +70,17 @@ def parse_date_from_filename( filename, debug=False ):
     if debug:
         print('filename:',filename)
         print('m',m)
-        if m:  print('m.group0:' ,m.group(0))
-        if m:  print('m.group1:' ,m.group(1))
+        if m:  print('m.group0:', m.group(0))
+        if m:  print('m.group1:', m.group(1))
         print('s',s)
         if s:  print('s.group0:', s.group(0))
         if s:  print('s.group1:', s.group(1))
     logger.debug('filename:%s',filename)
-    logger.debug('m',m)
+    logger.debug('m:%s',m)
     if m:
         logger.debug('m.group0:%s' ,m.group(0))
         logger.debug('m.group1:%s' ,m.group(1))
-    logger.debug('s',s)
+    logger.debug('s:%s',s)
     if s:
         logger.debug('s.group0:%s', s.group(0))
         logger.debug('s.group1:%s', s.group(1))
@@ -89,14 +89,20 @@ def parse_date_from_filename( filename, debug=False ):
     if m:
         # check for match on count in filename
         if s:
+            # debugging
+            logger.debug('date and count to build the time')
             # we are using filename date and cnt to build the time
             return datetime.datetime.strptime(m.group(1), '%Y-%m-%d') + datetime.timedelta(seconds=int(s.group(1)))
         else:
+            # debugging
+            logger.debug('date only builds the time')
             # we are using justfilename date to build the time
             return datetime.datetime.strptime(m.group(1), '%Y-%m-%d')
     else:
+        # debugging
+        logger.debug('default date builds the time')
         # we are using the default date to build the time
-        return defaultdatetime
+        return defaultdate
     
 # bust up the filename and strip previously implemented strings in the basename
 def parse_cleanup_filename( filename, debug=False ):
@@ -185,28 +191,103 @@ def get_exif_attribute_from_jpg( fn, ifd='0th', tag=306, debug=False ):
     return exif_dict[ifd][tag]
 
 
+# get the DateTime out of JPG meta data
+def get_exif_datetime_attribute_from_jpg( fn, ifd='0th', tag=306, defaultdate=datetime.datetime.now(), debug=False ):
+    exif_dict = piexif.load(fn)
+    # convert the attributes to a datetime object if its name is datetime
+    if 'DateTime' in piexif.TAGS[ifd][tag]["name"]:
+        try:
+            return datetime.datetime.strptime(exif_dict[ifd][tag].decode("utf-8"), '%Y:%m:%d %H:%M:%S')
+        except Exception:
+            logger.debug('failed to convert DateTime - used default')
+            return defaultdate
+    # if not converted - return the value
+    logger.debug('not datetime converted')
+    return exif_dict[ifd][tag]
+
+# create a sorted list of filenames based on cleaned up file names
+def sorted_filelist_by_cleanedup_filename( filelist ):
+    # create a new list that has the dir, clean_filename, orig_filename
+    # the '*' infront of the fuction is because we want to expand out the tuple passed back
+    newlist = [ [*parse_cleanup_filename(file), file] for file in filelist ]
+    # take this list sort it, extract out the orig_filenaem and return that result
+    sortedlist = [ filerow[2] for filerow in sorted(newlist) ]
+    return sortedlist
+
 # process a list of files
-#   recount - flag that says we are going to sort using the date in the filename not the date in the file
-def get_date_sorted_filelists( fileglob, recount=False, debug=False  ):
+#   datefrom - specifies where we get the date from
+#     jpg - read the value from the meta data in the file (use datefrom strategy when the date does not exist in the file)
+#     jpgdefault - read the value from the meta data in the file (use defaultdate when meta data does not exist)
+#     filename - read the value from the date in the filename itself (use default date if filename does not have date)
+#     filecreate - read the file create date date/time and use this to set the fdate
+#     forced - set date to the defaultdate passed in for all files with seconds increment in order of sorted files
+#     cleanup - set the date to the defaultdate passed in for all files,
+#               but cleanup the filename list, sort again, and seconds set based on this new sorted order
+#   nonjpgdatefrom - specifies where we get the date from non JPG files when datefrom=jpg, or reset to match datefrom value
+#     << same values as datefrom without jpg or jpgdefault as valid values>>
+#
+def get_date_sorted_filelists( fileglob, datefrom='jpg', nonjpgdatefrom='filecreate', defaultdate=datetime.datetime.now(), debug=False  ):
     # local variable
     datefilelist = []
 
-    # pull the filelist and sort by filename
+    # debugging
+    logger.debug('defaultdate:%s', defaultdate)
+
+    # set the default date for jpg file lookup
+    jpgdefaultdate = None
+    if datefrom == 'jpgdefault':   jpgdefaultdate = defaultdate
+    logger.debug('jgpdefaultdate:%s', jpgdefaultdate)
+    
+    # update/change nonjpgdatefrom if datefrom is not jpg
+    if not 'jpg' in datefrom:
+        nonjpgdatefrom = datefrom
+        logger.debug('set nonjpgdatefrom to value from datefrom:%s', datefrom)
+        
+    # pull the filelist and sort by filename from filesystem
     filelist = sorted(glob.glob( fileglob ))
 
+    # if we running in cleanup mode, then resort the list
+    if datefrom=='cleanup':
+        filelist = sorted_filelist_by_cleanedup_filename( filelist )
+        logger.debug('resort the file list with cleanedup filenames')
+
     # step through this list of files - and grab a date associated with each file
+    filecnt = 0
     for fname in filelist:
-        if recount:
-            # the date we use is pulled from the filename
-            fdate = parse_date_from_filename( fname )
-        elif fname.lower().endswith('.jpg'):
-            # add in the ability to pull the adate
-        
+        filecnt += 1
+        fdate = None
+        # JPG processing first
+        if fname.lower().endswith('.jpg') and 'jpg' in datefrom:
             # get file date of the picture form meta data
-            fdate = get_exif_attribute_from_jpg( fname )
+            # and set the default date properl
+            fdate = get_exif_datetime_attribute_from_jpg( fname, defaultdate=jpgdefaultdate )
+
+        # if the fdate is set, save it and loop again
+        if fdate:
+            logger.debug('fdate set by jpg meta data:%s:%s', fname, fdate)
+            datefilelist.append([fdate, fname])
+            continue
+
+        # if the fdate is not set - lets set the fdate based on the nonjpgdatefrom strategy
+        if nonjpgdatefrom == 'filename':
+            # the date we use is pulled from the filename
+            fdate = parse_date_from_filename( fname, defaultdate )
+            # debugging
+            logger.debug('fdate set by %s:%s:%s', nonjpgdatefrom, fname, fdate)
+        elif nonjpgdatefrom=='filecreate':
+            # the date is pulled from the file create date
+            # works for windows os - not sure this will work on linux/macos
+            # TODO - update this to be platform independent
+            fdate = datetime.datetime.fromtimestamp(os.path.getctime( fname ) )
+            logger.debug('fdate set by %s:%s:%s', nonjpgdatefrom, fname, fdate)
+        elif nonjpgdatefrom in ('forced', 'cleanup'):
+            # we are forcing the date to the same date - that which was passed in
+            # are adding a second to each entry to give us a sort order that aligns with how this list is storted
+            fdate = defaultdate +  datetime.timedelta(seconds=filecnt)
+            logger.debug('fdate set by %s:%s:%s', nonjpgdatefrom, fname, fdate)
         else:
-            # not a jpg - then use a default date/time
-            fdate = defaultdatetime
+            # we have a defaultdate type we don't know - raise exception
+            raise Exception('unknown defaultdate:%s',nonjpgdatefrom)
 
         # add this record to list
         datefilelist.append([fdate, fname])
@@ -214,8 +295,17 @@ def get_date_sorted_filelists( fileglob, recount=False, debug=False  ):
     # create sorted list
     datefilelistsorted = sorted(datefilelist)
 
+    # determine if they are different orders based on date/time sort and flag if they are
+    sameorder=True
+    for idx in range(len(datefilelist)):
+        if datefilelistsorted[idx][1] != datefilelist[idx][1]:
+            logger.debug('%s:%s:%s', idx,datefilelistsorted[idx][1],datefilelist[idx][1])
+            sameorder=False
+            break
+        
+
     # return the two lists
-    return (filelist, datefilelistsorted)
+    return (filelist, datefilelistsorted, sameorder)
 
     
 # create list of actions to be taken
@@ -287,5 +377,6 @@ if __name__ == '__main__':
     print(type(jpgdate))
     print(jpgdate)
     sys.exit()
+    
 
 #eof

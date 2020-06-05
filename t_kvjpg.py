@@ -4,7 +4,7 @@ import datetime
 import os
 import re
 
-__version__ = '1.04'
+__version__ = '1.05'
 
 datestr = '2018-10-18'
 dateval = datetime.datetime.strptime(datestr, '%Y-%m-%d')
@@ -22,7 +22,10 @@ class TestKVJpg(unittest.TestCase):
         self.assertEqual( kvjpg.parse_date_from_filename( datestr + '-Ken.jpg'), dateval)
     def test_parse_date_from_filename_p02_simple_with_no_date(self):
         self.assertEqual( kvjpg.parse_date_from_filename( 'Ken.jpg'), kvjpg.defaultdatetime)
-    def test_parse_date_from_filename_p03_simple_with_date_and_cnt(self):
+    def test_parse_date_from_filename_p03_simple_with_no_date_pass_datetime(self):
+        passdatetime=datetime.datetime.now()
+        self.assertEqual( kvjpg.parse_date_from_filename( 'Ken.jpg', defaultdate=passdatetime), passdatetime)
+    def test_parse_date_from_filename_p04_simple_with_date_and_cnt(self):
         self.assertEqual( kvjpg.parse_date_from_filename( datestr + '-CNT00010-Ken.jpg'), dateval + datetime.timedelta(seconds=10))
 
     def test_parse_cleanup_filename_p01_simple(self):
@@ -51,7 +54,7 @@ class TestKVJpg(unittest.TestCase):
         filerow = [datetime.datetime(2018, 10, 15, 11, 29, 51, 560672),'IMG_3466.JPG']
         kvjpg.datetime_offset_for_matching_filename( filerow, re.compile('IMG_(\d+).JPG'), datetime.timedelta(seconds=-30*60), range(3450,3470))
         self.assertEqual( filerow[0], datetime.datetime(2018, 10, 15, 10, 59, 51, 560672) )
-    def test_datetime_offset_for_matching_filename_p02_nomatch(self):
+    def test_datetime_offset_for_matching_filename_p03_nomatch(self):
         filerow = [datetime.datetime(2018, 10, 15, 11, 29, 51, 560672),'IMG_3466.JPG']
         kvjpg.datetime_offset_for_matching_filename( filerow, re.compile('IMG_4\d\d\d.JPG'), datetime.timedelta(seconds=-30*60), 4000)
         self.assertEqual( filerow[0], datetime.datetime(2018, 10, 15, 11, 29, 51, 560672) )
@@ -61,10 +64,23 @@ class TestKVJpg(unittest.TestCase):
 
 
     def test_get_date_sorted_filelists_p01_simple(self):
-        (filelist, datefilelistsorted) = kvjpg.get_date_sorted_filelists( '*.jpg' )
-        self.assertEqual(filelist[0], 'IMG_2666.JPG')
+        (filelist, datefilelistsorted, sameorder) = kvjpg.get_date_sorted_filelists( '*.jpg' )
+        # check to see got the files
+        if len(filelist) != 3:
+            self.assertTrue(False, 'Required files for this test are not in this folder - skipping test')
+            return
+        # based on files in C:\Users\ken\Dropbox\LinuxShare\JPGReorder
+        self.assertEqual(filelist[-1], 'IMG_2666.JPG')  
         self.assertEqual(datefilelistsorted[0][1], 'IMG_2666.JPG')
-
+    def test_get_date_sorted_filelists_p02_cleanup(self):
+        (filelist, datefilelistsorted, sameorder) = kvjpg.get_date_sorted_filelists( '*.jpg', datefrom='cleanup' )
+        # check to see got the files
+        if len(filelist) != 3:
+            self.assertTrue(False, 'Required files for this test are not in this folder - skipping test')
+            return
+        # based on files in C:\Users\ken\Dropbox\LinuxShare\JPGReorder
+        self.assertEqual(filelist[-1], '2019-11-02-CNT00540-IMG_5260.JPG')  
+        self.assertEqual(datefilelistsorted[1][1], 'IMG_2666.JPG')
         
 
     def test_create_file_action_list_p01_ren_simple(self):

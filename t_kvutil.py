@@ -13,11 +13,16 @@ kvlogger.dictConfig(config)
 logger=kvlogger.getLogger(__name__)
 
 # set the module version number
-AppVersion = '1.14'
+AppVersion = '1.17'
 
 # global variables
 tst_filename='t_kvutil_tst'
 tst_ext_range=4
+tst_day = datetime.datetime.today().day
+tst_path = '.' + os.path.sep
+tst_log_fmt_file='{}{:02d}.log'
+tst_log_fmt_fullfile='{}{}{:02d}.log'
+
 
 # utility to create/set/update commmand line passed in parameters
 def set_argv( position, value ):
@@ -33,15 +38,13 @@ def generate_test_filenames( startfilename='t_kvutil_tst', ext_range=4):
     return fname_list
 
 def file_teardown(  startfilename='t_kvutil_tst', ext_range=4):
-    logger.info('removing files:%s:%d', startfilename,ext_range)
-    print('removing files:%s:%d', startfilename,ext_range)
+    logger.info('removing files from startfilename:%s:ext_range:%d', startfilename,ext_range)
     for fname in generate_test_filenames( startfilename, ext_range ):
         if os.path.exists(fname):
             os.remove(fname)
 
 def file_setup(  startfilename='t_kvutil_tst', ext_range=4):
-    logger.info('creating files:%s:%d', startfilename,ext_range)
-    print('creating files:%s:%d', startfilename,ext_range)
+    logger.info('creating files from startfilename:%s:ext_range:%d', startfilename, ext_range)
     for fname in generate_test_filenames( startfilename, ext_range ):
         if not os.path.exists(fname):
             with open( fname, 'w' ) as t:
@@ -139,10 +142,16 @@ class TestKVUtilFilenames(unittest.TestCase):
         optiondictconfig = { 'test1' : { 'required' : True, 'type' : 'bool' }, 'AppVersion' : { 'value' : '1.01' } }
         set_argv(1,'test1=0') # push value onto command line (string)
         self.assertEqual(kvutil.kv_parse_command_line( optiondictconfig ), {'test1': False, 'AppVersion' : '1.01'} )
-    def test_kv_parse_command_line_p13_config_default_config(self):
+    def test_kv_parse_command_line_p13_config_default_config_setting(self):
         optiondictconfig = { 'AppVersion' : { 'value' : '1.01' } }
         set_argv(1,'log_level=DEBUG') # push value onto command line (string)
         self.assertEqual(kvutil.kv_parse_command_line( optiondictconfig ), {'log_level': 'DEBUG', 'AppVersion' : '1.01'} )
+    def test_kv_parse_command_line_p14_config_keymapdict(self):
+        optiondictconfig = { 'test1' : { 'value' : 12 } }
+        keymapdict = { 'invalid' : 'test1' }
+        set_argv(1,'invalid=invalid') # push value onto command line (string)
+        self.assertEqual(kvutil.kv_parse_command_line( optiondictconfig, keymapdict=keymapdict ), {'test1' : 'invalid'} )
+
 
     def test_kv_parse_command_line_f01_config_required_missing(self):
         with self.assertRaises(Exception) as context:
@@ -208,10 +217,69 @@ class TestKVUtilFilenames(unittest.TestCase):
             optiondictconfig = { 'no_valid_defined' : { 'value' : '1.01', 'type' : 'inlist' } }
             set_argv(1,'no_valid_defined=fail') # push value onto command line (string)
             kvutil.kv_parse_command_line( optiondictconfig )
+    def test_kv_parse_command_line_f13_config_raise_error_unknown_value(self):
+        with self.assertRaises(Exception) as context:
+            optiondictconfig = { 'valid_defined' : { 'value' : '1.01' } }
+            set_argv(1,'no_valid_defined=fail') # push value onto command line (string)
+            kvutil.kv_parse_command_line( optiondictconfig, raise_error=True )
 
     # hashmap setting
     def test_set_when_not_set_p01_key2_not_exist(self):
         self.assertEqual(kvutil.set_when_not_set( { 'key1' : { 'key3' : 'value3'} }, 'key1', 'key2', 'value2' ), True )
+
+    # logfile filename
+    def test_filename_log_day_of_month_p01_simple(self):
+        self.assertEqual(kvutil.filename_log_day_of_month( tst_filename+'.log' ), tst_log_fmt_file.format(tst_filename, tst_day))
+    def test_filename_log_day_of_month_p02_fullfilename(self):
+        self.assertEqual(kvutil.filename_log_day_of_month( tst_path+tst_filename+'.log' ), tst_log_fmt_fullfile.format(tst_path, tst_filename, tst_day))
+    def test_filename_log_day_of_month_p03_ext_override_without_dot(self):
+        self.assertEqual(kvutil.filename_log_day_of_month( tst_filename+'.bak', ext_override='log' ), tst_log_fmt_file.format(tst_filename, tst_day))
+    def test_filename_log_day_of_month_p04_ext_override_with_dot(self):
+        self.assertEqual(kvutil.filename_log_day_of_month( tst_filename+'.bak', ext_override='.log' ), tst_log_fmt_file.format(tst_filename, tst_day))
+    def test_filename_log_day_of_month_p05_path_override(self):
+        self.assertEqual(kvutil.filename_log_day_of_month( 'badpath/'+tst_filename+'.log', path_override=tst_path), tst_log_fmt_fullfile.format(tst_path, tst_filename, tst_day))
+    def test_filename_log_day_of_month_p06_path_override_no_slash(self):
+        self.assertEqual(kvutil.filename_log_day_of_month( 'badpath/'+tst_filename+'.log', path_override='.'), tst_log_fmt_fullfile.format(tst_path, tst_filename, tst_day))
+    def test_filename_log_day_of_month_p07_current_file_exists_key(self):
+        logfile=kvutil.filename_log_day_of_month( tst_filename+'.log' )
+        with open( logfile, 'w' ) as t:
+            pass
+        self.assertTrue( os.path.exists(logfile) )
+        kvutil.remove_filename(logfile)
+    def test_filename_log_day_of_month_p08_historical_file_exists_remove(self):
+        logfile=kvutil.filename_log_day_of_month( tst_filename+'.log' )
+        with open( logfile, 'w' ) as t:
+            pass
+        self.assertTrue( os.path.exists(logfile) )
+        stinfo = os.stat(logfile)
+        newmtime = stinfo.st_mtime - 60*60*25 # more than a day ago
+        os.utime(logfile, (newmtime, newmtime))
+        logfile=kvutil.filename_log_day_of_month( tst_filename+'.log' )
+        self.assertTrue( not os.path.exists(logfile) )
+        kvutil.remove_filename(logfile)
+        
+    
+    # filename_create 
+    def test_filename_create_p01_simple(self):
+        self.assertEqual(kvutil.filename_create( '/test/' + tst_filename+'.log' ), os.path.normpath('/test/' + tst_filename+'.log'))
+    def test_filename_create_p01_path_blank(self):
+        self.assertEqual(kvutil.filename_create( '/test/' + tst_filename+'.log', path_blank=True ),  os.path.normpath(tst_filename+'.log'))
+    def test_filename_create_p01_filename_ext(self):
+        self.assertEqual(kvutil.filename_create( '/test/' + tst_filename+'.log', filename_ext='bak' ), os.path.normpath('/test/' + tst_filename+'.bak'))
+    def test_filename_create_p01_filename_ext_with_dot(self):
+        self.assertEqual(kvutil.filename_create( '/test/' + tst_filename+'.log', filename_ext='.bak' ), os.path.normpath('/test/' + tst_filename+'.bak'))
+    def test_filename_create_p01_filename_base(self):
+        self.assertEqual(kvutil.filename_create( '/test/' + tst_filename+'.log', filename_base='newbasefilename' ), os.path.normpath('/test/' + 'newbasefilename' + '.log'))
+    def test_filename_create_p01_filename_path(self):
+        self.assertEqual(kvutil.filename_create( '/test/' + tst_filename+'.log', filename_path='/newpath/' ), os.path.normpath('/newpath/' + tst_filename+'.log'))
+    def test_filename_create_p01_filename_path_no_slash(self):
+        self.assertEqual(kvutil.filename_create( '/test/' + tst_filename+'.log', filename_path='/newpath' ), os.path.normpath('/newpath/' + tst_filename+'.log'))
+    def test_filename_create_p01_blank_filename(self):
+        self.assertEqual(kvutil.filename_create( '', filename_path='/test/', filename_base=tst_filename, filename_ext='.log' ), os.path.normpath('/test/' + tst_filename+'.log'))
+    def test_filename_create_p01_none_filename(self):
+        self.assertEqual(kvutil.filename_create( None, filename_path='/test/', filename_base=tst_filename, filename_ext='.log' ), os.path.normpath('/test/' + tst_filename+'.log'))
+    def test_filename_create_p01_filename_not_passed_in(self):
+        self.assertEqual(kvutil.filename_create( filename_path='/test/', filename_base=tst_filename, filename_ext='.log' ), os.path.normpath('/test/' + tst_filename+'.log'))
 
     # min/max filename
     def test_filename_maxmin_p01_forward(self):
@@ -377,4 +445,6 @@ class TestKVUtilFilenames(unittest.TestCase):
     
 
 if __name__ == '__main__':
+    logger.info('STARTUP(v%s)%s', AppVersion, '-'*40)
+    logger.info('kvutil(v%s)%s', kvutil.AppVersion, '-'*40)
     unittest.main()
