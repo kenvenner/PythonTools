@@ -1,7 +1,7 @@
 '''
 @author:   Ken Venner
 @contact:  ken@venerllc.com
-@version:  1.34
+@version:  1.35
 
 Library of tools used in general by KV
 '''
@@ -18,7 +18,7 @@ import logging
 logger = logging.getLogger(__name__)
 
 # set the module version number
-AppVersion = '1.34'
+AppVersion = '1.35'
 
 # import ast
 #   and call bool(ast.literal_eval(value)) 
@@ -282,7 +282,7 @@ def kv_parse_command_line_display( optiondictconfig, optiondict={}, debug=False 
         else:
             print('option.:', opt)
 
-        for fld in ('value','required','description', 'error'):
+        for fld in ('value','required','description', 'valid', 'error'):
             if fld in optiondictconfig[opt]:
                 print('  ' + fld + '.'*(12-len(fld)) + ':', optiondictconfig[opt][fld])
         
