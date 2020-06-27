@@ -824,7 +824,7 @@ def scriptinfo():
 
 
 #utility used to dump a dictionary to a file in json format
-def dump_dict_to_json_file( filename, optiondict ):
+def dump_dict_to_json_file( optiondict, filename ):
     import json
     with open( filename, 'w' ) as json_out:
         json.dump( optiondict, json_out )

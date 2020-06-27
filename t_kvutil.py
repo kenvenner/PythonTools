@@ -160,6 +160,13 @@ class TestKVUtilFilenames(unittest.TestCase):
         set_argv(1,'conf_json=t_kvutil.json') # push value onto command line (string)
         self.assertEqual(kvutil.kv_parse_command_line( optiondictconfig ), {'conf_json': 't_kvutil.json', 'test1' : 'conf_json_loaded'} )
         kvutil.remove_filename('t_kvutil.json')
+    def test_kv_parse_command_line_p15_config_conf_json_optiondictconfi(self):
+        conf_json= { 'test1' : 'conf_json_loaded' }
+        with open('t_kvutil.json', 'w') as json_conf:
+            json.dump(conf_json, json_conf)
+        optiondictconfig = { 'test1' : { 'value' : 12 }, 'conf_json' : { 'value' : 't_kvutil.json' }}
+        self.assertEqual(kvutil.kv_parse_command_line( optiondictconfig ), {'conf_json': 't_kvutil.json', 'test1' : 'conf_json_loaded'} )
+        kvutil.remove_filename('t_kvutil.json')
     def test_kv_parse_command_line_p16_config_conf_json_cmdline_override(self):
         conf_json= { 'test1' : 'conf_json_loaded' }
         with open('t_kvutil.json', 'w') as json_conf:
@@ -281,6 +288,15 @@ class TestKVUtilFilenames(unittest.TestCase):
         kvutil.remove_filename(logfile)
         
     
+    # min/max filename
+    def test_filename_maxmin_p01_forward(self):
+        self.assertEqual(kvutil.filename_maxmin( tst_filename+'*' ), '{}.{:03d}'.format(tst_filename, 0))
+    def test_filename_maxmin_p02_reverse(self):
+        self.assertEqual(kvutil.filename_maxmin(  tst_filename+'*', reverse=True ), '{}.{:03d}'.format(tst_filename, range(tst_ext_range)[-1]) )
+    def test_filename_maxmin_p03_nofiles(self):
+        self.assertEqual(kvutil.filename_maxmin( 'no'+tst_filename+'*' ), None)
+
+
     # filename_create 
     def test_filename_create_p01_simple(self):
         self.assertEqual(kvutil.filename_create( '/test/' + tst_filename+'.log' ), os.path.normpath('/test/' + tst_filename+'.log'))
@@ -303,16 +319,8 @@ class TestKVUtilFilenames(unittest.TestCase):
     def test_filename_create_p01_filename_not_passed_in(self):
         self.assertEqual(kvutil.filename_create( filename_path='/test/', filename_base=tst_filename, filename_ext='.log' ), os.path.normpath('/test/' + tst_filename+'.log'))
 
-    # min/max filename
-    def test_filename_maxmin_p01_forward(self):
-        self.assertEqual(kvutil.filename_maxmin( tst_filename+'*' ), '{}.{:03d}'.format(tst_filename, 0))
-    def test_filename_maxmin_p02_reverse(self):
-        self.assertEqual(kvutil.filename_maxmin(  tst_filename+'*', reverse=True ), '{}.{:03d}'.format(tst_filename, range(tst_ext_range)[-1]) )
-    def test_filename_maxmin_p03_nofiles(self):
-        self.assertEqual(kvutil.filename_maxmin( 'no'+tst_filename+'*' ), None)
 
-
-
+    # filename split
     def test_filename_split_p01_filename_only(self):
         self.assertEqual(kvutil.filename_split('filename.ext'), ('.','filename', '.ext'))
     def test_filename_split_p02_filename_path(self):
@@ -328,6 +336,10 @@ class TestKVUtilFilenames(unittest.TestCase):
     def test_filename_split_p07_filename_blank(self):
         self.assertEqual(kvutil.filename_split(''), (os.path.normpath(''),'',''))
 
+    #filename splitall
+
+    
+    # filename list
     def test_filename_list_p01_simple_filename(self):
         self.assertEqual(kvutil.filename_list( 'ken.txt', None, None ), ['ken.txt']) 
     def test_filename_list_p02_simple_filename_path(self):
@@ -345,7 +357,7 @@ class TestKVUtilFilenames(unittest.TestCase):
     def test_filename_list_p06_simple_fileglob_dir_notpath(self):
         self.assertEqual(kvutil.filename_list( None, None, '..\\tools\\kvutil.*', True ), ['kvutil.py']) 
 
-
+    # filename proper
     def test_filename_proper_p01_simple_filename(self):
         self.assertEqual(kvutil.filename_proper( 'ken.txt' ), os.path.normpath('./ken.txt') )
     def test_filename_proper_p02_abspath_filename(self):
@@ -368,7 +380,7 @@ class TestKVUtilFilenames(unittest.TestCase):
             kvutil.filename_proper( 'C:/Users/ken/Dropbox/LinuxShare/PerlPlay/templates/missingdir/ken.txt' )
         #self.assertTrue('This is broken' in context.exception)
 
-
+    # filename unique
     def test_filename_unique_p01_filename(self):
         self.assertEqual(kvutil.filename_unique('uniquefname.txt'), os.path.normpath('./uniquefname.txt'))
     def test_filename_unique_po2_filedict_datecnt(self):
@@ -380,12 +392,12 @@ class TestKVUtilFilenames(unittest.TestCase):
         self.assertEqual(kvutil.filename_unique('{}.{:03d}'.format(tst_filename, 0)), os.path.normpath('{}v01.{:03d}'.format(tst_filename, 0)))
 
         
-
+    # cloudpath
     def test_cloudpath_p01_dropbox(self):
         self.assertEqual(kvutil.cloudpath('Dropbox/LinuxShare/python/tools'), os.path.normpath( os.environ.get('USERPROFILE')+'/Dropbox/LinuxShare/python/tools'))
         
 
-
+    # slurp
     def test_slurp_p01_simple(self):
         filename  = 't_kvutil_slurp_test.txt'
         fullstr = ''
@@ -401,7 +413,7 @@ class TestKVUtilFilenames(unittest.TestCase):
         kvutil.remove_filename(filename)
 
         
-
+    # read list from file lines
     def test_read_list_from_file_lines_p01_simple(self):
         filename  = 't_kvutil_RLFF_test.txt'
         fulllist = []
@@ -438,6 +450,7 @@ class TestKVUtilFilenames(unittest.TestCase):
     # def test_remove_filename - no test cases created for this function yet
     # def test_remove_dir - no test cases created for this function yet
 
+    # datetime from string
     def test_datetime_from_str_p01_zero_padded(self):
         self.assertEqual(kvutil.datetime_from_str('01/01/19'), datetime.datetime(2019, 1, 1) )
         self.assertEqual(kvutil.datetime_from_str('01/01/2019'), datetime.datetime(2019, 1, 1) )
@@ -468,9 +481,10 @@ class TestKVUtilFilenames(unittest.TestCase):
         with self.assertRaises(Exception) as context:
             kvutil.datetime_from_str('')
 
-        
+    # def test_functionName_p01_simple(self):
     # def test_loggingAppStart_p01_something(self):
     # def test_scriptinfo_p01_something(self):
+    # def dump_dict_to_json_file( optiondict, filename ):
     
 
 if __name__ == '__main__':
