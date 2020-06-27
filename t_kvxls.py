@@ -24,7 +24,7 @@ filenamexlsx3 = kvutil.filename_unique( { 'base_filename' : 't_kvxlstest3', 'fil
 
 
 
-xlsfloat2datetime = [ 43080.0,  datetime.datetime.strptime('12/11/2017', '%m/%d/%Y') ]
+xlsfloat2datetime = [ 43080.0,  datetime.datetime.strptime('12/11/2017', '%m/%d/%Y'), '12/11/2017' ]
 
 records = [
     {'Company': 'NHLiq', 'Wine': 'Caravan Cabernet Sauvignon', 'Vintage_Wine': 'Caravan Cabernet Sauvignon 2014', 'Vintage': '2014', 'Date': '12/11/2017', 'Type': 'red-cab', 'LastSeen': 'Never'} ,
@@ -70,9 +70,21 @@ class TestKVxls(unittest.TestCase):
             kvutil.remove_filename( filenamexlsx2, kvutil.functionName() )
 
                         
-    def test_xldate_to_datetime_p01_simple(self):
+    # convert excel date fields to python
+    def test_xldate_to_datetime_p01_float(self):
         logger.debug('STARTUP')
         self.assertEqual(kvxls.xldate_to_datetime(xlsfloat2datetime[0]), xlsfloat2datetime[1])
+    def test_xldate_to_datetime_p02_string(self):
+        logger.debug('STARTUP')
+        self.assertEqual(kvxls.xldate_to_datetime(xlsfloat2datetime[2]), xlsfloat2datetime[1])
+    def test_xldate_to_datetime_p03_blank_skipblank(self):
+        logger.debug('STARTUP')
+        self.assertEqual(kvxls.xldate_to_datetime('',True), '')
+
+    def test_xldate_to_datetime_f01_blank(self):
+        logger.debug('STARTUP')
+        with self.assertRaises(Exception) as context:
+            kvxls.xldate_to_datetime('')
 
     # XLS file processing - simple req_cols
     def test_readxlslist_findheader_p01_xls_simple_reqcols(self):

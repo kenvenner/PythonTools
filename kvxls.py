@@ -1,7 +1,7 @@
 '''
 @author:   Ken Venner
 @contact:  ken@venerllc.com
-@version:  1.10
+@version:  1.12
 
 Library of tools used to process XLS/XLSX files
 '''
@@ -10,6 +10,7 @@ import openpyxl  # xlsx (read/write)
 import xlrd      # xls (read)
 import xlwt      # xls (write)
 
+import kvutil
 import kvmatch
 import datetime
 
@@ -18,7 +19,7 @@ import logging
 logger = logging.getLogger(__name__)
 
 # global variables
-AppVersion = '1.10'
+AppVersion = '1.12'
 
 #----- OPTIONS ---------------------------------------
 # debug
@@ -44,10 +45,15 @@ AppVersion = '1.10'
 # ---- UTILITY FUNCTIONS ------------------------------
 
 # utility used to convert an xls date number into a datetime object
-def xldate_to_datetime(xldate):
-    temp = datetime.datetime(1899, 12, 30)
-    delta = datetime.timedelta(days=xldate)
-    return temp+delta
+def xldate_to_datetime(xldate, skipblank=False):
+    if isinstance(xldate,str):
+        logger.debug('converting xldate string to date using kvutil.datetime_from_str:%s', xldate)
+        return kvutil.datetime_from_str( xldate, skipblank )
+    else:
+        logger.debug('converting xldate float to date:%s', xldate)
+        temp = datetime.datetime(1899, 12, 30)
+        delta = datetime.timedelta(days=xldate)
+        return temp+delta
     
 # routine extracts a row from the excel file and passes back as a list
 def _extract_excel_row_into_list(xlsxfiletype, s, row, colstart, colmax, debug=False):

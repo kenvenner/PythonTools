@@ -1,7 +1,7 @@
 '''
 @author:   Ken Venner
 @contact:  ken@venerllc.com
-@version:  1.10
+@version:  1.11
 
 Library of tools used to read and write CSV files
 '''
@@ -14,7 +14,7 @@ import logging
 logger = logging.getLogger(__name__)
 
 # version number
-AppVersion = '1.10'
+AppVersion = '1.11'
 
 # determine the max keys across a list of dictionaries
 def max_column_list( csvlist ):
@@ -28,7 +28,7 @@ def max_column_list( csvlist ):
 # write out a list of dicts => record into a CSV
 # based on one or more key fields
 # assumes the first line of the CSV file is the header/defintion of the CSV
-def writelist2csv( csvfile, csvlist, csvfields=None, mode='w', header=True, encoding='LATIN-1', maxcolumns=False, debug=False ):
+def writelist2csv( csvfile, csvlist, csvfields=None, mode='w', header=True, encoding='windows-1252', maxcolumns=False, debug=False ):
     # get the keys from the dictionary keys in the first value itself
     if not csvfields:
         csvfields = list( csvlist[0].keys() )
@@ -46,7 +46,7 @@ def writelist2csv( csvfile, csvlist, csvfields=None, mode='w', header=True, enco
 # write out a dict that is keyed => record into a CSV
 # based on one or more key fields
 # assumes the first line of the CSV file is the header/defintion of the CSV
-def writedict2csv( csvfile, csvdict, csvfields=None, mode='w', header=True, encoding='LATIN-1', maxcolumns=False, debug=False ):
+def writedict2csv( csvfile, csvdict, csvfields=None, mode='w', header=True, encoding='windows-1252', maxcolumns=False, debug=False ):
     # get the keys from the dictionary keys in the first value itself
     if not csvfields:
         csvfields = list( csvdict[ list( csvdict.keys() )[0] ].keys() )
@@ -66,7 +66,7 @@ def writedict2csv( csvfile, csvdict, csvfields=None, mode='w', header=True, enco
 # read in the CSV and create a dictionary to the records
 # based on one or more key fields
 # assumes the first line of the CSV file is the header/defintion of the CSV
-def readcsv2list_with_header( csvfile, headerlc=False, encoding='LATIN-1', debug=False ):
+def readcsv2list_with_header( csvfile, headerlc=False, encoding='windows-1252', debug=False ):
     results = []
     with open(csvfile, mode='r', encoding=encoding) as csv_file:
         reader = csv.reader(csv_file)
@@ -87,7 +87,7 @@ def readcsv2list_with_header( csvfile, headerlc=False, encoding='LATIN-1', debug
 # read in the CSV and create a dictionary to the records
 # based on one or more key fields
 # assumes the first line of the CSV file is the header/defintion of the CSV
-def readcsv2list( csvfile, headerlc=False, encoding='LATIN-1', debug=False ):
+def readcsv2list( csvfile, headerlc=False, encoding='windows-1252', debug=False ):
     results, header = readcsv2list_with_header( csvfile, headerlc, encoding, debug )
     return results
 
@@ -96,7 +96,7 @@ def readcsv2list( csvfile, headerlc=False, encoding='LATIN-1', debug=False ):
 # read in the CSV and create a dictionary to the records
 # based on one or more key fields
 # assumes the first line of the CSV file is the header/defintion of the CSV
-def readcsv2dict_with_header( csvfile, dictkeys, dupkeyfail=False, noshowwarning=False, headerlc=False, encoding='LATIN-1', debug=False ):
+def readcsv2dict_with_header( csvfile, dictkeys, dupkeyfail=False, noshowwarning=False, headerlc=False, encoding='windows-1252', debug=False ):
     results  = {}
     dupkeys  = []
     dupcount = 0
@@ -136,7 +136,7 @@ def readcsv2dict_with_header( csvfile, dictkeys, dupkeyfail=False, noshowwarning
 # read in the CSV and create a dictionary to the records
 # based on one or more key fields
 # assumes the first line of the CSV file is the header/defintion of the CSV
-def readcsv2dict( csvfile, dictkeys, dupkeyfail=False, noshowwarning=False, headerlc=False, encoding='LATIN-1', debug=False ):
+def readcsv2dict( csvfile, dictkeys, dupkeyfail=False, noshowwarning=False, headerlc=False, encoding='windows-1252', debug=False ):
     results, header, dupcnt = readcsv2dict_with_header( csvfile, dictkeys, dupkeyfail=dupkeyfail, noshowwarning=noshowwarning, headerlc=headerlc, encoding=encoding, debug=debug )
     return results
 
@@ -148,7 +148,7 @@ def readcsv2dict( csvfile, dictkeys, dupkeyfail=False, noshowwarning=False, head
 # read in the CSV and create a dictionary to the records
 # based on one or more key fields
 # no header on this file - the header must be passed in
-def readcsv2dict_with_noheader( csvfile, dictkeys, header, dupkeyfail=False, noshowwarning=False, encoding='LATIN-1', debug=False ):
+def readcsv2dict_with_noheader( csvfile, dictkeys, header, dupkeyfail=False, noshowwarning=False, encoding='windows-1252', debug=False ):
     if not dictkeys:
         logger.error('must pass in dictkeys')
         raise Exception('must pass in dictkeys')

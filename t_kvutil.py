@@ -4,6 +4,7 @@ import re
 import os
 import sys
 import datetime
+import json
 
 
 # logging
@@ -151,7 +152,23 @@ class TestKVUtilFilenames(unittest.TestCase):
         keymapdict = { 'invalid' : 'test1' }
         set_argv(1,'invalid=invalid') # push value onto command line (string)
         self.assertEqual(kvutil.kv_parse_command_line( optiondictconfig, keymapdict=keymapdict ), {'test1' : 'invalid'} )
-
+    def test_kv_parse_command_line_p15_config_conf_json(self):
+        conf_json= { 'test1' : 'conf_json_loaded' }
+        with open('t_kvutil.json', 'w') as json_conf:
+            json.dump(conf_json, json_conf)
+        optiondictconfig = { 'test1' : { 'value' : 12 } }
+        set_argv(1,'conf_json=t_kvutil.json') # push value onto command line (string)
+        self.assertEqual(kvutil.kv_parse_command_line( optiondictconfig ), {'conf_json': 't_kvutil.json', 'test1' : 'conf_json_loaded'} )
+        kvutil.remove_filename('t_kvutil.json')
+    def test_kv_parse_command_line_p16_config_conf_json_cmdline_override(self):
+        conf_json= { 'test1' : 'conf_json_loaded' }
+        with open('t_kvutil.json', 'w') as json_conf:
+            json.dump(conf_json, json_conf)
+        optiondictconfig = { 'test1' : { 'value' : 12 } }
+        set_argv(1,'conf_json=t_kvutil.json') # push value onto command line (string)
+        set_argv(2,'test1=cmdline_loaded') # push value onto command line (string)
+        self.assertEqual(kvutil.kv_parse_command_line( optiondictconfig ), {'conf_json': 't_kvutil.json', 'test1' : 'cmdline_loaded'} )
+        kvutil.remove_filename('t_kvutil.json')
 
     def test_kv_parse_command_line_f01_config_required_missing(self):
         with self.assertRaises(Exception) as context:
@@ -222,6 +239,11 @@ class TestKVUtilFilenames(unittest.TestCase):
             optiondictconfig = { 'valid_defined' : { 'value' : '1.01' } }
             set_argv(1,'no_valid_defined=fail') # push value onto command line (string)
             kvutil.kv_parse_command_line( optiondictconfig, raise_error=True )
+    def test_kv_parse_command_line_f14_config_missing_conf_json(self):
+        with self.assertRaises(Exception) as context:
+            optiondictconfig = { 'test1' : { 'value' : 12 } }
+            set_argv(1,'conf_json=t_kvutil.json') # push value onto command line (string)
+            kvutil.kv_parse_command_line( optiondictconfig )
 
     # hashmap setting
     def test_set_when_not_set_p01_key2_not_exist(self):
@@ -431,6 +453,9 @@ class TestKVUtilFilenames(unittest.TestCase):
         self.assertEqual(kvutil.datetime_from_str('1-1-2019'), datetime.datetime(2019, 1, 1) )
         self.assertEqual(kvutil.datetime_from_str('2019-1-1'), datetime.datetime(2019, 1, 1) )
 
+    def test_datetime_from_str_p03_blank_stripblank(self):
+        self.assertEqual(kvutil.datetime_from_str('', True),'' )
+
     def test_datetime_from_str_f01_invalid_date(self):
         with self.assertRaises(Exception) as context:
             kvutil.datetime_from_str('20/1/19')
@@ -438,6 +463,10 @@ class TestKVUtilFilenames(unittest.TestCase):
     def test_datetime_from_str_f02_no_matching_format(self):
         with self.assertRaises(Exception) as context:
             kvutil.datetime_from_str('1/1/20019')
+
+    def test_datetime_from_str_f03_blank(self):
+        with self.assertRaises(Exception) as context:
+            kvutil.datetime_from_str('')
 
         
     # def test_loggingAppStart_p01_something(self):
