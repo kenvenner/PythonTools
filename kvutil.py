@@ -1,7 +1,7 @@
 '''
 @author:   Ken Venner
 @contact:  ken@venerllc.com
-@version:  1.38
+@version:  1.39
 
 Library of tools used in general by KV
 '''
@@ -18,7 +18,7 @@ import logging
 logger = logging.getLogger(__name__)
 
 # set the module version number
-AppVersion = '1.38'
+AppVersion = '1.39'
 
 # import ast
 #   and call bool(ast.literal_eval(value)) 
@@ -81,6 +81,10 @@ def kv_parse_command_line( optiondictconfig, raise_error=False, keymapdict=None,
             'value' : False,
             'type'  : 'bool',
             'description' : 'defines if we will dump the final optiondict and exit',
+        },
+        'dumpconfigfile' : {
+            'value' : None,
+            'description' : 'defines the filename we dump the populated optiondict dictionary to as json',
         },
         'conf_json' : {
             'value' : None,
@@ -256,6 +260,10 @@ def kv_parse_command_line( optiondictconfig, raise_error=False, keymapdict=None,
     if debug:  print('kv_parse_command_line:optiondict:', optiondict)
     logger.debug('optiondict:%s', optiondict)
 
+    # check to see if we want to dump the optiondict out to a file
+    if 'dumpconfigfile' in optiondict and optiondict['dumpconfigfile']:
+        dump_dict_to_json_file( optiondict['dumpconfigfile'], optiondict )
+        
     # check to see if they set the dumpconfig setting if so display and exit
     if 'dumpconfig' in optiondict and optiondict['dumpconfig']:
         print('kv_parse_command_line:Dump configuration requested:')
@@ -824,7 +832,7 @@ def scriptinfo():
 
 
 #utility used to dump a dictionary to a file in json format
-def dump_dict_to_json_file( optiondict, filename ):
+def dump_dict_to_json_file( filename, optiondict ):
     import json
     with open( filename, 'w' ) as json_out:
         json.dump( optiondict, json_out )
