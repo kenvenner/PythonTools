@@ -152,29 +152,74 @@ class TestKVUtilFilenames(unittest.TestCase):
         keymapdict = { 'invalid' : 'test1' }
         set_argv(1,'invalid=invalid') # push value onto command line (string)
         self.assertEqual(kvutil.kv_parse_command_line( optiondictconfig, keymapdict=keymapdict ), {'test1' : 'invalid'} )
-    def test_kv_parse_command_line_p15_config_conf_json(self):
+    def test_kv_parse_command_line_p15_config_conf_json_cmdline_single(self):
         conf_json= { 'test1' : 'conf_json_loaded' }
         with open('t_kvutil.json', 'w') as json_conf:
             json.dump(conf_json, json_conf)
         optiondictconfig = { 'test1' : { 'value' : 12 } }
         set_argv(1,'conf_json=t_kvutil.json') # push value onto command line (string)
-        self.assertEqual(kvutil.kv_parse_command_line( optiondictconfig ), {'conf_json': 't_kvutil.json', 'test1' : 'conf_json_loaded'} )
+        self.assertEqual(kvutil.kv_parse_command_line( optiondictconfig ), {'conf_json': ['t_kvutil.json'], 'test1' : 'conf_json_loaded'} )
         kvutil.remove_filename('t_kvutil.json')
-    def test_kv_parse_command_line_p15_config_conf_json_optiondictconfi(self):
+    def test_kv_parse_command_line_p16_config_conf_json_cmdline_multiple(self):
         conf_json= { 'test1' : 'conf_json_loaded' }
         with open('t_kvutil.json', 'w') as json_conf:
             json.dump(conf_json, json_conf)
-        optiondictconfig = { 'test1' : { 'value' : 12 }, 'conf_json' : { 'value' : 't_kvutil.json' }}
-        self.assertEqual(kvutil.kv_parse_command_line( optiondictconfig ), {'conf_json': 't_kvutil.json', 'test1' : 'conf_json_loaded'} )
+        conf_json= { 'test2' : 'conf_json_loaded' }
+        with open('t_kvutil2.json', 'w') as json_conf:
+            json.dump(conf_json, json_conf)
+        optiondictconfig = { 'test1' : { 'value' : 12 }, 'test2' : { 'value' : 12 } }
+        set_argv(1,'conf_json=t_kvutil.json,t_kvutil2.json') # push value onto command line (string)
+        self.assertEqual(kvutil.kv_parse_command_line( optiondictconfig ), {'conf_json': ['t_kvutil.json', 't_kvutil2.json'], 'test1' : 'conf_json_loaded', 'test2' : 'conf_json_loaded'} )
         kvutil.remove_filename('t_kvutil.json')
-    def test_kv_parse_command_line_p16_config_conf_json_cmdline_override(self):
+        kvutil.remove_filename('t_kvutil2.json')
+    def test_kv_parse_command_line_p17_config_conf_json_optiondictconfig_single_list(self):
+        conf_json= { 'test1' : 'conf_json_loaded' }
+        with open('t_kvutil.json', 'w') as json_conf:
+            json.dump(conf_json, json_conf)
+        optiondictconfig = { 'test1' : { 'value' : 12 }, 'conf_json' : { 'value' : ['t_kvutil.json'] }, 'set_cmd' : {} }
+        set_argv(1,'set_cmd=cmd') # push value onto command line (string)
+        self.assertEqual(kvutil.kv_parse_command_line( optiondictconfig ), {'conf_json': ['t_kvutil.json'], 'test1' : 'conf_json_loaded', 'set_cmd' : 'cmd'} )
+        kvutil.remove_filename('t_kvutil.json')
+    def test_kv_parse_command_line_p18_config_conf_json_optiondictconfig_single_value(self):
+        conf_json= { 'test1' : 'conf_json_loaded' }
+        with open('t_kvutil.json', 'w') as json_conf:
+            json.dump(conf_json, json_conf)
+        optiondictconfig = { 'test1' : { 'value' : 12 }, 'conf_json' : { 'value' : 't_kvutil.json' }, 'set_cmd' : {}}
+        set_argv(1,'set_cmd=cmd') # push value onto command line (string)
+        self.assertEqual(kvutil.kv_parse_command_line( optiondictconfig ), {'conf_json': ['t_kvutil.json'], 'test1' : 'conf_json_loaded', 'set_cmd' : 'cmd'} )
+        kvutil.remove_filename('t_kvutil.json')
+    def test_kv_parse_command_line_p19_config_conf_json_optiondictconfig_multiple_list(self):
+        conf_json= { 'test1' : 'conf_json_loaded' }
+        with open('t_kvutil.json', 'w') as json_conf:
+            json.dump(conf_json, json_conf)
+        conf_json= { 'test2' : 'conf_json_loaded' }
+        with open('t_kvutil2.json', 'w') as json_conf:
+            json.dump(conf_json, json_conf)
+        optiondictconfig = { 'test1' : { 'value' : 12 }, 'test2' : { 'value' : 12 }, 'conf_json' : { 'value' : ['t_kvutil.json', 't_kvutil2.json'] }, 'set_cmd' : {}}
+        set_argv(1,'set_cmd=cmd') # push value onto command line (string)
+        self.assertEqual(kvutil.kv_parse_command_line( optiondictconfig ), {'conf_json': ['t_kvutil.json', 't_kvutil2.json'], 'test1' : 'conf_json_loaded', 'test2' : 'conf_json_loaded', 'set_cmd' : 'cmd'} )
+        kvutil.remove_filename('t_kvutil.json')
+        kvutil.remove_filename('t_kvutil2.json')
+    def test_kv_parse_command_line_p20_config_conf_json_optiondictconfig_multiple_list_valoverride(self):
+        conf_json= { 'test1' : 'conf_json_loaded' }
+        with open('t_kvutil.json', 'w') as json_conf:
+            json.dump(conf_json, json_conf)
+        conf_json= { 'test1' : 'value_override' }
+        with open('t_kvutil2.json', 'w') as json_conf:
+            json.dump(conf_json, json_conf)
+        optiondictconfig = { 'test1' : { 'value' : 12 }, 'conf_json' : { 'value' : ['t_kvutil.json', 't_kvutil2.json'] }, 'set_cmd' : {}}
+        set_argv(1,'set_cmd=cmd') # push value onto command line (string)
+        self.assertEqual(kvutil.kv_parse_command_line( optiondictconfig ), {'conf_json': ['t_kvutil.json', 't_kvutil2.json'], 'test1' : 'value_override', 'set_cmd' : 'cmd'} )
+        kvutil.remove_filename('t_kvutil.json')
+        kvutil.remove_filename('t_kvutil2.json')
+    def test_kv_parse_command_line_p21_config_conf_json_cmdline_override(self):
         conf_json= { 'test1' : 'conf_json_loaded' }
         with open('t_kvutil.json', 'w') as json_conf:
             json.dump(conf_json, json_conf)
         optiondictconfig = { 'test1' : { 'value' : 12 } }
         set_argv(1,'conf_json=t_kvutil.json') # push value onto command line (string)
         set_argv(2,'test1=cmdline_loaded') # push value onto command line (string)
-        self.assertEqual(kvutil.kv_parse_command_line( optiondictconfig ), {'conf_json': 't_kvutil.json', 'test1' : 'cmdline_loaded'} )
+        self.assertEqual(kvutil.kv_parse_command_line( optiondictconfig ), {'conf_json': ['t_kvutil.json'], 'test1' : 'cmdline_loaded'} )
         kvutil.remove_filename('t_kvutil.json')
 
     def test_kv_parse_command_line_f01_config_required_missing(self):
@@ -248,6 +293,7 @@ class TestKVUtilFilenames(unittest.TestCase):
             kvutil.kv_parse_command_line( optiondictconfig, raise_error=True )
     def test_kv_parse_command_line_f14_config_missing_conf_json(self):
         with self.assertRaises(Exception) as context:
+            kvutil.remove_filename('t_kvutil.json')
             optiondictconfig = { 'test1' : { 'value' : 12 } }
             set_argv(1,'conf_json=t_kvutil.json') # push value onto command line (string)
             kvutil.kv_parse_command_line( optiondictconfig )

@@ -1,7 +1,7 @@
 '''
 @author:   Ken Venner
 @contact:  ken@venerllc.com
-@version:  1.02
+@version:  1.03
 
 Library of tools used send out message through gmail
 '''
@@ -24,7 +24,7 @@ import logging
 logger = logging.getLogger(__name__)
 
 # version number
-AppVersion = '1.02'
+AppVersion = '1.03'
 
 
 class GmailSend:
@@ -273,8 +273,10 @@ class GmailSend:
     
 if __name__ == "__main__":
     # Run some tests
-    fromaddr = 'wines@vennerllc.com'
-    password = 'win3s3arch*'
+    import kvutil
+    optiondict = kvutil.kv_parse_command_line( {"email_user": {}, "email_password": {}, "conf_json":{"value": "gmail-wines.json"}}, debug=False )
+    fromaddr = optiondict['email_user']
+    password = optiondict['email_password']
     mFrom = "Test User <test@mydomain.com>"
     mTo = "ken@vennerllc.com"
 
