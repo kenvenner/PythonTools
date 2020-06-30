@@ -1,7 +1,7 @@
 '''
 @author:   Ken Venner
 @contact:  ken@venerllc.com
-@version:  1.41
+@version:  1.42
 
 Library of tools used in general by KV
 '''
@@ -18,7 +18,7 @@ import logging
 logger = logging.getLogger(__name__)
 
 # set the module version number
-AppVersion = '1.41'
+AppVersion = '1.42'
 
 # import ast
 #   and call bool(ast.literal_eval(value)) 
@@ -168,7 +168,6 @@ def kv_parse_command_line( optiondictconfig, raise_error=False, keymapdict=None,
             # need to make sure this setting is of the proper format
             # it was not structured correctly in the json file
             logger.warning('conf_json entered as a string vs list - format converted')
-            print('is not list')
             conf_json_files = [optiondict['conf_json']]
             optiondict['conf_json'] = conf_json_files
         logger.debug('config files defined on optiondictconfig:%s', conf_json_files)
