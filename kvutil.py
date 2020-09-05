@@ -1,7 +1,7 @@
 '''
 @author:   Ken Venner
 @contact:  ken@venerllc.com
-@version:  1.42
+@version:  1.45
 
 Library of tools used in general by KV
 '''
@@ -18,7 +18,7 @@ import logging
 logger = logging.getLogger(__name__)
 
 # set the module version number
-AppVersion = '1.42'
+AppVersion = '1.45'
 
 # import ast
 #   and call bool(ast.literal_eval(value)) 
@@ -55,6 +55,12 @@ AppVersion = '1.42'
 #
 # optiondict = kv_parse_command_line( optiondictconfig, keymapdict=keymapdict )
 #
+## Special behavior
+#  help=<value>
+#
+#  will cause the system to generate a file help file when this is passed in on the command line
+#
+#  if <value> in list ('tbl','table','helptbl','fmt'), then the output is mark down table
 #
 def kv_parse_command_line( optiondictconfig, raise_error=False, keymapdict=None, debug=False ):
     # debug
@@ -76,6 +82,14 @@ def kv_parse_command_line( optiondictconfig, raise_error=False, keymapdict=None,
             'value' : 1,
             'type'  : 'int',
             'description' : 'defines the display level for print messages',
+        },
+        'help' : {
+            'value' : None,
+            'description' : 'when used we output program options.<br>If set to True, then we display in human readable format.<br> If value set to:  tbl,table,helptbl,fmt - then we output in markdown format to be added to readme.md files',
+        },
+        'helpall' : {
+            'value' : None,
+            'description' : 'when used we output program options and defaultoptions.<br>If set to True, then we display in human readable format.<br>If value set to:  tbl,table,helptbl,fmt - then we output in markdown format to be added to readme.md files',
         },
         'dumpconfig' : {
             'value' : False,
@@ -211,7 +225,7 @@ def kv_parse_command_line( optiondictconfig, raise_error=False, keymapdict=None,
             # copy over this default into optiondict
             optiondictconfig[key]= defaultdictconfig[key].copy()
             # tag the defaultdictconfig that we used this key
-            defaultdictconfig['applied'] = True
+            defaultdictconfig[key]['applied'] = True
             # set the value
             if 'value' in defaultdictconfig[key]:
                 optiondict[key] = defaultdictconfig[key]['value']
@@ -242,6 +256,8 @@ def kv_parse_command_line( optiondictconfig, raise_error=False, keymapdict=None,
                 optiondict[key] = value.split(',')
             elif optiondictconfig[key]['type'] == 'date':
                 optiondict[key] = datetime_from_str( value )
+            elif optiondictconfig[key]['type'] == 'datetimezone':
+                optiondict[key] = datetimezone_from_str( value )
             elif optiondictconfig[key]['type'] == 'inlist':
                 # value must be from a predefined list of acceptable values
                 if not 'valid' in optiondictconfig[key]:
@@ -259,17 +275,25 @@ def kv_parse_command_line( optiondictconfig, raise_error=False, keymapdict=None,
                 optiondict[key] = value
                 if debug: print('type not known:', type)
                 logger.debug('type unknown:%s', type)
-        elif key == 'help':
-            # user asked for help - display help and then exit
-            kv_parse_command_line_display( optiondictconfig, debug=False )
-            sys.exit()
         elif raise_error:
             logger.error('unknown command line option:%s', key)
             raise Exception('unknown command line option:%s', key)
         else:
             if debug:  print('kv_parse_command_line:unknown-option:', key)
             logger.warning('unknown option:%s', key)
-            
+
+        # special processing if we are asking for help
+        if key in ('help', 'helpall'):
+            # user asked for help - display help and then exit
+            tblfmt = False
+            if value in ('tbl','table','helptbl','fmt'):
+                tblfmt = True
+            # determine if we are also display the additional options
+            defaultoptions={}
+            if key == 'helpall':
+                defaultoptions = defaultdictconfig
+            kv_parse_command_line_display( optiondictconfig, defaultoptions, tblfmt=tblfmt, debug=False )
+            sys.exit()
     # test for required fields being populated
     missingoption = []
     for key in optiondictconfig:
@@ -319,20 +343,24 @@ def set_when_not_set( dict, key1, key2, value ):
     return False
 
 # display the optiondictconfig information in human readable format
-def kv_parse_command_line_display( optiondictconfig, optiondict={}, debug=False ):
+def kv_parse_command_line_display( optiondictconfig, defaultoptions={}, optiondict={}, tblfmt=False, debug=False ):
+    # set the sortorder for a known set of keys
     set_when_not_set( optiondictconfig, 'AppVersion', 'sortorder', 1 )
-    set_when_not_set( optiondictconfig, 'debug', 'sortorder', 9999 )
+    set_when_not_set( optiondictconfig, 'debug', 'sortorder', 9997 )
+    set_when_not_set( optiondictconfig, 'help', 'sortorder', 9998 )
+    set_when_not_set( optiondictconfig, 'helpall', 'sortorder', 9999 )
 
     # predefined number ranges by type
     nextcounter = {
-        'None'    : 2,
-        'dir'     : 100,
-        'int'     : 200,
-        'float'   : 300, 
-        'bool'    : 400,
-        'date'    : 500,
-        'liststr' : 600,
-        'inlist'  : 700,
+        'None'         : 2,
+        'dir'          : 100,
+        'int'          : 200,
+        'float'        : 300, 
+        'bool'         : 400,
+        'date'         : 500,
+        'datetimezone' : 600,
+        'liststr'      : 700,
+        'inlist'       : 800,
     }        
 
     opt2sort = []
@@ -353,19 +381,81 @@ def kv_parse_command_line_display( optiondictconfig, optiondict={}, debug=False 
         # now build sort string
         opt2sort.append([optiondictconfig[opt]['sortorder'], opt])
 
+    # add in the default options if we have them populated
+    if defaultoptions:
+        sortcnt = 9996
+        opt = '-----'
+        optiondictconfig[opt] = { 'value' : opt, 'description' : opt, 'type' : opt }
+        opt2sort.append([sortcnt, opt])
+        sortcnt = 10000
+        
+        for opt in defaultoptions.keys():
+            if opt not in optiondictconfig:
+                if opt == 'help':
+                    opt2sort.append( [9998, opt] )
+                elif opt == 'helpall':
+                    opt2sort.append( [9999, opt] )
+                else:
+                    opt2sort.append( [sortcnt, opt] )
+                optiondictconfig[opt] = defaultoptions[opt]
+                sortcnt += 1
+
+
+    # header if we are doing table output
+    if tblfmt:
+        print('| option | type | value | description |')
+        print('| ------ | ---- | ----- | ----------- |')
+
+    # define the string format for each cell in the table
+    tblFmt = ' {} |'
+    
     # step through the sorted list and display things
     for row in sorted(opt2sort):
         opt = row[1]
         if opt in optiondict:
             optiondictconfig[opt]['value'] = optiondict[opt]
-        if 'type' in optiondictconfig[opt]:
-            print('option.:', opt, ' (type:',optiondictconfig[opt]['type'], ')' )
-        else:
-            print('option.:', opt)
 
-        for fld in ('value','required','description', 'valid', 'error'):
+        # output style
+        if tblfmt:
+            # user wanted to output in table format - each line with no <newline>
+            print('| {} |'.format(opt), end ="")
+            # output the type - may not be populated
+            fld = 'type'
+            fldout = ''
             if fld in optiondictconfig[opt]:
-                print('  ' + fld + '.'*(12-len(fld)) + ':', optiondictconfig[opt][fld])
+                fldout = optiondictconfig[opt][fld]
+            print(tblFmt.format(fldout), end="")
+            # output the value - may not be populated
+            fld = 'value'
+            fldout = ''
+            if fld in optiondictconfig[opt]:
+                fldout = optiondictconfig[opt][fld]
+            if opt in optiondict and fld in optiondict[opt]:
+                fldout = optiondict[opt][fld]
+            print(tblFmt.format(fldout), end="")
+            # output the type - may not be populated
+            fld = 'description'
+            fldout = ''
+            if fld in optiondictconfig[opt]:
+                fldout = optiondictconfig[opt][fld]
+            # add in valid, error values if they exist
+            for fld in ('valid','error'):
+                if fld in optiondictconfig[opt]:
+                    if fldout:
+                        fldout += '<br>'
+                    fldout += 'valid:{}'.format(optiondictconfig[opt][fld])
+            # output this field - but this time with a <newline>
+            print(tblFmt.format(fldout))
+        else:
+            # linear output 
+            if 'type' in optiondictconfig[opt]:
+                print('option.:', opt, ' (type:',optiondictconfig[opt]['type'], ')' )
+            else:
+                print('option.:', opt)
+
+                for fld in ('value','required','description', 'valid', 'error'):
+                    if fld in optiondictconfig[opt]:
+                        print('  ' + fld + '.'*(12-len(fld)) + ':', optiondictconfig[opt][fld])
         
 
 # define the filename used to create log files
@@ -797,6 +887,51 @@ def datetime_from_str( value, skipblank=False ):
             return datetime.datetime.strptime(value, datefmt)
 
     raise Exception('Unable to convert to date time:%s', value)
+
+
+# extract out a datetime value with timezone from a string if possible
+# formats currently supported:
+#     YYYY-MM-DD HH:MM:SS[+-]HHHH
+#     YYYY-MM-DDTHH:MM:SS[+-]HHHH
+#     YYYY-MM-DD HH:MM:SS.mmmm[+-]HHHH
+#     YYYY-MM-DDTHH:MM:SS.mmmm[+-]HHHH
+#
+#     YYYY-MM-DD HH:MM:SS[+-]HH:HH
+#     YYYY-MM-DDTHH:MM:SS[+-]HH:HH
+#     YYYY-MM-DD HH:MM:SS.mmmm[+-]HH:HH
+#     YYYY-MM-DDTHH:MM:SS.mmmm[+-]HH:HH
+#
+def datetimezone_from_str( value, skipblank=False ):
+    import re
+    datefmtscleanup = (
+        ( re.compile('(.*[+-])(\d{2}):(\d{2})$'), 'remove-colon-2' ),
+    )
+    datefmts = (
+        ( re.compile('\d{4}-\d{1,2}-\d{1,2}T\d{1,2}:\d{1,2}:\d{1,2}\.\d+[+-]\d{4}$'), '%Y-%m-%dT%H:%M:%S.%f%z' ),
+        ( re.compile('\d{4}-\d{1,2}-\d{1,2} \d{1,2}:\d{1,2}:\d{1,2}\.\d+[+-]\d{4}$'), '%Y-%m-%d %H:%M:%S.%f%z' ),
+        ( re.compile('\d{4}-\d{1,2}-\d{1,2}T\d{1,2}:\d{1,2}:\d{1,2}[+-]\d{4}$'), '%Y-%m-%dT%H:%M:%S%z' ),
+        ( re.compile('\d{4}-\d{1,2}-\d{1,2} \d{1,2}:\d{1,2}:\d{1,2}[+-]\d{4}$'), '%Y-%m-%d %H:%M:%S%z' ),
+    )
+
+    if skipblank and not value:
+        return value
+
+    # see if we need to change the format of the data we got in
+    for (redate, action) in datefmtscleanup:
+        if redate.match(value):
+            m = redate.match(value)
+            if action == 'remove-colon-2':
+                value = m.group(1) + m.group(2) + m.group(3)
+
+
+    # convert date into date/time/zone
+    for (redate, datefmt) in datefmts:
+        if redate.match(value):
+            return datetime.datetime.strptime(value, datefmt)
+
+    # error out because we could not convert
+    raise Exception('Unable to convert to date time:%s', value)
+
 
 
 # return the function name of the function that called this

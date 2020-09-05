@@ -7,7 +7,7 @@ import os
 
 # logging
 import kvlogger
-config=kvlogger.get_config('t_kvxls.log')
+config=kvlogger.get_config('t_kvxls.log', loggerlevel='DEBUG')
 kvlogger.dictConfig(config)
 logger=kvlogger.getLogger(__name__)
 

@@ -527,6 +527,71 @@ class TestKVUtilFilenames(unittest.TestCase):
         with self.assertRaises(Exception) as context:
             kvutil.datetime_from_str('')
 
+    # datetimezone from string
+    def test_datetimezone_from_str_p01_zero_padded_no_colon_neg_TZ(self):
+        self.assertEqual(kvutil.datetimezone_from_str('2019-01-01 01:01:01.0101-0700'), datetime.datetime(2019, 1, 1, 1, 1, 1, 10100, tzinfo=datetime.timezone(datetime.timedelta(-1, 61200))))
+        self.assertEqual(kvutil.datetimezone_from_str('2019-01-01 01:01:01-0700'), datetime.datetime(2019, 1, 1, 1, 1, 1, tzinfo=datetime.timezone(datetime.timedelta(-1, 61200))) )
+        self.assertEqual(kvutil.datetimezone_from_str('2019-01-01T01:01:01.0101-0700'), datetime.datetime(2019, 1, 1, 1, 1, 1, 10100, tzinfo=datetime.timezone(datetime.timedelta(-1, 61200))) )
+        self.assertEqual(kvutil.datetimezone_from_str('2019-01-01T01:01:01-0700'), datetime.datetime(2019, 1, 1, 1, 1, 1, tzinfo=datetime.timezone(datetime.timedelta(-1, 61200))) )
+
+    def test_datetimezone_from_str_p02_zero_padded_colon_neg_TZ(self):
+        self.assertEqual(kvutil.datetimezone_from_str('2019-01-01 01:01:01.0101-07:00'), datetime.datetime(2019, 1, 1, 1, 1, 1, 10100, tzinfo=datetime.timezone(datetime.timedelta(-1, 61200))) )
+        self.assertEqual(kvutil.datetimezone_from_str('2019-01-01 01:01:01-07:00'), datetime.datetime(2019, 1, 1, 1, 1, 1, tzinfo=datetime.timezone(datetime.timedelta(-1, 61200))) )
+        self.assertEqual(kvutil.datetimezone_from_str('2019-01-01T01:01:01.0101-07:00'), datetime.datetime(2019, 1, 1, 1, 1, 1, 10100, tzinfo=datetime.timezone(datetime.timedelta(-1, 61200))) )
+        self.assertEqual(kvutil.datetimezone_from_str('2019-01-01T01:01:01-07:00'), datetime.datetime(2019, 1, 1, 1, 1, 1, tzinfo=datetime.timezone(datetime.timedelta(-1, 61200))) )
+
+    def test_datetimezone_from_str_p03_zero_padded_no_colon_pos_TZ(self):
+        self.assertEqual(kvutil.datetimezone_from_str('2019-01-01 01:01:01.0101+0700'), datetime.datetime(2019, 1, 1, 1, 1, 1, 10100, tzinfo=datetime.timezone(datetime.timedelta(0, 25200))))
+        self.assertEqual(kvutil.datetimezone_from_str('2019-01-01 01:01:01+0700'), datetime.datetime(2019, 1, 1, 1, 1, 1, tzinfo=datetime.timezone(datetime.timedelta(0, 25200))) )
+        self.assertEqual(kvutil.datetimezone_from_str('2019-01-01T01:01:01.0101+0700'), datetime.datetime(2019, 1, 1, 1, 1, 1, 10100, tzinfo=datetime.timezone(datetime.timedelta(0, 25200))) )
+        self.assertEqual(kvutil.datetimezone_from_str('2019-01-01T01:01:01+0700'), datetime.datetime(2019, 1, 1, 1, 1, 1, tzinfo=datetime.timezone(datetime.timedelta(0, 25200))) )
+
+    def test_datetimezone_from_str_p04_zero_padded_colon_pos_TZ(self):
+        self.assertEqual(kvutil.datetimezone_from_str('2019-01-01 01:01:01.0101+07:00'), datetime.datetime(2019, 1, 1, 1, 1, 1, 10100, tzinfo=datetime.timezone(datetime.timedelta(0, 25200))) )
+        self.assertEqual(kvutil.datetimezone_from_str('2019-01-01 01:01:01+07:00'), datetime.datetime(2019, 1, 1, 1, 1, 1, tzinfo=datetime.timezone(datetime.timedelta(0, 25200))) )
+        self.assertEqual(kvutil.datetimezone_from_str('2019-01-01T01:01:01.0101+07:00'), datetime.datetime(2019, 1, 1, 1, 1, 1, 10100, tzinfo=datetime.timezone(datetime.timedelta(0, 25200))) )
+        self.assertEqual(kvutil.datetimezone_from_str('2019-01-01T01:01:01+07:00'), datetime.datetime(2019, 1, 1, 1, 1, 1, tzinfo=datetime.timezone(datetime.timedelta(0, 25200))) )
+
+    def test_datetimezone_from_str_p05_nonzero_padded_no_colon_neg_TZ(self):
+        self.assertEqual(kvutil.datetimezone_from_str('2019-1-1 01:01:01.0101-0700'), datetime.datetime(2019, 1, 1, 1, 1, 1, 10100, tzinfo=datetime.timezone(datetime.timedelta(-1, 61200))))
+        self.assertEqual(kvutil.datetimezone_from_str('2019-1-1 01:01:01-0700'), datetime.datetime(2019, 1, 1, 1, 1, 1, tzinfo=datetime.timezone(datetime.timedelta(-1, 61200))) )
+        self.assertEqual(kvutil.datetimezone_from_str('2019-1-1T01:01:01.0101-0700'), datetime.datetime(2019, 1, 1, 1, 1, 1, 10100, tzinfo=datetime.timezone(datetime.timedelta(-1, 61200))) )
+        self.assertEqual(kvutil.datetimezone_from_str('2019-1-1T01:01:01-0700'), datetime.datetime(2019, 1, 1, 1, 1, 1, tzinfo=datetime.timezone(datetime.timedelta(-1, 61200))) )
+
+    def test_datetimezone_from_str_p06_nonzero_padded_colon_neg_TZ(self):
+        self.assertEqual(kvutil.datetimezone_from_str('2019-1-1 01:01:01.0101-07:00'), datetime.datetime(2019, 1, 1, 1, 1, 1, 10100, tzinfo=datetime.timezone(datetime.timedelta(-1, 61200))) )
+        self.assertEqual(kvutil.datetimezone_from_str('2019-1-1 01:01:01-07:00'), datetime.datetime(2019, 1, 1, 1, 1, 1, tzinfo=datetime.timezone(datetime.timedelta(-1, 61200))) )
+        self.assertEqual(kvutil.datetimezone_from_str('2019-1-1T01:01:01.0101-07:00'), datetime.datetime(2019, 1, 1, 1, 1, 1, 10100, tzinfo=datetime.timezone(datetime.timedelta(-1, 61200))) )
+        self.assertEqual(kvutil.datetimezone_from_str('2019-1-1T01:01:01-07:00'), datetime.datetime(2019, 1, 1, 1, 1, 1, tzinfo=datetime.timezone(datetime.timedelta(-1, 61200))) )
+
+    def test_datetimezone_from_str_p07_nonzero_padded_no_colon_pos_TZ(self):
+        self.assertEqual(kvutil.datetimezone_from_str('2019-1-1 01:01:01.0101+0700'), datetime.datetime(2019, 1, 1, 1, 1, 1, 10100, tzinfo=datetime.timezone(datetime.timedelta(0, 25200))))
+        self.assertEqual(kvutil.datetimezone_from_str('2019-1-1 01:01:01+0700'), datetime.datetime(2019, 1, 1, 1, 1, 1, tzinfo=datetime.timezone(datetime.timedelta(0, 25200))) )
+        self.assertEqual(kvutil.datetimezone_from_str('2019-1-1T01:01:01.0101+0700'), datetime.datetime(2019, 1, 1, 1, 1, 1, 10100, tzinfo=datetime.timezone(datetime.timedelta(0, 25200))) )
+        self.assertEqual(kvutil.datetimezone_from_str('2019-1-1T01:01:01+0700'), datetime.datetime(2019, 1, 1, 1, 1, 1, tzinfo=datetime.timezone(datetime.timedelta(0, 25200))) )
+
+    def test_datetimezone_from_str_p08_nonzero_padded_colon_pos_TZ(self):
+        self.assertEqual(kvutil.datetimezone_from_str('2019-1-1 01:01:01.0101+07:00'), datetime.datetime(2019, 1, 1, 1, 1, 1, 10100, tzinfo=datetime.timezone(datetime.timedelta(0, 25200))) )
+        self.assertEqual(kvutil.datetimezone_from_str('2019-1-1 01:01:01+07:00'), datetime.datetime(2019, 1, 1, 1, 1, 1, tzinfo=datetime.timezone(datetime.timedelta(0, 25200))) )
+        self.assertEqual(kvutil.datetimezone_from_str('2019-1-1T01:01:01.0101+07:00'), datetime.datetime(2019, 1, 1, 1, 1, 1, 10100, tzinfo=datetime.timezone(datetime.timedelta(0, 25200))) )
+        self.assertEqual(kvutil.datetimezone_from_str('2019-1-1T01:01:01+07:00'), datetime.datetime(2019, 1, 1, 1, 1, 1, tzinfo=datetime.timezone(datetime.timedelta(0, 25200))) )
+
+    def test_datetimezone_from_str_p09_blank_stripblank(self):
+        self.assertEqual(kvutil.datetimezone_from_str('', True),'' )
+
+    def test_datetimezone_from_str_f01_invalid_date(self):
+        with self.assertRaises(Exception) as context:
+            kvutil.datetimezone_from_str('2019-19-01 01:01:01.0101-0700')
+
+    def test_datetimezone_from_str_f02_no_matching_format(self):
+        with self.assertRaises(Exception) as context:
+            kvutil.datetimezone_from_str('20019-19-01 01:01:01.0101-0700')
+
+    def test_datetimezone_from_str_f03_blank(self):
+        with self.assertRaises(Exception) as context:
+            kvutil.datetimezone_from_str('')
+
+
     # def test_functionName_p01_simple(self):
     # def test_loggingAppStart_p01_something(self):
     # def test_scriptinfo_p01_something(self):

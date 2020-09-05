@@ -1,7 +1,7 @@
 '''
 @author:   Ken Venner
 @contact:  ken@venerllc.com
-@version:  1.12
+@version:  1.13
 
 Library of tools used to process XLS/XLSX files
 '''
@@ -19,7 +19,7 @@ import logging
 logger = logging.getLogger(__name__)
 
 # global variables
-AppVersion = '1.12'
+AppVersion = '1.13'
 
 #----- OPTIONS ---------------------------------------
 # debug
@@ -34,7 +34,7 @@ AppVersion = '1.12'
 # col_header
 # no_header
 # aref_result
-# saverow
+# save_row
 # start_row
 # sheetname
 # sheetrow
@@ -185,6 +185,26 @@ def readxls2list( xlsfile, debug=False ):
 def readxls2dict( xlsfile, dictkeys, dupkeyfail=False, debug=False ):
     return readxls2dict_findheader( xlsfile, dictkeys, [], optiondict={'col_header' : True}, debug=debug, dupkeyfail=dupkeyfail )
 
+
+# read in the xls - output the first XX lines
+def readxls2dump( xlsfile, rows=10, debug=False ):
+    optiondict={'no_header' : True, 'aref_result' : True, 'save_row' : True }
+    excelDict = readxls_findheader( xlsfile, [], optiondict=optiondict, debug=debug )
+    print('{}:{}:{}:{}:{}:'.format('xlsfile', 'sheetName', 'reccnt', 'colcnt', 'value'))
+    for sheetname in excelDict['sheetNames']:
+        optiondict['sheetname'] = sheetname
+        excelDict = chgsheet_findheader( excelDict, [], optiondict=optiondict, debug=debug )
+        results = excelDict2list_findheader( excelDict, [], optiondict=optiondict, debug=debug )
+        reccnt = 0
+        for rec in results:
+            colcnt = 0
+            for col in rec:
+                print('{}:{}:{:02d}:{:03d}:{}:'.format(excelDict['xlsfile'], excelDict['sheetName'], reccnt, colcnt, col))
+                colcnt += 1
+            reccnt += 1
+            if reccnt > rows:
+                break
+    
 # ---------- GENERIC OPEN EXCEL to enable EDIT ----------------------
 #
 # or passed on to other routines to extract the data for processing
@@ -241,9 +261,10 @@ def readxls_findheader( xlsfile, req_cols, xlatdict={}, optiondict={}, col_aref=
         'arefresult'     : 'aref_result',
         'arefresults'    : 'aref_result',
         'aref_results'   : 'aref_result',
-        'saverow'        : 'saverow',
-        'saverows'       : 'saverow',
-        'save_rows'      : 'saverow',
+        'saverow'        : 'save_row',
+        'saverows'       : 'save_row',
+        'save_rows'      : 'save_row',
+        'sheetName'      : 'sheetname',
     }
 
     # check what got passed in
@@ -440,7 +461,7 @@ def readxls_findheader( xlsfile, req_cols, xlatdict={}, optiondict={}, col_aref=
         'xlsfile' : xlsfile,
         'xlsxfiletype' : xlsxfiletype,
         'wb' : wb,
-        'sheetNames' : sheetName,
+        'sheetNames' : sheetNames,
         'sheetName' : sheetName,
         's' : s,
         'sheettitle' : sheettitle,
@@ -514,9 +535,10 @@ def chgsheet_findheader( excelDict, req_cols, xlatdict={}, optiondict={}, col_ar
         'arefresult'     : 'aref_result',
         'arefresults'    : 'aref_result',
         'aref_results'   : 'aref_result',
-        'saverow'        : 'saverow',
-        'saverows'       : 'saverow',
-        'save_rows'      : 'saverow',
+        'saverow'        : 'save_row',
+        'saverows'       : 'save_row',
+        'save_rows'      : 'save_row',
+        'sheetName'      : 'sheetname',
     }
 
     # check what got passed in
@@ -690,7 +712,7 @@ def chgsheet_findheader( excelDict, req_cols, xlatdict={}, optiondict={}, col_ar
         'xlsfile' : xlsfile,
         'xlsxfiletype' : xlsxfiletype,
         'wb' : wb,
-        'sheetNames' : sheetName,
+        'sheetNames' : sheetNames,
         'sheetName' : sheetName,
         's' : s,
         'sheettitle' : sheettitle,
@@ -766,6 +788,35 @@ def readxls2list_findheader( xlsfile, req_cols, xlatdict={}, optiondict={}, col_
     # call the routine that opens the XLS and returns back the excelDict
     # (missing data_only attribute between optiondict and debug)
     excelDict = readxls_findheader( xlsfile, req_cols, xlatdict, optiondict, col_aref, debug=debug )
+
+    # call the library function
+    return excelDict2list_findheader( excelDict, req_cols, xlatdict=xlatdict, optiondict=optiondict, col_aref=col_aref, debug=debug )
+
+
+def excelDict2list_findheader( excelDict, req_cols, xlatdict={}, optiondict={}, col_aref=None, debug=False ):
+
+    # local variables
+    results = []
+    header = None
+    
+    # debugging
+    if debug: print('req_cols:', req_cols)
+    if debug: print('xlatdict:', xlatdict)
+    if debug: print('optiondict:', optiondict)
+    if debug: print('col_aref:', col_aref)
+    logger.debug('req_cols:%s', req_cols)
+    logger.debug('xlatdict:%s', xlatdict)
+    logger.debug('optiondict:%s', optiondict)
+    logger.debug('col_aref:%s', col_aref)
+    
+    # set flags
+    col_header  = False  # if true - we take the first row of the file as the header
+    no_header   = False  # if true - there are no headers read - we either return 
+    aref_result = False  # if true - we don't return dicts, we return a list
+    save_row    = False  # if true - then we append/save the XLSRow with the record
+    
+    start_row   = 0      # if passed in - we start the search at this row (starts at 1 or greater)
+
     
     # pull in passed values from optiondict
     if 'col_header'  in optiondict: col_header  = optiondict['col_header']
