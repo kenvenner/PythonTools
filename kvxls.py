@@ -176,17 +176,23 @@ def setExcelCellPatternFill( excelDict, row, col_name, fgColor, fill_type="solid
 
 # read in the XLS and create a dictionary to the records
 # assumes the first line of the XLS file is the header/defintion of the XLS
-def readxls2list( xlsfile, save_row=False, debug=False ):
-    return readxls2list_findheader( xlsfile, [], optiondict={'col_header' : True, 'save_row' : save_row}, debug=debug )
+def readxls2list( xlsfile, sheetname=None, save_row=False, debug=False ):
+    optiondict={'col_header' : True, 'save_row' : save_row}
+    if sheetname:
+        optiondict['sheetname'] = sheetname
+    return readxls2list_findheader( xlsfile, [], optiondict=optiondict, debug=debug )
 
 # read in the XLS and create a dictionary to the records
 # based on one or more key fields
 # assumes the first line of the CSV file is the header/defintion of the CSV
-def readxls2dict( xlsfile, dictkeys, dupkeyfail=False, save_row=False, debug=False ):
-    return readxls2dict_findheader( xlsfile, dictkeys, [], optiondict={'col_header' : True, 'save_row' : save_row}, debug=debug, dupkeyfail=dupkeyfail )
+def readxls2dict( xlsfile, dictkeys, sheetname=None, save_row=False, dupkeyfail=False, debug=False ):
+    optiondict={'col_header' : True, 'save_row' : save_row}
+    if sheetname:
+        optiondict['sheetname'] = sheetname
+    return readxls2dict_findheader( xlsfile, dictkeys, [], optiondict=optiondict, debug=debug, dupkeyfail=dupkeyfail )
 
 
-# read in the xls and return back the first "rows" lines from each sheet in an array of strings
+# read in the xls - output the first XX lines
 def readxls2dump( xlsfile, rows=10, debug=False ):
     xlslines=[]
     optiondict={'no_header' : True, 'aref_result' : True, 'save_row' : True }
