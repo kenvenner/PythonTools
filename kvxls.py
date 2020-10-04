@@ -1,7 +1,7 @@
 '''
 @author:   Ken Venner
 @contact:  ken@venerllc.com
-@version:  1.13
+@version:  1.15
 
 Library of tools used to process XLS/XLSX files
 '''
@@ -19,7 +19,7 @@ import logging
 logger = logging.getLogger(__name__)
 
 # global variables
-AppVersion = '1.13'
+AppVersion = '1.15'
 
 #----- OPTIONS ---------------------------------------
 # debug
@@ -176,21 +176,22 @@ def setExcelCellPatternFill( excelDict, row, col_name, fgColor, fill_type="solid
 
 # read in the XLS and create a dictionary to the records
 # assumes the first line of the XLS file is the header/defintion of the XLS
-def readxls2list( xlsfile, debug=False ):
-    return readxls2list_findheader( xlsfile, [], optiondict={'col_header' : True}, debug=debug )
+def readxls2list( xlsfile, save_row=False, debug=False ):
+    return readxls2list_findheader( xlsfile, [], optiondict={'col_header' : True, 'save_row' : save_row}, debug=debug )
 
 # read in the XLS and create a dictionary to the records
 # based on one or more key fields
 # assumes the first line of the CSV file is the header/defintion of the CSV
-def readxls2dict( xlsfile, dictkeys, dupkeyfail=False, debug=False ):
-    return readxls2dict_findheader( xlsfile, dictkeys, [], optiondict={'col_header' : True}, debug=debug, dupkeyfail=dupkeyfail )
+def readxls2dict( xlsfile, dictkeys, dupkeyfail=False, save_row=False, debug=False ):
+    return readxls2dict_findheader( xlsfile, dictkeys, [], optiondict={'col_header' : True, 'save_row' : save_row}, debug=debug, dupkeyfail=dupkeyfail )
 
 
-# read in the xls - output the first XX lines
+# read in the xls and return back the first "rows" lines from each sheet in an array of strings
 def readxls2dump( xlsfile, rows=10, debug=False ):
+    xlslines=[]
     optiondict={'no_header' : True, 'aref_result' : True, 'save_row' : True }
     excelDict = readxls_findheader( xlsfile, [], optiondict=optiondict, debug=debug )
-    print('{}:{}:{}:{}:{}:'.format('xlsfile', 'sheetName', 'reccnt', 'colcnt', 'value'))
+    xlslines.append('{}:{}:{}:{}:{}:'.format('xlsfile', 'sheetName', 'reccnt', 'colcnt', 'value'))
     for sheetname in excelDict['sheetNames']:
         optiondict['sheetname'] = sheetname
         excelDict = chgsheet_findheader( excelDict, [], optiondict=optiondict, debug=debug )
@@ -199,11 +200,12 @@ def readxls2dump( xlsfile, rows=10, debug=False ):
         for rec in results:
             colcnt = 0
             for col in rec:
-                print('{}:{}:{:02d}:{:03d}:{}:'.format(excelDict['xlsfile'], excelDict['sheetName'], reccnt, colcnt, col))
+                xlslines.append('{}:{}:{:02d}:{:03d}:{}:'.format(excelDict['xlsfile'], excelDict['sheetName'], reccnt, colcnt, col))
                 colcnt += 1
             reccnt += 1
             if reccnt > rows:
                 break
+    return xlslines
     
 # ---------- GENERIC OPEN EXCEL to enable EDIT ----------------------
 #
