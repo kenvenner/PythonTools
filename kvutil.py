@@ -1,7 +1,7 @@
 '''
 @author:   Ken Venner
 @contact:  ken@venerllc.com
-@version:  1.45
+@version:  1.48
 
 Library of tools used in general by KV
 '''
@@ -18,7 +18,7 @@ import logging
 logger = logging.getLogger(__name__)
 
 # set the module version number
-AppVersion = '1.45'
+AppVersion = '1.48'
 
 # import ast
 #   and call bool(ast.literal_eval(value)) 
@@ -263,12 +263,12 @@ def kv_parse_command_line( optiondictconfig, raise_error=False, keymapdict=None,
                 if not 'valid' in optiondictconfig[key]:
                     if debug: print('missing optiondictconfig setting [valid] for key:', key)
                     logger.error('missing optiondictconfig setting [valid] for key:%s', key)
-                    raise Exception('missing optiondictconfig setting [valid] for key:%s', key)
+                    raise Exception('missing optiondictconfig setting [valid] for key:{}'.format(key))
                 if value not in optiondictconfig[key]['valid']:
                     if debug:  print('value:', value, ':not in defined list of valid values:', optiondictconfig[key]['valid'])
                     logger.error('invalid value passed in for [%s]:%s',key,value)
                     logger.error('list of valid values are:%s',  optiondictconfig[key]['valid'])
-                    raise Exception('invalid value passed in for [%s]:%s',key,value)
+                    raise Exception('invalid value passed in for [{}]:{}'.format(key,value))
                 optiondict[key] = value
             else:
                 # user set a type but we don't know what to do with this type
@@ -277,7 +277,7 @@ def kv_parse_command_line( optiondictconfig, raise_error=False, keymapdict=None,
                 logger.debug('type unknown:%s', type)
         elif raise_error:
             logger.error('unknown command line option:%s', key)
-            raise Exception('unknown command line option:%s', key)
+            raise Exception('unknown command line option:{}'.format(key))
         else:
             if debug:  print('kv_parse_command_line:unknown-option:', key)
             logger.warning('unknown option:%s', key)
@@ -496,7 +496,7 @@ def filename_maxmin( file_glob, reverse=False ):
 # create a filename from part of a filename
 #   pull apart the filenaem passed in (if passed in) and then fill in the various file parts based
 #   on the other attributes passed in
-def filename_create( filename=None, filename_path=None, filename_base=None, filename_ext=None, path_blank=False ):
+def filename_create( filename=None, filename_path=None, filename_base=None, filename_ext=None, path_blank=False, filename_base_append=None, filename_base_prepend=None ):
     # pull apart the filename passed in
     if filename:
         file_path, base_filename, file_ext = filename_split( filename, path_blank=path_blank )
@@ -511,6 +511,10 @@ def filename_create( filename=None, filename_path=None, filename_base=None, file
         file_path = filename_path
     if filename_base:
         base_filename = filename_base
+    if filename_base_prepend:
+        base_filename = filename_base_prepend + base_filename
+    if filename_base_append:
+        base_filename += filename_base_append
     if filename_path:
         file_path = filename_path
     elif path_blank:
@@ -546,21 +550,42 @@ def filename_splitall(path):
 
 
 
-# create a list of filenames given a name, a list of names or a glob
-def filename_list( filename, filenamelist, fileglob, strippath=False ):
+# create a list of filenames given a name, a list of names, file glob,
+# list of include files in a file, list of exclue files in a file
+def filename_list( filename=None, filenamelist=None, fileglob=None, strippath=False, includelist_filename=None, excludefilenamelist=None, excludelist_filename=None  ):
+    # local variable
     flist=[]
+    xlist=[]
+    # read list from files provide
+    if includelist_filename:
+        flist = read_list_from_file_lines(includelist_filename,trim=True)
+    if excludelist_filename:
+        xlist = read_list_from_file_lines(excludelist_filename,trim=True)
+    if excludefilenamelist:
+        xlist.extend(excludefilenamelist)
+    # read list from records provided
     if fileglob:
-        flist=glob.glob(fileglob)
+        flist.extend(glob.glob(fileglob))
     if filenamelist:
         flist.extend(filenamelist)
     if filename:
         flist.append(filename)
 
+    # remove records if exclude definitions provided
+    if xlist:
+        for excludefile in xlist:
+            if excludefile in flist:
+                flist.remove(excludefile)
+
+    # strip path from filename if flag is set
     if strippath:
         for ndx in range(len(flist)):
             flist[ndx] = os.path.basename(flist[ndx])
 
-    return flist
+    # create the unique list of filenames and return them
+    return sorted(list(set(flist)))
+
+
 
 # create a full filename and optionally validate directory exists and is writeabile (UT)
 def filename_proper( filename_full, dir=None, create_dir=False, write_check=False ):
@@ -584,19 +609,19 @@ def filename_proper( filename_full, dir=None, create_dir=False, write_check=Fals
             except Exception as e:
                 if debug: print('kvutil:filename_proper:makedirs:%s' % e)
                 logger.error('makedirs:%s' % e)
-                raise Exception('kvutil:filename_proper:makedirs:%s', e)
+                raise Exception('kvutil:filename_proper:makedirs:{}'.format(e))
         else:
             # needs to be created - option not enabled - raise an error
             if debug: print('kvutil:filename_proper:directory does not exist:%s' % dir )
             logger.error('directory does not exist:%s', dir )
-            raise Exception('kvutil:filename_proper:directory does not exist:%s' % dir )
+            raise Exception('kvutil:filename_proper:directory does not exist:{}'.format(dir))
 
     # check to see if the directory is writeable if the flag is set
     if write_check:
         if not os.access( dir, os.W_OK ):
             if debug: print('kvutil:filename_proper:directory is not writeable:%s' % dir )
             logger.error('directory is not writeable:%s', dir )
-            raise Exception('kvutil:filename_proper:directory is not writeable:%s' % dir )
+            raise Exception('kvutil:filename_proper:directory is not writeable:{}'.format(dir) )
     
     # build a full filename
     full_filename = os.path.join( dir, filename )
@@ -886,7 +911,7 @@ def datetime_from_str( value, skipblank=False ):
         if redate.match(value):
             return datetime.datetime.strptime(value, datefmt)
 
-    raise Exception('Unable to convert to date time:%s', value)
+    raise Exception('Unable to convert to date time:{}'.format(value))
 
 
 # extract out a datetime value with timezone from a string if possible
@@ -930,7 +955,7 @@ def datetimezone_from_str( value, skipblank=False ):
             return datetime.datetime.strptime(value, datefmt)
 
     # error out because we could not convert
-    raise Exception('Unable to convert to date time:%s', value)
+    raise Exception('Unable to convert to date time:{}'.format(value))
 
 
 
