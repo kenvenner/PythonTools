@@ -5,6 +5,8 @@ import datetime
 
 import os
 
+# test for creation of xls and xlsx files
+
 xlsfloat2datetime = [ 43080.0,  datetime.datetime.strptime('12/11/2017', '%m/%d/%Y') ]
 
 filenamexlsx = kvutil.filename_unique( { 'base_filename' : 't_kvxlstest', 'file_ext' : '.xlsx', 'uniqtype' : 'datecnt', 'overwrite' : True, 'forceuniq' : True } )

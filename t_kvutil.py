@@ -23,7 +23,8 @@ tst_day = datetime.datetime.today().day
 tst_path = '.' + os.path.sep
 tst_log_fmt_file='{}{:02d}.log'
 tst_log_fmt_fullfile='{}{}{:02d}.log'
-
+tst_prepend='pre-'
+tst_append='-post'
 
 # utility to create/set/update commmand line passed in parameters
 def set_argv( position, value ):
@@ -346,24 +347,30 @@ class TestKVUtilFilenames(unittest.TestCase):
     # filename_create 
     def test_filename_create_p01_simple(self):
         self.assertEqual(kvutil.filename_create( '/test/' + tst_filename+'.log' ), os.path.normpath('/test/' + tst_filename+'.log'))
-    def test_filename_create_p01_path_blank(self):
+    def test_filename_create_p02_path_blank(self):
         self.assertEqual(kvutil.filename_create( '/test/' + tst_filename+'.log', path_blank=True ),  os.path.normpath(tst_filename+'.log'))
-    def test_filename_create_p01_filename_ext(self):
+    def test_filename_create_p03_filename_ext(self):
         self.assertEqual(kvutil.filename_create( '/test/' + tst_filename+'.log', filename_ext='bak' ), os.path.normpath('/test/' + tst_filename+'.bak'))
-    def test_filename_create_p01_filename_ext_with_dot(self):
+    def test_filename_create_p04_filename_ext_with_dot(self):
         self.assertEqual(kvutil.filename_create( '/test/' + tst_filename+'.log', filename_ext='.bak' ), os.path.normpath('/test/' + tst_filename+'.bak'))
-    def test_filename_create_p01_filename_base(self):
+    def test_filename_create_p05_filename_base(self):
         self.assertEqual(kvutil.filename_create( '/test/' + tst_filename+'.log', filename_base='newbasefilename' ), os.path.normpath('/test/' + 'newbasefilename' + '.log'))
-    def test_filename_create_p01_filename_path(self):
+    def test_filename_create_p06_filename_path(self):
         self.assertEqual(kvutil.filename_create( '/test/' + tst_filename+'.log', filename_path='/newpath/' ), os.path.normpath('/newpath/' + tst_filename+'.log'))
-    def test_filename_create_p01_filename_path_no_slash(self):
+    def test_filename_create_p07_filename_path_no_slash(self):
         self.assertEqual(kvutil.filename_create( '/test/' + tst_filename+'.log', filename_path='/newpath' ), os.path.normpath('/newpath/' + tst_filename+'.log'))
-    def test_filename_create_p01_blank_filename(self):
+    def test_filename_create_p08_blank_filename(self):
         self.assertEqual(kvutil.filename_create( '', filename_path='/test/', filename_base=tst_filename, filename_ext='.log' ), os.path.normpath('/test/' + tst_filename+'.log'))
-    def test_filename_create_p01_none_filename(self):
+    def test_filename_create_p09_none_filename(self):
         self.assertEqual(kvutil.filename_create( None, filename_path='/test/', filename_base=tst_filename, filename_ext='.log' ), os.path.normpath('/test/' + tst_filename+'.log'))
-    def test_filename_create_p01_filename_not_passed_in(self):
+    def test_filename_create_p10_filename_not_passed_in(self):
         self.assertEqual(kvutil.filename_create( filename_path='/test/', filename_base=tst_filename, filename_ext='.log' ), os.path.normpath('/test/' + tst_filename+'.log'))
+    def test_filename_create_p01_simple_prepend(self):
+        self.assertEqual(kvutil.filename_create( '/test/' + tst_filename+'.log', filename_base_prepend=tst_prepend ), os.path.normpath('/test/' + tst_prepend + tst_filename+'.log'))
+    def test_filename_create_p01_simple_append(self):
+        self.assertEqual(kvutil.filename_create( '/test/' + tst_filename+'.log', filename_base_append=tst_append ), os.path.normpath('/test/' + tst_filename + tst_append + '.log'))
+    def test_filename_create_p01_simple_pre_append(self):
+        self.assertEqual(kvutil.filename_create( '/test/' + tst_filename+'.log', filename_base_append=tst_append, filename_base_prepend=tst_prepend ), os.path.normpath('/test/' + tst_prepend+tst_filename+tst_append+'.log'))
 
 
     # filename split
@@ -388,46 +395,60 @@ class TestKVUtilFilenames(unittest.TestCase):
     # filename list
     def test_filename_list_p01_simple_filename(self):
         self.assertEqual(kvutil.filename_list( 'ken.txt', None, None ), ['ken.txt']) 
-    def test_filename_list_p02_simple_filename_path(self):
+    def test_filename_list_p02_simple_filename_nopath(self):
+        self.assertEqual(kvutil.filename_list( 'ken.txt', None, None, strippath=True ), ['ken.txt']) 
+    def test_filename_list_p03_simple_pathfilename_path(self):
         self.assertEqual(kvutil.filename_list( 'ken/ken.txt', None, None ), ['ken/ken.txt']) 
-    def test_filename_list_p03_simple_filename_nopath(self):
+    def test_filename_list_p04_simple_pathfilename_nopath(self):
         self.assertEqual(kvutil.filename_list( 'ken/ken.txt', None, None, strippath=True ), ['ken.txt']) 
-    def test_filename_list_p04_simple_filenamelist(self):
-        self.assertEqual(kvutil.filename_list( None, ['ken.txt','ken2.txt'], None, None ), ['ken.txt','ken2.txt']) 
-    def test_filename_list_p05_simple_filename_filenamelist(self):
-        self.assertEqual(kvutil.filename_list( 'ken3.txt', ['ken.txt','ken2.txt'], None, None ), ['ken.txt','ken2.txt','ken3.txt']) 
-    def test_filename_list_p06_simple_fileglob(self):
-        self.assertEqual(kvutil.filename_list( None, None, 'kvutil.*', None ), ['kvutil.py']) 
-    def test_filename_list_p07_simple_fileglob_dir(self):
-        self.assertEqual(kvutil.filename_list( None, None, '..\\tools\\kvutil.*', None ), ['..\\tools\\kvutil.py']) 
-    def test_filename_list_p08_simple_fileglob_dir_notpath(self):
-        self.assertEqual(kvutil.filename_list( None, None, '..\\tools\\kvutil.*', True ), ['kvutil.py']) 
-    def test_filename_list_p09_list_excludelist_from_file(self):
+    def test_filename_list_p05_simple_filenamelist(self):
+        self.assertEqual(kvutil.filename_list( None, ['ken.txt','ken2.txt'], None ), ['ken.txt','ken2.txt']) 
+    def test_filename_list_p06_simple_filename_filenamelist(self):
+        self.assertEqual(kvutil.filename_list( 'ken3.txt', ['ken.txt','ken2.txt'], None ), ['ken.txt','ken2.txt','ken3.txt']) 
+    def test_filename_list_p07_simple_pathfilenamelist_path(self):
+        self.assertEqual(kvutil.filename_list( None, ['ken/ken.txt','ken2/ken2.txt'], None ), ['ken/ken.txt','ken2/ken2.txt']) 
+    def test_filename_list_p08_simple_pathfilenamelist_nopath(self):
+        self.assertEqual(kvutil.filename_list( None, ['ken/ken.txt','ken2/ken2.txt'], None, strippath=True ), ['ken.txt','ken2.txt']) 
+    def test_filename_list_p09_simple_pathfilename_filenamelist_path(self):
+        self.assertEqual(kvutil.filename_list( 'a/ken3.txt', ['b/ken.txt','c/ken2.txt'], None ), ['a/ken3.txt','b/ken.txt','c/ken2.txt']) 
+    def test_filename_list_p10_simple_fileglob(self):
+        self.assertEqual(kvutil.filename_list( None, None, 'kvutil.*' ), ['kvutil.py'] ) 
+    def test_filename_list_p11_simple_fileglob_dir(self):
+        self.assertEqual(kvutil.filename_list( None, None, '..\\tools\\kvutil.*' ), ['..\\tools\\kvutil.py']) 
+    def test_filename_list_p12_simple_fileglob_dir_notpath(self):
+        self.assertEqual(kvutil.filename_list( None, None, '..\\tools\\kvutil.*', strippath=True ), ['kvutil.py']) 
+    def test_filename_list_p13_list_excludelist_from_file(self):
         fnamelist='t_kvutil_inc.lst'
         with open(fnamelist, 'w') as out:
             out.write('ken.txt\nken1.txt\nken4.txt\n')
         self.assertEqual(kvutil.filename_list( 'ken.txt', ['ken1.txt','ken2.txt'], None, False, excludelist_filename=fnamelist ), ['ken2.txt'])
         kvutil.remove_filename( fnamelist,'test_filename_list_p09_list_excludelist_from_file' )
-    def test_filename_list_p10_list_includelist_from_file(self):
+    def test_filename_list_p14_list_excludelist_from_file_path(self):
+        fnamelist='t_kvutil_inc.lst'
+        with open(fnamelist, 'w') as7 out:
+            out.write('a/ken.txt\nb/ken1.txt\nd/ken4.txt\n')
+        self.assertEqual(kvutil.filename_list( 'a/ken.txt', ['b/ken1.txt','c/ken2.txt'], None, False, excludelist_filename=fnamelist ), ['c/ken2.txt'])
+        kvutil.remove_filename( fnamelist,'test_filename_list_p09_list_excludelist_from_file' )
+    def test_filename_list_p15_list_includelist_from_file(self):
         fnamelist='t_kvutil_inc.lst'
         with open(fnamelist, 'w') as out:
             out.write('ken.txt\nken1.txt\nken2.txt\n')
         self.assertEqual(kvutil.filename_list( 'ken.txt', None, False, includelist_filename=fnamelist ), ['ken.txt','ken1.txt','ken2.txt'])
         kvutil.remove_filename( fnamelist,'test_filename_list_p10_list_includelist_from_file' )
 
-    def test_filename_list_p11_simple_filename_and_list(self):
+    def test_filename_list_p16_simple_filename_and_list(self):
         self.assertEqual(kvutil.filename_list( 'ken.txt', ['ken1.txt','ken2.txt'], None, None ), ['ken.txt','ken1.txt','ken2.txt']) 
-    def test_filename_list_p12_simple_filename_and_list_dups(self):
+    def test_filename_list_p17_simple_filename_and_list_dups(self):
         self.assertEqual(kvutil.filename_list( 'ken.txt', ['ken.txt','ken1.txt','ken2.txt'], None, None ), ['ken.txt','ken1.txt','ken2.txt']) 
-    def test_filename_list_p13_simple_filename_and_list_nopath(self):
+    def test_filename_list_p18_simple_filename_and_list_nopath(self):
         self.assertEqual(kvutil.filename_list( 'ken.txt', ['ken1.txt','ken2.txt'], None, True ), ['ken.txt','ken1.txt','ken2.txt']) 
-    def test_filename_list_p14_simple_filename_and_list_path(self):
+    def test_filename_list_p19_simple_filename_and_list_path(self):
         self.assertEqual(kvutil.filename_list( '../ken.txt', ['../ken1.txt','../ken2.txt'], None ), ['../ken.txt','../ken1.txt','../ken2.txt']) 
-    def test_filename_list_p15_simple_filename_and_list_excludelist(self):
+    def test_filename_list_p20_simple_filename_and_list_excludelist(self):
         self.assertEqual(kvutil.filename_list( 'ken.txt', ['ken1.txt','ken2.txt'], None, False, excludefilenamelist=['ken.txt','ken1.txt'] ), ['ken2.txt']) 
-    def test_filename_list_p16_simple_filename_and_list_excludelist_dups(self):
+    def test_filename_list_p21_simple_filename_and_list_excludelist_dups(self):
         self.assertEqual(kvutil.filename_list( 'ken.txt', ['ken1.txt','ken2.txt'], None, False, excludefilenamelist=['ken.txt','ken1.txt','ken.txt'] ), ['ken2.txt']) 
-    def test_filename_list_p17_simple_filename_and_list_excludelist_notinlist(self):
+    def test_filename_list_p22_simple_filename_and_list_excludelist_notinlist(self):
         self.assertEqual(kvutil.filename_list( 'ken.txt', ['ken1.txt','ken2.txt'], None, False, excludefilenamelist=['ken.txt','ken1.txt','ken4.txt'] ), ['ken2.txt']) 
 
         

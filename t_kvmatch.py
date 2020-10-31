@@ -42,9 +42,19 @@ class TestKVMatch(unittest.TestCase):
         self.assertEqual( kvmatch.build_multifield_key( rowdict, ['Company','Price'] ), 'Test|10.0' )
     def test_build_multifield_key_p04_string_date(self):
         self.assertEqual( kvmatch.build_multifield_key( rowdict, ['Company','ProcessDate'] ), 'Test|2020-01-01 00:00:00' )
+    def test_build_multifield_key_p05_single_string_string(self):
+        self.assertEqual( kvmatch.build_multifield_key( rowdict, 'Company' ), 'Test' )
+    def test_build_multifield_key_p02_multiplestrings_joinchar(self):
+        self.assertEqual( kvmatch.build_multifield_key( rowdict, ['Company','Wine'], joinchar=':' ), 'Test:Yummy' )
     def test_build_multifield_key_f01_missing_key(self):
         with self.assertRaises(Exception) as context:
             kvmatch.build_multifield_key( rowdict, ['Company','Missing'] )
+    def test_build_multifield_key_f02_empty_dictkeys(self):
+        with self.assertRaises(Exception) as context:
+            kvmatch.build_multifield_key( rowdict, [] )
+    def test_build_multifield_key_f03_empty_string_dictkeys(self):
+        with self.assertRaises(Exception) as context:
+            kvmatch.build_multifield_key( rowdict, '' )
 
     def test_badoptiondict_check_p01_bad_key(self):
         self.assertEqual( len( kvmatch.badoptiondict_check( 'test_badoptiondict_check_p01_bad_key', {'no_case' : True}, badoptiondict, True)), 1)
