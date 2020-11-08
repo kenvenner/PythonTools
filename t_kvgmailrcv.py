@@ -6,7 +6,7 @@ import sys
 import imaplib
 
 # set the module version number
-AppVersion = '1.05'
+AppVersion = '1.06'
 
 user = 'wines@vennerllc.com'
 password = 'win3s3arch*'
@@ -187,7 +187,13 @@ class TestKVGmailRcv(unittest.TestCase):
     def test_GmailImap_login_p01_getNextMessage(self):
         if debug: print('test_GmailImap_login_p01_getNextMessage')
         imap = kvgmailrcv.GmailImap( {'verbose' : False, 'user':user, 'password' : password, 'imap_folder' : folder_msgs} )
-        imap.getNextMessage()
+        msgNotFound=imap.getNextMessage()
+        if msgNotFound:
+            print('+'*80)
+            print('test_GmailImap_login_p01_getNextMessage')
+            print('must put messages in folder:', folder_msgs)
+            print('+'*80)
+            self.assertFalse( msgNotFound )
         if debug: print('dump the mparse variable')
         kvgmailrcv.dump_mparse(imap.mparse, 'test_GmailImap_login_p01_getNextMessage')
         if debug: print('dump is done')
@@ -206,7 +212,13 @@ class TestKVGmailRcv(unittest.TestCase):
     def test_GmailImap_login_p01_getNextMessage_saveMessage(self):
         if debug: print('test_GmailImap_login_p01_getNextMessage')
         imap = kvgmailrcv.GmailImap( {'verbose' : False, 'user':user, 'password' : password, 'imap_folder' : folder_msgs, 'msgPath' : msgPathValid} )
-        imap.getNextMessage()
+        msgNotFound=imap.getNextMessage()
+        if msgNotFound:
+            print('+'*80)
+            print('test_GmailImap_login_p01_getNextMessage_saveMessage')
+            print('must put messages in folder:', folder_msgs)
+            print('+'*80)
+            self.assertFalse( msgNotFound )
         if debug: print('dump the mparse variable')
         kvgmailrcv.dump_mparse(imap.mparse, 'test_GmailImap_login_p01_getNextMessage')
         if debug: print('dump is done')
@@ -242,7 +254,14 @@ class TestKVGmailRcv(unittest.TestCase):
         if debug: print('test_GmailImap_excludeMessage_p01_simple(self)')
         imap = kvgmailrcv.GmailImap( {'verbose' : False, 'user':user, 'password' : password, 'imap_folder' : folder_msgs} )
         imap.setIncludeExclude(['KEN@vennerllc.com'],['VennerLLC.com'],False,['kvenner@Spacex.com'],['spacex.com'])
-        imap.getNextMessage()
+        msgNotFound=imap.getNextMessage()
+        if msgNotFound:
+            print('+'*80)
+            print('test_GmailImap_excludeMessage_p01_simple')
+            print('must put messages in folder:', folder_msgs)
+            print('+'*80)
+            self.assertFalse( msgNotFound )
+        # got a message can continue
         imap.mparse.from_email = 'KEN@vennerllc.com'
         self.assertFalse( imap.excludeMessage() )
         imap.mparse.from_email = 'wines@vennerllc.com'
@@ -255,9 +274,15 @@ class TestKVGmailRcv(unittest.TestCase):
         self.assertTrue( imap.excludeMessage() )
     def test_GmailImap_excludeMessage_p02_ExcludeIfNotInclude(self):
         if debug: print('test_GmailImap_excludeMessage_p02_ExcludeIfNotInclude(self)')
-        imap = kvgmailrcv.GmailImap( {'verbose' : False, 'user':user, 'password' : password, 'imap_folder' : folder_msgs} )
+        imap = kvgmailrcv.GmailImap( {'verbose' : True, 'user':user, 'password' : password, 'imap_folder' : folder_msgs} )
         imap.setIncludeExclude(['KEN@vennerllc.com'],['VennerLLC.com'],True,['kvenner@Spacex.com'],['spacex.com'])
-        imap.getNextMessage()
+        msgNotFound=imap.getNextMessage()
+        if msgNotFound:
+            print('+'*80)
+            print('test_GmailImap_excludeMessage_p02_ExcludeIfNotInclude')
+            print('must put messages in folder:', folder_msgs)
+            print('+'*80)
+            self.assertFalse( msgNotFound )
         imap.mparse.from_email = 'KEN@vennerllc.com'
         self.assertFalse( imap.excludeMessage() )
         imap.mparse.from_email = 'wines@vennerllc.com'
@@ -271,4 +296,5 @@ class TestKVGmailRcv(unittest.TestCase):
 
 if __name__ == '__main__':
     unittest.main()
+    print('assure you have messages in:{}:{}'.format(user,folder_msgs))
         

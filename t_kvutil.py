@@ -14,7 +14,7 @@ kvlogger.dictConfig(config)
 logger=kvlogger.getLogger(__name__)
 
 # set the module version number
-AppVersion = '1.18'
+AppVersion = '1.19'
 
 # global variables
 tst_filename='t_kvutil_tst'
@@ -425,7 +425,7 @@ class TestKVUtilFilenames(unittest.TestCase):
         kvutil.remove_filename( fnamelist,'test_filename_list_p09_list_excludelist_from_file' )
     def test_filename_list_p14_list_excludelist_from_file_path(self):
         fnamelist='t_kvutil_inc.lst'
-        with open(fnamelist, 'w') as7 out:
+        with open(fnamelist, 'w') as out:
             out.write('a/ken.txt\nb/ken1.txt\nd/ken4.txt\n')
         self.assertEqual(kvutil.filename_list( 'a/ken.txt', ['b/ken1.txt','c/ken2.txt'], None, False, excludelist_filename=fnamelist ), ['c/ken2.txt'])
         kvutil.remove_filename( fnamelist,'test_filename_list_p09_list_excludelist_from_file' )
