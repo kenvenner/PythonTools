@@ -32,6 +32,9 @@ def set_argv( position, value ):
         sys.argv.append('arg%02d'%pos)
     sys.argv[position] = value
 
+def clear_argv( ):
+    sys.argv=sys.argv[:1]
+
 def generate_test_filenames( startfilename='t_kvutil_tst', ext_range=4):
     fname_list = []
     for i in range(ext_range):
@@ -222,7 +225,14 @@ class TestKVUtilFilenames(unittest.TestCase):
         set_argv(2,'test1=cmdline_loaded') # push value onto command line (string)
         self.assertEqual(kvutil.kv_parse_command_line( optiondictconfig ), {'conf_json': ['t_kvutil.json'], 'test1' : 'cmdline_loaded'} )
         kvutil.remove_filename('t_kvutil.json')
+        clear_argv()
+    def test_kv_parse_command_line_p22_config_conf_json_cmdline_single_not_exist(self):
+        optiondictconfig = { 'test1' : { 'value' : 12 } }
+        set_argv(1,'conf_json=t_kvutil2.json') # push value onto command line (string)
+        kvutil.remove_filename('t_kvutil2.json')
+        self.assertEqual(kvutil.kv_parse_command_line( optiondictconfig ), {'test1' :  12 } )
 
+        
     def test_kv_parse_command_line_f01_config_required_missing(self):
         with self.assertRaises(Exception) as context:
             optiondictconfig = { 'test1' : { 'required' : True, 'type' : 'bool' }, 'AppVersion' : { 'value' : '1.01' } }
@@ -295,7 +305,7 @@ class TestKVUtilFilenames(unittest.TestCase):
     def test_kv_parse_command_line_f14_config_missing_conf_json(self):
         with self.assertRaises(Exception) as context:
             kvutil.remove_filename('t_kvutil.json')
-            optiondictconfig = { 'test1' : { 'value' : 12 } }
+            optiondictconfig = { 'test1' : { 'value' : 12 }, 'conf_mustload' : True }
             set_argv(1,'conf_json=t_kvutil.json') # push value onto command line (string)
             kvutil.kv_parse_command_line( optiondictconfig )
 

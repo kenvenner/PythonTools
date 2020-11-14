@@ -1,7 +1,7 @@
 '''
 @author:   Ken Venner
 @contact:  ken@venerllc.com
-@version:  1.48
+@version:  1.49
 
 Library of tools used in general by KV
 '''
@@ -11,6 +11,7 @@ import os
 import datetime
 import sys
 import errno
+import json
 from distutils.util import strtobool
 
 # setup the logger
@@ -18,7 +19,7 @@ import logging
 logger = logging.getLogger(__name__)
 
 # set the module version number
-AppVersion = '1.48'
+AppVersion = '1.49'
 
 # import ast
 #   and call bool(ast.literal_eval(value)) 
@@ -105,6 +106,11 @@ def kv_parse_command_line( optiondictconfig, raise_error=False, keymapdict=None,
             'type'  : 'liststr',
             'description' : 'defines the list of json file(s) that houses configuration information',
         },
+        'conf_mustload' : {
+            'value' : False,
+            'type'  : 'bool',
+            'description' : 'defines if we are required to load defined configuration files (default: False)',
+        },
         'log_level' : {
             'value' : 'INFO',
             'type'  : 'inlist',
@@ -167,7 +173,7 @@ def kv_parse_command_line( optiondictconfig, raise_error=False, keymapdict=None,
         # put this into cmdlineargs dictionary
         cmdlineargs[key] = value
 
-    # read on configuration from json files housing configuration data
+    # read in configuration from json files housing configuration data
     conf_json_files = []
     if 'conf_json' in cmdlineargs:
         # config files defined in the command line
@@ -189,13 +195,33 @@ def kv_parse_command_line( optiondictconfig, raise_error=False, keymapdict=None,
     # step through all the configuration files reading in the settings
     # and flatten them out into a final configuratin file based dictionary
     confargs = {}
+    conf_files_read=list()
     for conf_json_file in conf_json_files:
         logger.debug('conf_json_file:%s', conf_json_file)
-        with open( conf_json_file, 'r' ) as json_conf:
-            import json
-            fileargs = json.load(json_conf)
-        for key,value in fileargs.items():
-            confargs[key] = value
+        if os.path.exists( conf_json_file ):
+            with open( conf_json_file, 'r' ) as json_conf:
+                fileargs = json.load(json_conf)
+                conf_files_read.append(conf_json_file)
+            for key,value in fileargs.items():
+                confargs[key] = value
+        else:
+            if ('conf_mustload' in optiondict and optiondict['conf_mustload']) or ('conf_mustload' in cmdlineargs and cmdlineargs['conf_mustload']):
+                raise Exception('missing config file:'+conf_json_file)
+            else:
+                logger.warning('skipped missing config file:%s', conf_json_file)
+    if conf_files_read:
+        # populate the list of config files with the actual files read in
+        optiondict['conf_json']=conf_files_read
+    else:
+        if 'conf_json' in optiondict:
+            # no files read in - remove this config setting if it exists
+            del optiondict['conf_json']
+        if 'conf_json' in confargs:
+            # no files read in - remove from here also
+            del confargs['conf_json']
+        if 'conf_json' in cmdlineargs:
+            # no files read in - remove from here also
+            del cmdlineargs['conf_json']
 
     # now that we have loaded and flattened out all file based settings
     # move these settings to the final proper destination
@@ -219,7 +245,7 @@ def kv_parse_command_line( optiondictconfig, raise_error=False, keymapdict=None,
     # now step through the configuration settings we have received
     for key,value in cmdlineargs.items():
         # logic to bring in "default/implied optiondict values if key passed is not part of app definition
-        if key not in optiondict and key in defaultdictconfig:
+        if key not in optiondictconfig and key in defaultdictconfig:
             if debug:  print('kv_parse_command_line:key-not-in-optiondictconfig-but-in-defaultoptiondictconfig:', key)
             logger.debug('key-not-in-optiondictconfig-but-in-defaultoptiondictconfig:%s', key)
             # copy over this default into optiondict
@@ -1031,6 +1057,6 @@ def scriptinfo():
 def dump_dict_to_json_file( filename, optiondict ):
     import json
     with open( filename, 'w' ) as json_out:
-        json.dump( optiondict, json_out )
+        json.dump( optiondict, json_out, indent=4 )
         
 # eof
