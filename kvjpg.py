@@ -1,7 +1,7 @@
 '''
 @author:   Ken Venner
 @contact:  ken@venerllc.com
-@version:  1.09
+@version:  1.10
 
 Library of tools used to process JPG image files
 '''
@@ -20,7 +20,7 @@ logger = logging.getLogger(__name__)
 
 
 # global variables
-AppVersion = '1.09'
+AppVersion = '1.10'
 
 debug = False
 
@@ -275,7 +275,10 @@ def get_date_sorted_filelists( fileglob, datefrom='jpg', nonjpgdatefrom='filecre
         if fname.lower().endswith('.jpg') and 'jpg' in datefrom:
             # get file date of the picture form meta data
             # and set the default date properl
-            fdate = get_exif_datetime_attribute_from_jpg( fname, defaultdate=jpgdefaultdate )
+            try:
+                fdate = get_exif_datetime_attribute_from_jpg( fname, defaultdate=jpgdefaultdate )
+            except:
+                fdate = parse_date_from_filename( fname, defaultdate )
 
         # if the fdate is set, save it and loop again
         if fdate:

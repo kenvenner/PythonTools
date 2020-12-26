@@ -1,7 +1,7 @@
 '''
 @author:   Ken Venner
 @contact:  ken@venerllc.com
-@version:  1.49
+@version:  1.50
 
 Library of tools used in general by KV
 '''
@@ -19,7 +19,7 @@ import logging
 logger = logging.getLogger(__name__)
 
 # set the module version number
-AppVersion = '1.49'
+AppVersion = '1.50'
 
 # import ast
 #   and call bool(ast.literal_eval(value)) 
@@ -522,7 +522,7 @@ def filename_maxmin( file_glob, reverse=False ):
 # create a filename from part of a filename
 #   pull apart the filenaem passed in (if passed in) and then fill in the various file parts based
 #   on the other attributes passed in
-def filename_create( filename=None, filename_path=None, filename_base=None, filename_ext=None, path_blank=False, filename_base_append=None, filename_base_prepend=None ):
+def filename_create( filename=None, filename_path=None, filename_base=None, filename_ext=None, path_blank=False, filename_base_append=None, filename_base_prepend=None, use_input_filename=None, filename_unique=None ):
     # pull apart the filename passed in
     if filename:
         file_path, base_filename, file_ext = filename_split( filename, path_blank=path_blank )

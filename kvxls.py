@@ -1,7 +1,7 @@
 '''
 @author:   Ken Venner
 @contact:  ken@venerllc.com
-@version:  1.18
+@version:  1.19
 
 Library of tools used to process XLS/XLSX files
 '''
@@ -20,7 +20,7 @@ import logging
 logger = logging.getLogger(__name__)
 
 # global variables
-AppVersion = '1.18'
+AppVersion = '1.19'
 
 #----- OPTIONS ---------------------------------------
 # debug
@@ -963,10 +963,14 @@ def excelDict2list_findheader( excelDict, req_cols, xlatdict={}, optiondict={}, 
                 logger.debug('add column XLSRow with row to record')
                 
             # do field manipulations here - date - but only on XLS not XLSX files
-            if not xlsxfiletype:
-                if 'dateflds' in optiondict:
-                    for fld in optiondict['dateflds']:
-                        if fld in rowdict:
+            if 'dateflds' in optiondict:
+                for fld in optiondict['dateflds']:
+                    if fld in rowdict:
+                        if not xlsxfiletype:
+                            rowdict[fld] = xldate_to_datetime(rowdict[fld])
+                            if debug: print('xldate conversion on:', fld)
+                            logger.debug('xldate conversion on:%s', fld)
+                        elif isinstance(rowdict[fld],str):
                             rowdict[fld] = xldate_to_datetime(rowdict[fld])
                             if debug: print('xldate conversion on:', fld)
                             logger.debug('xldate conversion on:%s', fld)
