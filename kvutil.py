@@ -1,7 +1,7 @@
 '''
 @author:   Ken Venner
 @contact:  ken@venerllc.com
-@version:  1.50
+@version:  1.52
 
 Library of tools used in general by KV
 '''
@@ -9,6 +9,7 @@ Library of tools used in general by KV
 import glob
 import os
 import datetime
+import pytz
 import sys
 import errno
 import json
@@ -19,7 +20,7 @@ import logging
 logger = logging.getLogger(__name__)
 
 # set the module version number
-AppVersion = '1.50'
+AppVersion = '1.52'
 
 # import ast
 #   and call bool(ast.literal_eval(value)) 
@@ -151,6 +152,11 @@ def kv_parse_command_line( optiondictconfig, raise_error=False, keymapdict=None,
     # read in the command line options that we care about and create dictionary
     cmdlineargs = {}
     for argpos in range(1,len(sys.argv)):
+        # check to see if they have an equal in the string
+        if not '=' in sys.argv[argpos]:
+            logger.error('command line arguements must be key=value - there is no equal:{}'.format(sys.argv[argpos]))
+            raise Exception('command line arguements must be key=value - there is no equal:{}'.format(sys.argv[argpos]))
+        
         # get the argument and split it into key and value
         (key,value) = sys.argv[argpos].split('=')
 
@@ -912,20 +918,72 @@ def remove_dir(dirname,calledfrom='',debug=False,maxretry=20):
             logger.warning('catch WinError:%s', str(f))
 
 
+def current_timezone_string():
+    now = datetime.datetime.now()
+    local_now = now.astimezone()
+    local_tz = local_now.tzinfo
+    local_tzname = local_tz.tzname(local_now)
+    return local_tzname
+
+def datetime2utcdatetime(dt, default_tz=None, no_tz=False):
+    # default tz conversion
+    tzconv = {
+        'Pacific Standard Time': 'America/Los_Angeles',
+    }
+    # define it because it was not passed in
+    if default_tz==None:
+        default_tz = current_timezone_string()
+
+    # convert the string if it is not known
+    if default_tz in tzconv:
+        default_tz = tzconv[default_tz]
+
+    # commented out for now
+    if False:
+        local_dt = dt.replace(tzinfo=pytz.timezone(default_tz))
+        # add utc time zone if no time zone is set
+        # convert to utc time zone from whatever time zone the datetime is set to
+        #utc_datetime = dt.astimezone(pytz.timezone('utc')).replace(tzinfo=None)
+        utc_datetime = dt.astimezone(pytz.utc)
+
+    if dt.tzinfo is None:
+        local = pytz.timezone(default_tz)
+        naive = dt
+        local_dt = local.localize(naive, is_dst=None)
+    else:
+        local_dt = dt
+
+    utc_datetime = local_dt.astimezone(pytz.utc)
+
+    if no_tz:
+        utc_datetime = utc_datetime.replace(tzinfo=None)
+
+    return utc_datetime
+
+
+    
 # extract out a datetime value from a string if possible
 # formats currently supported:
-#  m/d/y
-#  m-d-y
+#  mm-dd-yy
+#  mm-dd-yyyy
+#  mm/dd/yy
+#  mm/dd/yyyy
+#  YYYY-MM-DDTHH:MM:SS.mmmmm
+#  YYYY-MM-DD HH:MM:SS
+#  YYYY-MM-DD HH:MM
 #  YYYY-MM-DD
 #  YYYYMMDD
 #
 def datetime_from_str( value, skipblank=False ):
     import re
     datefmts = (
-        ( re.compile('\d{1,2}\/\d{1,2}\/\d\d$'), '%m/%d/%y' ),
-        ( re.compile('\d{1,2}\/\d{1,2}\/\d\d\d\d$'), '%m/%d/%Y' ),
-        ( re.compile('\d{1,2}-\d{1,2}-\d\d$'), '%m-%d-%y' ),
-        ( re.compile('\d{1,2}-\d{1,2}-\d\d\d\d$'), '%m-%d-%Y' ),
+        ( re.compile('\d{1,2}\/\d{1,2}\/\d{2}$'), '%m/%d/%y' ),
+        ( re.compile('\d{1,2}\/\d{1,2}\/\d{4}$'), '%m/%d/%Y' ),
+        ( re.compile('\d{1,2}-\d{1,2}-\d{2}$'), '%m-%d-%y' ),
+        ( re.compile('\d{1,2}-\d{1,2}-\d{4}$'), '%m-%d-%Y' ),
+        ( re.compile('\d{4}-\d{1,2}-\d{1,2}T\d{1,2}:\d{1,2}:\d{1,2}\.\d+$'), '%Y-%m-%dT%H:%M:%S.%f' ),
+        ( re.compile('\d{4}-\d{1,2}-\d{1,2}\s\d{1,2}:\d{1,2}:\d{1,2}$'), '%Y-%m-%d %H:%M:%S' ),
+        ( re.compile('\d{4}-\d{1,2}-\d{1,2}\s\d{1,2}:\d{1,2}$'), '%Y-%m-%d %H:%M' ),
         ( re.compile('\d{4}-\d{1,2}-\d{1,2}$'), '%Y-%m-%d' ),
         ( re.compile('^\d{8}$'), '%Y%m%d' ),
     )
