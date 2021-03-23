@@ -1,7 +1,7 @@
 """
 @author:   Ken Venner
 @contact:  ken@venerllc.com
-@version:  1.05
+@version:  1.06
 
 Tooling that creates a new major/minor version on a file
 
@@ -49,7 +49,7 @@ sys.excepthook = handle_exception
 # application variables
 optiondictconfig = {
     'AppVersion': {
-        'value': '1.05',
+        'value': '1.06',
         'description': 'defines the version number for the app',
     },
     'input_folder': {
@@ -184,7 +184,7 @@ def update_file_version(filename, major_update=False, test=False, debug=False):
                         # app_ver = m.group(1)
                         major_ver = int(m.group(1))
                         minor_ver = int(m.group(2))
-                        app_ver = '{}.{}'.format(major_ver, minor_ver)
+                        app_ver = '{}.{}'.format(m.group(1), m.group(2))
 
                         if debug:
                             print('matching line:', line)
@@ -327,6 +327,17 @@ if __name__ == '__main__':
         optiondict['input_folder'] = ''
 
         logger.info('files to be processed:%s', filelist)
+
+        for chk_file in filelist:
+
+            appVer, newAppVer, filename, file_bak = update_file_version(chk_file,
+                                                                        major_update=optiondict['major_update'],
+                                                                        test=optiondict['test'],
+                                                                        debug=optiondict['debug'])
+            logger.info(
+                'version changed in git for:{}:outputs are appVer:{}, newAppVer:{}, filename:{}, file_bak:{}'.format(
+                    chk_file, appVer, newAppVer, filename, file_bak))
+
     else:
         logger.info('folder to be processed:%s', optiondict['input_folder'])
 
