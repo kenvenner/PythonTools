@@ -17,12 +17,9 @@ AppVersion = '1.06'
 
 # utility used to create a new consolidate key that is a multi-field key
 def build_multifield_key( rowdict, dictkeys, joinchar='|', debug=False ):
-    if isinstance(dictkeys, str):
-        logger.warning('dictkeys passed as string - converted to list')
-        dictkeys = [dictkeys]
     if not dictkeys:
-        logger.error('empty dictkeys')
-        raise Exception('emptydictkeys')
+        logger.error('missing dictkeys')
+        raise
     if debug:
         print('build_multifield_key:dictkeys:', dictkeys)
         print('build_multifield_key:rowdict:', rowdict)
@@ -57,11 +54,11 @@ class MatchRow(object):
     def __init__(self, req_cols, xlatdict={}, optiondict={}):
         # validate input types
         if req_cols and not isinstance(req_cols, list):
-            raise Exception('req_cols must be a list:%s', req_cols)
+            raise Exception(u'req_cols must be a list: {}'.format(req_cols))
         if xlatdict and not isinstance(xlatdict,dict):
-            raise Exception('xlatdict must be a dict:%s', req_cols)
+            raise Exception(u'xlatdict must be a dict: {}'.format(req_cols))
         if optiondict and not isinstance(optiondict,dict):
-            raise Exception('optiondict must be a dict:%s', req_cols)
+            raise Exception(u'optiondict must be a dict: {}'.format(req_cols))
             
 
         # setup variables

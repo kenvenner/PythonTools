@@ -102,6 +102,10 @@ def dictConfig( config ):
 def getLogger( name ):
     return logging.getLogger( name )
 
+
+"""
+Commented out this code block
+
 # Capturing Traceback informatoin in your logs and JSON payload logging pointers
 # https://www.datadoghq.com/blog/python-logging-best-practices/
 
@@ -114,3 +118,5 @@ def handle_exception(exc_type, exc_value, exc_traceback):
     logger.error("Uncaught exception", exc_info=(exc_type, exc_value, exc_traceback))
 
 sys.excepthook = handle_exception
+
+"""

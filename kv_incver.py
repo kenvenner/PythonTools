@@ -1,7 +1,7 @@
 """
 @author:   Ken Venner
 @contact:  ken@venerllc.com
-@version:  1.06
+@version:  1.07
 
 Tooling that creates a new major/minor version on a file
 
@@ -49,7 +49,7 @@ sys.excepthook = handle_exception
 # application variables
 optiondictconfig = {
     'AppVersion': {
-        'value': '1.06',
+        'value': '1.07',
         'description': 'defines the version number for the app',
     },
     'input_folder': {
@@ -335,8 +335,8 @@ if __name__ == '__main__':
                                                                         test=optiondict['test'],
                                                                         debug=optiondict['debug'])
             logger.info(
-                'version changed in git for:{}:outputs are appVer:{}, newAppVer:{}, filename:{}, file_bak:{}'.format(
-                    chk_file, appVer, newAppVer, filename, file_bak))
+                'version changed in git for:%s:outputs are appVer:%s, newAppVer:%s, filename:%s, file_bak:%s', 
+                    chk_file, appVer, newAppVer, filename, file_bak)
 
     else:
         logger.info('folder to be processed:%s', optiondict['input_folder'])
@@ -360,7 +360,7 @@ if __name__ == '__main__':
                                                                             test=optiondict['test'],
                                                                             debug=optiondict['debug'])
                 logger.info(
-                    'version changed in git for:{}:outputs are appVer:{}, newAppVer:{}, filename:{}, file_bak:{}'.format(
-                        chk_file, appVer, newAppVer, filename, file_bak))
+                    'version changed in git for:%s:outputs are appVer:%s, newAppVer:%s, filename:%s, file_bak:%s'. 
+                        chk_file, appVer, newAppVer, filename, file_bak)
             else:
-                logger.info('version previously changed in git for:{}'.format(chk_file))
+                logger.info('version previously changed in git for: %s', chk_file)

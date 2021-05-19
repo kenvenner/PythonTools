@@ -1,7 +1,9 @@
+from __future__ import print_function
+
 '''
 @author:   Ken Venner
 @contact:  ken@venerllc.com
-@version:  1.53
+@version:  1.55
 
 Library of tools used in general by KV
 '''
@@ -9,8 +11,8 @@ Library of tools used in general by KV
 import glob
 import os
 import datetime
-from dateutil import tz
-from dateutil.zoneinfo import get_zonefile_instance
+#from dateutil import tz
+#from dateutil.zoneinfo import get_zonefile_instance
 import sys
 import errno
 import json
@@ -22,7 +24,7 @@ import logging
 logger = logging.getLogger(__name__)
 
 # set the module version number
-AppVersion = '1.53'
+AppVersion = '1.55'
 
 
 # import ast
@@ -156,8 +158,8 @@ def kv_parse_command_line(optiondictconfig, raise_error=False, keymapdict=None, 
     for argpos in range(1, len(sys.argv)):
         # check to see if they have an equal in the string
         if not '=' in sys.argv[argpos]:
-            logger.error('command line arguements must be key=value - there is no equal:{}'.format(sys.argv[argpos]))
-            raise Exception('command line arguements must be key=value - there is no equal:{}'.format(sys.argv[argpos]))
+            logger.error('command line arguements must be key=value - there is no equal:%s', sys.argv[argpos])
+            raise Exception(u'command line arguements must be key=value - there is no equal:{}'.format(sys.argv[argpos]))
 
         # get the argument and split it into key and value
         (key, value) = sys.argv[argpos].split('=')
@@ -215,7 +217,7 @@ def kv_parse_command_line(optiondictconfig, raise_error=False, keymapdict=None, 
         else:
             if ('conf_mustload' in optiondict and optiondict['conf_mustload']) or (
                     'conf_mustload' in cmdlineargs and cmdlineargs['conf_mustload']):
-                raise Exception('missing config file:' + conf_json_file)
+                raise Exception(u'missing config file: {}'.format(conf_json_file))
             else:
                 logger.warning('skipped missing config file:%s', conf_json_file)
     if conf_files_read:
@@ -297,13 +299,13 @@ def kv_parse_command_line(optiondictconfig, raise_error=False, keymapdict=None, 
                 if not 'valid' in optiondictconfig[key]:
                     if debug: print('missing optiondictconfig setting [valid] for key:', key)
                     logger.error('missing optiondictconfig setting [valid] for key:%s', key)
-                    raise Exception('missing optiondictconfig setting [valid] for key:{}'.format(key))
+                    raise Exception(u'missing optiondictconfig setting [valid] for key:{}'.format(key))
                 if value not in optiondictconfig[key]['valid']:
                     if debug:  print('value:', value, ':not in defined list of valid values:',
                                      optiondictconfig[key]['valid'])
                     logger.error('invalid value passed in for [%s]:%s', key, value)
                     logger.error('list of valid values are:%s', optiondictconfig[key]['valid'])
-                    raise Exception('invalid value passed in for [{}]:{}'.format(key, value))
+                    raise Exception(u'invalid value passed in for [{}]:{}'.format(key, value))
                 optiondict[key] = value
             else:
                 # user set a type but we don't know what to do with this type
@@ -312,7 +314,7 @@ def kv_parse_command_line(optiondictconfig, raise_error=False, keymapdict=None, 
                 logger.debug('type unknown:%s', type)
         elif raise_error:
             logger.error('unknown command line option:%s', key)
-            raise Exception('unknown command line option:{}'.format(key))
+            raise Exception(u'unknown command line option:{}'.format(key))
         else:
             if debug:  print('kv_parse_command_line:unknown-option:', key)
             logger.warning('unknown option:%s', key)
@@ -649,19 +651,19 @@ def filename_proper(filename_full, dir=None, create_dir=False, write_check=False
             except Exception as e:
                 if debug: print('kvutil:filename_proper:makedirs:%s' % e)
                 logger.error('makedirs:%s' % e)
-                raise Exception('kvutil:filename_proper:makedirs:{}'.format(e))
+                raise Exception(u'kvutil:filename_proper:makedirs:{}'.format(e))
         else:
             # needs to be created - option not enabled - raise an error
             if debug: print('kvutil:filename_proper:directory does not exist:%s' % dir)
             logger.error('directory does not exist:%s', dir)
-            raise Exception('kvutil:filename_proper:directory does not exist:{}'.format(dir))
+            raise Exception(u'kvutil:filename_proper:directory does not exist:{}'.format(dir))
 
     # check to see if the directory is writeable if the flag is set
     if write_check:
         if not os.access(dir, os.W_OK):
             if debug: print('kvutil:filename_proper:directory is not writeable:%s' % dir)
             logger.error('directory is not writeable:%s', dir)
-            raise Exception('kvutil:filename_proper:directory is not writeable:{}'.format(dir))
+            raise Exception(u'kvutil:filename_proper:directory is not writeable:{}'.format(dir))
 
     # build a full filename
     full_filename = os.path.join(dir, filename)
@@ -743,9 +745,9 @@ def filename_unique(filename=None, filename_href={}):
 
     # check to see if we have and field issues
     if field_issues:
-        if debug:  print('kvutil:filename_unique:missing values for:', ','.join(field_issues))
+        if debug:  print('kvutil:filename_unique:missing values for: {}'.format(','.join(field_issues)))
         logger.error('missing values for:%s', ','.join(field_issues))
-        raise Exception('kvutil:filename_unique:missing values for:', ','.join(field_issues))
+        raise Exception(u'kvutil:filename_unique:missing values for: {}'.format(','.join(field_issues)))
 
     # check that we have valid values
     for key in validate_values:
@@ -754,9 +756,9 @@ def filename_unique(filename=None, filename_href={}):
 
     # check to see if we have and field issues
     if field_issues:
-        if debug: print('kvutil:filename_unique:invalid values for:', ','.join(field_issues))
+        if debug: print('kvutil:filename_unique:invalid values for: {}'.format(','.join(field_issues)))
         logger.error('invalid values for:%s', ','.join(field_issues))
-        raise Exception('kvutil:filename_unique:invalid values for:', ','.join(field_issues))
+        raise Exception(u'kvutil:filename_unique:invalid values for: {}'.format(','.join(field_issues)))
 
     # create a filename if it does not exist
     default_options['filename'] = os.path.normpath(
@@ -805,7 +807,7 @@ def filename_unique(filename=None, filename_href={}):
         if unique_counter >= default_options['maxcnt']:
             if debug: print('kvutil:filename_unique:reached maximum count and not unique filename:', filename)
             logger.error('reached maximum count and not unique filename:%d:%s', unique_counter, filename)
-            raise Exception('kvutil:filename_unique:reached maximum count and not unique filename:', filename)
+            raise Exception(u'kvutil:filename_unique:reached maximum count and not unique filename: {}'.format(filename))
 
     # debugging
     # print('file_unique:filename:final:', filename)
@@ -1001,7 +1003,7 @@ def datetime_from_str(value, skipblank=False):
         if redate.match(value):
             return datetime.datetime.strptime(value, datefmt)
 
-    raise Exception('Unable to convert to date time:{}'.format(value))
+    raise Exception(u'Unable to convert to date time:{}'.format(value))
 
 
 # extract out a datetime value with timezone from a string if possible
@@ -1044,7 +1046,7 @@ def datetimezone_from_str(value, skipblank=False):
             return datetime.datetime.strptime(value, datefmt)
 
     # error out because we could not convert
-    raise Exception('Unable to convert to date time:{}'.format(value))
+    raise Exception(u'Unable to convert to date time:{}'.format(value))
 
 
 def valid_tz_string(tzstr):
@@ -1142,6 +1144,13 @@ def scriptinfo():
                 "dir": scriptdir}
     return scr_dict
 
+
+# utility used to dump a dictionary to a file in json format
+def load_json_file_to_dict(filename):
+    import json
+    with open(filename, 'r') as json_in:
+        json_dict = json.load(json_in)
+    return json_dict
 
 # utility used to dump a dictionary to a file in json format
 def dump_dict_to_json_file(filename, optiondict):

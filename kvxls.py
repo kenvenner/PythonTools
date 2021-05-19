@@ -9,6 +9,7 @@ Library of tools used to process XLS/XLSX files
 import openpyxl  # xlsx (read/write)
 import xlrd      # xls (read)
 import xlwt      # xls (write)
+import os        # determine if a file exists
 
 import kvutil
 import kvmatch
@@ -963,14 +964,10 @@ def excelDict2list_findheader( excelDict, req_cols, xlatdict={}, optiondict={}, 
                 logger.debug('add column XLSRow with row to record')
                 
             # do field manipulations here - date - but only on XLS not XLSX files
-            if 'dateflds' in optiondict:
-                for fld in optiondict['dateflds']:
-                    if fld in rowdict:
-                        if not xlsxfiletype:
-                            rowdict[fld] = xldate_to_datetime(rowdict[fld])
-                            if debug: print('xldate conversion on:', fld)
-                            logger.debug('xldate conversion on:%s', fld)
-                        elif isinstance(rowdict[fld],str):
+            if not xlsxfiletype:
+                if 'dateflds' in optiondict:
+                    for fld in optiondict['dateflds']:
+                        if fld in rowdict:
                             rowdict[fld] = xldate_to_datetime(rowdict[fld])
                             if debug: print('xldate conversion on:', fld)
                             logger.debug('xldate conversion on:%s', fld)
@@ -1074,11 +1071,25 @@ def writedict2xls( xlsfile, data, col_aref=None, optiondict={}, debug=False ):
 
 # write out a list of (dict or aref) to an XLS/XLSX based on the filename passed in
 def writelist2xls( xlsfile, data, col_aref=None, optiondict={}, debug=False ):
+    """
+    optiondict:
+    sheet_name - defines the sheet_name you are creating in this xlsx
+    replace_sheet - we are adding/inserting a sheet into an exising file if one exists or creating the file
+    replace_index - if we want to position the new sheet- we can defiune where we want it
+                    (0 is first sheet, -1 is last sheet, no value is last sheet)
+
+    :param xlsfile: (string) - filename we are creating
+    :param data: (list or list of dicts) - the material to be output
+    :param col_aref: (list) - column order/names we are outputting as
+
+    """
 
     # local variables
     sheet_name = 'Sheet1'
     no_header = False
     aref_result = False
+    replace_sheet = False
+    replace_index = None
     
     # determine what filetype we have here
     xlsxfiletype = xlsfile.endswith('.xlsx') or xlsfile.endswith('.xlsm')
@@ -1087,6 +1098,8 @@ def writelist2xls( xlsfile, data, col_aref=None, optiondict={}, debug=False ):
     if 'sheet_name' in optiondict:   sheet_name  = optiondict['sheet_name']
     if 'no_header' in optiondict:    no_header   = optiondict['no_header']
     if 'aref_result' in optiondict:  aref_result = optiondict['aref_result']
+    if 'replace_sheet' in optiondict:  replace_sheet = optiondict['replace_sheet']
+    if 'replace_index' in optiondict:   replace_index  = optiondict['replace_index']
 
     # set this value if the record we get is a list not a dictionary
     if isinstance(data[0], list):    aref_result = True
@@ -1096,6 +1109,7 @@ def writelist2xls( xlsfile, data, col_aref=None, optiondict={}, debug=False ):
         print('sheet_name:', sheet_name)
         print('no_header:', no_header)
         print('aref_result:', aref_result)
+        print('replace_sheet:', replace_sheet)
         print('xlsxfiletype:', xlsxfiletype)
         print('data cnt:', len(data))
         
@@ -1115,8 +1129,19 @@ def writelist2xls( xlsfile, data, col_aref=None, optiondict={}, debug=False ):
     # Create a new workbook
     if xlsxfiletype:
         # XLSX file
-        wb = openpyxl.Workbook()
-        ws = wb.active
+        if replace_sheet and sheet_name and os.path.exists(xlsfile):
+            # we are performing a replace/insert of a sheet in an existing workbook
+            wb = openpyxl.load_workbook(xlsfile)
+            sheets = wb.sheetnames
+            if sheet_name in sheets:
+                del wb[sheet_name]
+            if replace_index is None:
+                ws = wb.create_sheet(sheet_name)
+            else:
+                ws = wb.create_sheet(sheet_name, replace_index)
+        else:
+            wb = openpyxl.Workbook()
+            ws = wb.active
         
         # set the title if one is specified
         if sheet_name != 'Sheet1':

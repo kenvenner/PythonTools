@@ -1,7 +1,7 @@
 """
 @author:   Ken Venner
 @contact:  ken@venerllc.com
-@version:  1.06
+@version:  1.05
 
 Library of tools used in command line processing with configuration files
 
@@ -18,7 +18,7 @@ import argparse
 import json
 import os
 
-AppVersion = '1.06'
+AppVersion = '1.05'
 
 
 def merge_settings(args, conf_files=None, args_default=None, req_flds=None):
@@ -61,7 +61,7 @@ def merge_settings(args, conf_files=None, args_default=None, req_flds=None):
                 if 'conf' in fileargs:
                     confadded.append(fileargs['conf'])
                 for k, v in fileargs.items():
-                    if (k in args_default and k in args and args[k] and args[k] != args_default[k]) or (
+                    if (k in args_default and args[k] and args[k] != args_default[k]) or (
                             k not in args_default and k in args and args[k]):
                         # command line was changed from default setting - keep the command line setting
                         logger.debug(
