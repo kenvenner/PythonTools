@@ -1,7 +1,9 @@
+__version__ = '1.08'
+
 """
 @author:   Ken Venner
 @contact:  ken@venerllc.com
-@version:  1.07
+@version:  1.08
 
 Tooling that creates a new major/minor version on a file
 
@@ -9,8 +11,10 @@ Tooling that creates a new major/minor version on a file
 import re
 import os
 import subprocess
+import argparse
 
 import kvutil
+import kvargs
 
 # may comment out in the future
 import pprint
@@ -49,7 +53,7 @@ sys.excepthook = handle_exception
 # application variables
 optiondictconfig = {
     'AppVersion': {
-        'value': '1.07',
+        'value': '1.08',
         'description': 'defines the version number for the app',
     },
     'input_folder': {
@@ -308,57 +312,83 @@ def version_changed_in_git_branch(filename, debug=False):
 
 # ---------------------------------------------------------------------------
 if __name__ == '__main__':
+    args_default = dict()
+    req_flds = list()
+    
+    parser = argparse.ArgumentParser(description='Increment version of files')
+    parser.add_argument("input_file", nargs="?",
+                        help="file we are updating the version on")
+    parser.add_argument("--input_folder", default="./",
+                        help="folder of files to be analyzed and processed")
+    parser.add_argument("--input_list",
+                        help="list of files to be processed")
+    parser.add_argument("--input_glob",
+                        help="file glob files to be processed")
+    parser.add_argument("--major_update", "--major", "--major_ver", action="store_true", dest="major_update",
+                        help="Perform a major version update")
+    parser.add_argument("--minor_update", "--minor", "--minor_ver", action="store_true", dest="minor_update",
+                        help="Perform a minor version update")
+    parser.add_argument("--conf", 
+                        help="configuration file")
+    parser.add_argument("--test", action="store_true", 
+                        help="Run in test mode")
+    parser.add_argument("--debug", action="store_true", 
+                        help="Run in debug mode")
+    parser.add_argument('-v', '--version', action='version', version='%(prog)s ' + __version__)
 
-    # capture the command line
 
-    # optional setttings in code
-    #   raise_error = True - if we have a problem parsing option we raise an error rather than pass silently
-    #   keymapdict = {} - dictionary of mis-spelling of command options that are corrected for through this mapping
-    #   debug = True - provide insight to what is going on as we parse conf_json files and command line options
-    optiondict = kvutil.kv_parse_command_line(optiondictconfig, debug=False)
+    args = parser.parse_args()
+
+    # get the merged settings
+    vargs = kvargs.merge_settings(args, args.conf, args_default, req_flds)
+
+    if vargs.major_update and vargs.minor_update:
+        print("Set only one true:  minor_update, major_update")
+        sys.exit(1)
+    elif not vargs.major_update and not vargs.minor_update:
+        vargs.minor_update = True
+
 
     # get the list of files to be processed
-    filelist = kvutil.filename_list(optiondict['input_file'], optiondict['input_list'], optiondict['input_glob'],
-                                    includelist_filename=optiondict['input_list_file'],
-                                    excludelist_filename=optiondict['exclude_list_file'])
+    filelist = kvutil.filename_list(vargs['input_file'], vargs['input_list'], vargs['input_glob'])
 
     # our behavior is controlled if we set the input_file, if we don't the we do the git evaluation
     if filelist:
-        optiondict['input_folder'] = ''
+        vargs['input_folder'] = ''
 
         logger.info('files to be processed:%s', filelist)
 
         for chk_file in filelist:
 
             appVer, newAppVer, filename, file_bak = update_file_version(chk_file,
-                                                                        major_update=optiondict['major_update'],
-                                                                        test=optiondict['test'],
-                                                                        debug=optiondict['debug'])
+                                                                        major_update=vargs['major_update'],
+                                                                        test=vargs['test'],
+                                                                        debug=vargs['debug'])
             logger.info(
                 'version changed in git for:%s:outputs are appVer:%s, newAppVer:%s, filename:%s, file_bak:%s', 
                     chk_file, appVer, newAppVer, filename, file_bak)
 
     else:
-        logger.info('folder to be processed:%s', optiondict['input_folder'])
+        logger.info('folder to be processed:%s', vargs['input_folder'])
 
-        files_to_check = git_modified_files_in_folder(optiondict['input_folder'], debug=optiondict['debug'])
+        files_to_check = git_modified_files_in_folder(vargs['input_folder'], debug=vargs['debug'])
 
-        if optiondict['debug']:
+        if vargs['debug']:
             print('files_to_check:', files_to_check)
 
         if not files_to_check:
             logger.info('no files to be checked for this folder')
 
         for chk_file in files_to_check:
-            if optiondict['debug']:
+            if vargs['debug']:
                 print('-' * 40, '\nInspecting for version  number file:', chk_file)
 
-            if not version_changed_in_git_branch(chk_file, debug=optiondict['debug']):
+            if not version_changed_in_git_branch(chk_file, debug=vargs['debug']):
 
                 appVer, newAppVer, filename, file_bak = update_file_version(chk_file,
-                                                                            major_update=optiondict['major_update'],
-                                                                            test=optiondict['test'],
-                                                                            debug=optiondict['debug'])
+                                                                            major_update=vargs['major_update'],
+                                                                            test=vargs['test'],
+                                                                            debug=vargs['debug'])
                 logger.info(
                     'version changed in git for:%s:outputs are appVer:%s, newAppVer:%s, filename:%s, file_bak:%s'. 
                         chk_file, appVer, newAppVer, filename, file_bak)

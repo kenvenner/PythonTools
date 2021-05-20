@@ -1,9 +1,10 @@
-__version__ = '1.3'
+__version__ = '1.4'
 
 import PySimpleGUI as sg
 import os
 import json
 import copy
+from pathlib import Path, PurePath
 import logging
 
 logger = logging.getLogger(__name__)
@@ -272,14 +273,24 @@ def update_settings(settings, values, values_key_2_settings_key):
             del settings[k]
 
     # update settings if there are values to update
+    not_updated = dict()
     if values:
         # update window with the values read from settings file
         for k, v in values_key_2_settings_key.items():
             try:
-                settings[k] = values[v]
-            except Exception:
-                # print(f'Problem updating settings from window values. Key = {k}')
-                pass
+                if v in values:
+                    settings[k] = values[v]
+            except Exception as e:
+                #
+                # pass
+                not_updated[k] = {
+                    'v': v,
+                    'e': e
+                }
+
+        # debugging enabled when we want to see failed updates
+        if False:
+            print(not_updated)
 
 
 def save_settings(settings_file, settings, values, values_key_2_settings_key):
@@ -364,7 +375,8 @@ def create_settings_window(settings, values_key_2_settings_key, app_version):
                sg.FileSaveAs('SaveAs', key='-SAVE_AS-', file_types=(('Cfg', '*.json'),),
                              initial_folder=settings['cfg_folder']),
                sg.Input(key='-LOAD-', visible=False, enable_events=True),
-               sg.FileBrowse('Load', key='-LOAD-', file_types=(('Cfg', '*.json'),), initial_folder=settings['cfg_folder'])]]
+               sg.FileBrowse('Load', key='-LOAD-', file_types=(('Cfg', '*.json'),),
+                             initial_folder=settings['cfg_folder'])]]
 
     window = sg.Window('Settings', layout, finalize=True)
 
@@ -427,10 +439,20 @@ def process_change_settings(vargs, settings, v2s, parent, debug=False):
             # capture the filename from the save as
             settings_file = values['-SAVE_AS-']
             # check the input
-            if not os.path.exists(settings_file):
+            if not settings_file:
+                # user cancelled - just get out
                 continue
+            if not Path(settings_file).parent.is_dir():
+                sg.popup('Selected directory does not exist')
+                continue
+
+            settings['settings_file'] = settings_file
+
             # and now save out to this file
             save_settings(settings_file, settings, values, v2s)
+
+            # update the screen
+            update_windows_values(window, settings, v2s)
 
             # update the logging if we changed something
             reinitialize_logging(vargs, settings, parent)
@@ -439,10 +461,15 @@ def process_change_settings(vargs, settings, v2s, parent, debug=False):
             # capture the filename from the save as
             settings_file = values['-LOAD-']
             # check the input
+            if not settings_file:
+                # user selected cancel
+                continue
             if not os.path.exists(settings_file):
                 continue
             # and now read in this data
             settings = load_settings(settings_file, settings, v2s)
+            # set the variable
+            settings['settings_file'] = settings_file
             # update the screen
             update_windows_values(window, settings, v2s)
 
