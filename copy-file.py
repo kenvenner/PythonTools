@@ -1,11 +1,13 @@
-__version__ = '1.01'
+__version__ = '1.02'
 
 import argparse
 import sys
 from attrdict import AttrDict
 from pathlib import Path, PurePath
 
-def create_copy_list(srcdir, destdir, mtime_diff=False):
+def create_copy_list(srcdir, destdir, mtime_diff=False, diff=False):
+    cmd = 'diff' if diff else 'copy'
+    
     srcdir = Path(srcdir)
     destdir = Path(destdir)
 
@@ -23,10 +25,17 @@ def create_copy_list(srcdir, destdir, mtime_diff=False):
         destfile = [x for x in destfiles if x.name == filename][0]
 
         # if we enable time checks - and files are same timestamp skip
-        if mtime_diff and srcfile.stat().st_mtime == destfile.stat().st_mtime:
-            continue
+        if mtime_diff:
+            if srcfile.stat().st_mtime == destfile.stat().st_mtime:
+                continue
+            elif srcfile.stat().st_mtime < destfile.stat().st_mtime:
+                # swap the order
+                srcfile, destfile = destfile, srcfile
+
+        # generate the output command
         
-        print(f'copy {srcfile} {destfile}')
+        print(f'{cmd} "{srcfile}" "{destfile}"')
+
 
 def create_compile_list(srcdir):
     srcdir = Path(srcdir)
@@ -45,6 +54,8 @@ if __name__ == '__main__':
                         help="Source directory (default: current directory)")
     parser.add_argument('--mtime', action="store_true", default=False,
                         help="Copy when time stamps are different")
+    parser.add_argument('--diff', action="store_true", default=False,
+                        help="run diff rather than copy when timestamps are different")
     parser.add_argument('-v', '--version', action='version', version='%(prog)s ' + __version__)
 
     if len(sys.argv) == 1:
@@ -62,5 +73,5 @@ if __name__ == '__main__':
             sys.exit(1)
 
 
-    create_copy_list(args.src, args.dest, args.mtime)
+    create_copy_list(args.src, args.dest, args.mtime, args.diff)
 

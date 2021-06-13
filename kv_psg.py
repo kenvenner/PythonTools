@@ -1,4 +1,4 @@
-__version__ = '1.4'
+__version__ = '1.6'
 
 import PySimpleGUI as sg
 import os
@@ -424,13 +424,25 @@ def process_change_settings(vargs, settings, v2s, parent, debug=False):
         if event == 'Save':
             # make sure field is set properly
             if values['-SETTINGS_FILE-'] != settings['settings_file']:
-                window['-SETTINGS_FILE-'].update(value=settings['settings_file'])
-                window.Refresh()
-                sg.popup('To change settings file', 'Use the SaveAs button', 'Data not saved')
-                continue
+                # the field was changed - lets see if what we have is a valid folder and filename
+                if not Path(values['-SETTINGS_FILE-']).parent.is_dir():
+                    # the entered parent is not a dir - so we need to skip
+                    window['-SETTINGS_FILE-'].update(value=settings['settings_file'])
+                    window.Refresh()
+                    sg.popup('Improper path to file settings', 'Correct or try using the SaveAs button', 'Data not saved')
+                    continue
+                
+                # valid file capture value and continue on
+                settings['settings_file'] = values['-SETTINGS_FILE-']
+                # capture the filename from the save as
+                settings_file = values['-SETTINGS_FILE-']
+                
 
             # save screen data to file
             save_settings(settings_file, settings, values, v2s)
+
+            # update the screen
+            update_windows_values(window, settings, v2s)
 
             # update the logging if we changed something
             reinitialize_logging(vargs, settings, parent)
@@ -477,7 +489,7 @@ def process_change_settings(vargs, settings, v2s, parent, debug=False):
             reinitialize_logging(vargs, settings, parent)
 
     window.close()
-    return settings
+    return settings, settings_file
 
 
 # testing
