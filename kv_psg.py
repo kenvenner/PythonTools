@@ -1,4 +1,4 @@
-__version__ = '1.6'
+__version__ = '1.07'
 
 import PySimpleGUI as sg
 import os
@@ -360,16 +360,16 @@ def create_settings_window(settings, values_key_2_settings_key, app_version):
     def TextInput(text, key=None):
         if key is None:
             key = f"-{text.upper()}-"
-        return [TextLabel(text), sg.Input(key=key)]
+        return [TextLabel(text), sg.Input(key=key, size=(70,1))]
 
     layout = [[sg.Text('Settings', font='Any 15')],
               TextInput('Token'),
               TextInput('URL'),
-              [TextLabel('Log Folder'), sg.Input(key='-LOG_PATH-'), sg.FolderBrowse(target='-LOG_PATH-')],
+              [TextLabel('Log Folder'), sg.Input(key='-LOG_PATH-', size=(62,1)), sg.FolderBrowse(target='-LOG_PATH-')],
               [TextLabel('Log to console:'), sg.Checkbox('', default=False, key='-LOG_CONSOLE-')],
               [TextLabel('Log to file:'), sg.Checkbox('', default=True, key='-LOG_FILE-')],
               [TextLabel('Application version'), sg.Text(app_version)],
-              [TextLabel('Settings file'), sg.Input(key='-SETTINGS_FILE-')],
+              [TextLabel('Settings file'), sg.Input(key='-SETTINGS_FILE-', size=(70,1))],
               [sg.Button('Save'), sg.Button('Exit'),
                sg.Input(key='-SAVE_AS-', visible=False, enable_events=True),
                sg.FileSaveAs('SaveAs', key='-SAVE_AS-', file_types=(('Cfg', '*.json'),),

@@ -3,7 +3,7 @@ from __future__ import print_function
 '''
 @author:   Ken Venner
 @contact:  ken@venerllc.com
-@version:  1.55
+@version:  1.56
 
 Library of tools used in general by KV
 '''
@@ -11,8 +11,8 @@ Library of tools used in general by KV
 import glob
 import os
 import datetime
-#from dateutil import tz
-#from dateutil.zoneinfo import get_zonefile_instance
+from dateutil import tz
+from dateutil.zoneinfo import get_zonefile_instance
 import sys
 import errno
 import json
@@ -24,7 +24,7 @@ import logging
 logger = logging.getLogger(__name__)
 
 # set the module version number
-AppVersion = '1.55'
+AppVersion = '1.56'
 
 
 # import ast
@@ -1060,7 +1060,9 @@ def show_timezones(sublist=None, debug=False):
     sorted_zonenames = sorted(list(get_zonefile_instance().zones))
     sections = set([x.split('/')[0] for x in sorted_zonenames if '/' in x])
 
-    if sublist.capitalize() in sections:
+    if sublist is None:
+        display_zonenames = sorted_zonenames
+    elif sublist.capitalize() in sections:
         display_zonenames = [x for x in sorted_zonenames if x.startswith(str(sublist.capitalize()) + '/')]
     elif sublist.upper() in ('US', 'USA'):
         display_zonenames = [x for x in sorted_zonenames if x.startswith('US/')]

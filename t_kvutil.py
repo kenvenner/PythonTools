@@ -14,7 +14,7 @@ kvlogger.dictConfig(config)
 logger=kvlogger.getLogger(__name__)
 
 # set the module version number
-AppVersion = '1.19'
+AppVersion = '1.20'
 
 # global variables
 tst_filename='t_kvutil_tst'
@@ -555,6 +555,17 @@ class TestKVUtilFilenames(unittest.TestCase):
     # def test_remove_filename - no test cases created for this function yet
     # def test_remove_dir - no test cases created for this function yet
 
+    # def test_current_timezone_string
+    def test_datetime2utcdatetime_p01_datetime_2_utc(self):
+        n_dt = datetime.datetime(2016,1,1,11,30)
+        utc_dt = datetime.datetime(2016, 1, 1, 19, 30, tzinfo=tzutc())
+        self.assertEqual(kvutil.datetime2utcdatetime(n_dt), utc_dtc)
+    def test_datetime2utcdatetime_p02_datetime_2_utc_set_tz(self):
+        n_dt = datetime.datetime(2016,1,1,11,30)
+        tz = 'US/Eastern'
+        utc_dt = datetime.datetime(2016, 1, 1, 16, 30, tzinfo=tzutc())
+        self.assertEqual(kvutil.datetime2utcdatetime(n_dt, tz), utc_dtc)
+    
     # datetime from string
     def test_datetime_from_str_p01_zero_padded(self):
         self.assertEqual(kvutil.datetime_from_str('01/01/19'), datetime.datetime(2019, 1, 1) )
@@ -651,10 +662,37 @@ class TestKVUtilFilenames(unittest.TestCase):
             kvutil.datetimezone_from_str('')
 
 
+    # def test_valid_tz_string
+    def test_valid_tz_string_p01_valid(self):
+        self.assertTrue(kvutil.valid_tz_string('US/Eastern'))
+        self.assertFalse(kvutil.valid_tz_string('US/Invalid'))
+
+    # def test_show_timezones
+    def test_show_timezones_p01_us_zones(self):
+        us_tz = [
+            'US/Alaska',
+            'US/Aleutian',
+            'US/Arizona',
+            'US/Central',
+            'US/East-Indiana',
+            'US/Eastern',
+            'US/Hawaii',
+            'US/Indiana-Starke',
+            'US/Michigan',
+            'US/Mountain',
+            'US/Pacific',
+            'US/Pacific-New',
+            'US/Samoa',
+        ]
+        self.assertEqual(kvutil.show_timezones('US'), us_tz)
+
+        
     # def test_functionName_p01_simple(self):
     # def test_loggingAppStart_p01_something(self):
     # def test_scriptinfo_p01_something(self):
-    # def dump_dict_to_json_file( optiondict, filename ):
+
+    # def test_load_json_file_to_dict()
+    # def test_dump_dict_to_json_file( optiondict, filename ):
     
 
 if __name__ == '__main__':
