@@ -314,7 +314,7 @@ def version_changed_in_git_branch(filename, debug=False):
 if __name__ == '__main__':
     args_default = dict()
     req_flds = list()
-    
+
     parser = argparse.ArgumentParser(description='Increment version of files')
     parser.add_argument("input_file", nargs="?",
                         help="file we are updating the version on")
@@ -328,14 +328,13 @@ if __name__ == '__main__':
                         help="Perform a major version update")
     parser.add_argument("--minor_update", "--minor", "--minor_ver", action="store_true", dest="minor_update",
                         help="Perform a minor version update")
-    parser.add_argument("--conf", 
+    parser.add_argument("--conf",
                         help="configuration file")
-    parser.add_argument("--test", action="store_true", 
+    parser.add_argument("--test", action="store_true",
                         help="Run in test mode")
-    parser.add_argument("--debug", action="store_true", 
+    parser.add_argument("--debug", action="store_true",
                         help="Run in debug mode")
     parser.add_argument('-v', '--version', action='version', version='%(prog)s ' + __version__)
-
 
     args = parser.parse_args()
 
@@ -348,7 +347,6 @@ if __name__ == '__main__':
     elif not vargs.major_update and not vargs.minor_update:
         vargs.minor_update = True
 
-
     # get the list of files to be processed
     filelist = kvutil.filename_list(vargs['input_file'], vargs['input_list'], vargs['input_glob'])
 
@@ -359,14 +357,13 @@ if __name__ == '__main__':
         logger.info('files to be processed:%s', filelist)
 
         for chk_file in filelist:
-
             appVer, newAppVer, filename, file_bak = update_file_version(chk_file,
                                                                         major_update=vargs['major_update'],
                                                                         test=vargs['test'],
                                                                         debug=vargs['debug'])
             logger.info(
-                'version changed in git for:%s:outputs are appVer:%s, newAppVer:%s, filename:%s, file_bak:%s', 
-                    chk_file, appVer, newAppVer, filename, file_bak)
+                'version changed in git for:%s:outputs are appVer:%s, newAppVer:%s, filename:%s, file_bak:%s',
+                chk_file, appVer, newAppVer, filename, file_bak)
 
     else:
         logger.info('folder to be processed:%s', vargs['input_folder'])
@@ -390,7 +387,7 @@ if __name__ == '__main__':
                                                                             test=vargs['test'],
                                                                             debug=vargs['debug'])
                 logger.info(
-                    'version changed in git for:%s:outputs are appVer:%s, newAppVer:%s, filename:%s, file_bak:%s'. 
+                    'version changed in git for:%s:outputs are appVer:%s, newAppVer:%s, filename:%s, file_bak:%s'.
                         chk_file, appVer, newAppVer, filename, file_bak)
             else:
                 logger.info('version previously changed in git for: %s', chk_file)

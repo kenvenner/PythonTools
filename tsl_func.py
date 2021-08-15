@@ -1,4 +1,4 @@
-__version__ = '1.01'
+__version__ = '1.02'
 
 import pandas
 import os
@@ -21,12 +21,12 @@ TS_DUMP_RAW_COLS = ['ts_name',
                     'mount_id', 'share_guid',
                     'created', 'last_modified', 'expires_at',
                     'category', 'type',
-                    'is_single_file', 'is_offline', 
+                    'is_single_file', 'is_offline',
                     'active']
-
 
 DISPLAY_KEY = '-TS_DISPLAY_CHKBOX-'
 FILE_KEY = '-TS_DUMP-'
+
 
 # Generic functions used create/manage trusted share listings
 
@@ -34,7 +34,7 @@ class TSListing(object):
     """
     Object used to get trusted share listing data and generate any required outputs
     """
-    
+
     def __init__(self, obj_class=None, token=None, url=None, owner_only=False):
         """
         Create the object - based on the object class passed in
@@ -59,12 +59,12 @@ class TSListing(object):
 
         # create the object - with ts_listing set to true
         self.eclient = self.obj_class(None, self.token, self.url, ts_listing=True)
-        
+
     def ts_listing_steps(self, values):
         """
-        Using the values in setttings - perform the required actions to prepare data
+        Using the values in values - perform the required actions to prepare data
 
-        :param settings: (dict) - various settings that drive the update
+        :param values: (dict) - various settings that drive the update
         """
 
         # 1 - read in the ts listing data
@@ -78,8 +78,7 @@ class TSListing(object):
         if values[DISPLAY_KEY]:
             self.ts_listing_for_console()
             logger.info('Close this window to get to the Trusted Share listing')
-            
-    
+
     def ts_listing_for_console(self):
         """
         Create the strings that are used to display the trusted share listings
@@ -107,9 +106,8 @@ class TSListing(object):
         self.ts_listing_lines.append('{:>10s} | {:50s}'.format('-' * 10, '-' * 50))
         for rec in self.ts_collab_list:
             self.ts_listing_lines.append('{:>10s} | {:50s}'.format(rec['mount_id'], rec['name']))
-    
 
-    def ts_listing_read(self, owner_only = None):
+    def ts_listing_read(self, owner_only=None):
         """
         Read in the ts_listing
 
@@ -119,8 +117,7 @@ class TSListing(object):
         if owner_only is None:
             owner_only = self.owner_only
 
-        self.ts_owner_list, self.ts_collab_list = self.eclient.ts_listing(owner_only = owner_only)
-        
+        self.ts_owner_list, self.ts_collab_list = self.eclient.ts_listing(owner_only=owner_only)
 
     def ts_listing_dump(self, ts_dump_filename):
         """
@@ -130,13 +127,13 @@ class TSListing(object):
         """
 
         # owner
-        df1 = pandas.DataFrame(self.ts_owner_list) 
+        df1 = pandas.DataFrame(self.ts_owner_list)
         df1.rename(columns={'id': 'share_guid', 'name': 'ts_name'}, inplace=True)
         df1['is_owner'] = True
         df1['expires_at'] = ''
 
         # recipient
-        df2 = pandas.DataFrame(self.ts_collab_list) 
+        df2 = pandas.DataFrame(self.ts_collab_list)
         df2.rename(columns={'share_id': 'share_guid', 'name': 'ts_name'}, inplace=True)
         df2['is_owner'] = False
 
@@ -147,8 +144,6 @@ class TSListing(object):
         # define the output columns
         output_cols = copy.deepcopy(TS_DUMP_RAW_COLS)
         df = df[output_cols]
-        
+
         df.to_excel(ts_dump_filename, index=False)
         logger.info('Created the trusted share secure view listing file:  %s', ts_dump_filename)
-
-

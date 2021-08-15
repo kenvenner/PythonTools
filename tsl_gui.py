@@ -1,4 +1,4 @@
-__version__ = '1.01'
+__version__ = '1.02'
 
 import PySimpleGUI as sg
 import tsl_func
@@ -26,21 +26,16 @@ AppDebug = False
 def create_dump_data_window(settings, cfg_folder):
     """
     dump data from CWP to XLS screen
+
+    :param settings: (dict)
+    :param cfg_folder: (string)
     """
-
-    def TextLabel(text):
-        return sg.Text(text + ':', justification='r', size=(15, 1))
-
-    def TextInput(text, key=None):
-        if key is None:
-            key = f"-{text.upper()}-"
-        return [TextLabel(text), sg.Input(key=key)]
 
     def CheckboxFileSaveAs(text, key, default_text, default_folder):
         keychkbox = f"-{key.upper()}_CHKBOX-"
         key = f"-{key.upper()}-"
         text = text + ':'
-        return [sg.Checkbox(text, default=False, key=keychkbox), 
+        return [sg.Checkbox(text, default=False, key=keychkbox),
                 sg.Input(key=key, default_text=default_text), sg.FileSaveAs(initial_folder=default_folder, target=key)]
 
     layout = [
@@ -60,14 +55,6 @@ def display_ts_listing_window(list_lines):
     :param list_lines: (list) - list to be output
 
     """
-
-    def TextLabel(text):
-        return sg.Text(text + ':', justification='r', size=(15, 1))
-
-    def TextInput(text, key=None):
-        if key is None:
-            key = f"-{text.upper()}-"
-        return [TextLabel(text), sg.Input(key=key)]
 
     layout = [
         [sg.Output(size=(100, 10), key='ts_listing', font=('Courier', 11))],
@@ -97,11 +84,11 @@ def tsl_main(settings, cfg_folder, obj_class, token, url):
     """
     Logic driving the TS listing to display and file features
 
-    :param settings:
-    :param cfg_folder:
-    :param obj_class: 
-    :param token:
-    :param url:
+    :param settings: (dict)
+    :param cfg_folder: (string)
+    :param obj_class: (dict)
+    :param token: (string)
+    :param url: (string)
 
     may need to pass in a pointer to the object that we call 
     that will get the list of ts and that generates the output
@@ -118,7 +105,7 @@ def tsl_main(settings, cfg_folder, obj_class, token, url):
 
         # set the value based on if we are going to display on the screen
         option_enabled = False if not values[tsl_func.DISPLAY_KEY] else True
-        
+
         # update values based on what was entered in the screen
         # for things that generate output files
         for opt in ['TS_DUMP']:
@@ -139,8 +126,6 @@ def tsl_main(settings, cfg_folder, obj_class, token, url):
             pp.pprint(settings)
             print('values:')
             pp.pprint(values)
-            print('v2s:')
-            pp.pprint(v2s)
 
         # validate an option is selected otherwise return
         if not option_enabled:
@@ -150,7 +135,7 @@ def tsl_main(settings, cfg_folder, obj_class, token, url):
         try:
             # create the object that will perform the work
             tsl_obj = tsl_func.TSListing(obj_class, token, url)
-            
+
             # now set up for logging to window
             logger_window = kv_psg.setup_logger_console_window()
             # run through steps to get the data and output files if we are outputtting files
@@ -177,4 +162,3 @@ def tsl_main(settings, cfg_folder, obj_class, token, url):
         except Exception as e:
             print(e)
             sg.popup('ERROR - Failed to process trusted share listing', e)
-

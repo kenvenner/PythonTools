@@ -8,6 +8,7 @@ from pathlib import Path, PurePath
 import re
 import subprocess
 
+
 def list_git_branches():
     """
     run the command to get the local list of git branches
@@ -19,6 +20,7 @@ def list_git_branches():
 
     return output.decode('ascii').split('\n')
 
+
 def filter_to_jira_branches(git_branches, jira_branches=None):
     """
     filter out branches that match jira branches and pass back 
@@ -29,24 +31,22 @@ def filter_to_jira_branches(git_branches, jira_branches=None):
         jira_branches = ['NCCWEB']
 
     return [branch for branch in git_branches for jbranch in jira_branches if jbranch in branch]
-    
+
 
 def git_branch_delete_command(git_branches):
-
     print('git checkout master')
-    
+
     for line in git_branches:
         lstrip = line.strip()
 
         if lstrip.startswith('* '):
             lstrip = lstrip[2:]
-        
+
         print(f'git branch -d {lstrip}')
 
 
 # ---------------------------------------------------------------------------
 if __name__ == '__main__':
-
     parser = argparse.ArgumentParser(description='Git branch delete routines from JIRA')
     parser.add_argument("--jira", '-j', nargs='+',
                         help="list of jira project names in git branches")

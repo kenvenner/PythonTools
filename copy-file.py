@@ -5,15 +5,16 @@ import sys
 from attrdict import AttrDict
 from pathlib import Path, PurePath
 
+
 def create_copy_list(srcdir, destdir, mtime_diff=False, diff=False):
     cmd = 'diff' if diff else 'copy'
-    
+
     srcdir = Path(srcdir)
     destdir = Path(destdir)
 
     srcfiles = list(srcdir.glob('*.py'))
     destfiles = list(destdir.glob('*.py'))
-                    
+
     srcfilenames = [x.name for x in srcfiles]
     destfilenames = [x.name for x in destfiles]
 
@@ -33,7 +34,7 @@ def create_copy_list(srcdir, destdir, mtime_diff=False, diff=False):
                 srcfile, destfile = destfile, srcfile
 
         # generate the output command
-        
+
         print(f'{cmd} "{srcfile}" "{destfile}"')
 
 
@@ -67,11 +68,9 @@ if __name__ == '__main__':
 
     for dir in ['dest', 'src']:
         dir2chk = args[dir]
-        
+
         if not Path(dir2chk).is_dir():
             print(f'{dir} is not an existing directory: {dir2chk}')
             sys.exit(1)
 
-
     create_copy_list(args.src, args.dest, args.mtime, args.diff)
-

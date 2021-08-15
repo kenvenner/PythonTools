@@ -3,7 +3,7 @@ from __future__ import print_function
 '''
 @author:   Ken Venner
 @contact:  ken@venerllc.com
-@version:  1.57
+@version:  1.58
 
 Library of tools used in general by KV
 '''
@@ -24,7 +24,7 @@ import logging
 logger = logging.getLogger(__name__)
 
 # set the module version number
-AppVersion = '1.57'
+AppVersion = '1.58'
 
 HELP_KEYS = ('help', 'helpall')
 HELP_VALUE_TABLE = ('tbl', 'table', 'helptbl', 'fmt')
@@ -65,7 +65,7 @@ HELP_VALUE_TABLE = ('tbl', 'table', 'helptbl', 'fmt')
 #
 # optiondict = kv_parse_command_line( optiondictconfig, keymapdict=keymapdict )
 #
-## Special behavior
+# -- Special behavior
 #  help=<value>
 #
 #  will cause the system to generate a file help file when this is passed in on the command line
@@ -74,8 +74,8 @@ HELP_VALUE_TABLE = ('tbl', 'table', 'helptbl', 'fmt')
 #
 def kv_parse_command_line(optiondictconfig, raise_error=False, keymapdict=None, debug=False):
     # debug
-    if debug:  print('kv_parse_command_line:sys.argv:', sys.argv)
-    if debug:  print('kv_parse_command_line:optiondictconfig:', optiondictconfig)
+    if debug: print('kv_parse_command_line:sys.argv:', sys.argv)
+    if debug: print('kv_parse_command_line:optiondictconfig:', optiondictconfig)
     # debugging
     logger.debug('LOAD(v%s)%s', AppVersion, '-' * 40)
     logger.debug('sys.argv: %s', sys.argv)
@@ -160,7 +160,7 @@ def kv_parse_command_line(optiondictconfig, raise_error=False, keymapdict=None, 
     cmdlineargs = {}
     for argpos in range(1, len(sys.argv)):
         # check to see if they have an equal in the string
-        if not '=' in sys.argv[argpos]:
+        if '=' not in sys.argv[argpos]:
             logger.error('Command line arguements must be key=value - there is no equal:%s', sys.argv[argpos])
             raise Exception(
                 u'Command line arguements must be key=value - there is no equal:{}'.format(sys.argv[argpos]))
@@ -169,12 +169,12 @@ def kv_parse_command_line(optiondictconfig, raise_error=False, keymapdict=None, 
         (key, value) = sys.argv[argpos].split('=')
 
         # debug
-        if debug:  print('kv_parse_command_line:sys.argv[', argpos, ']:', sys.argv[argpos])
+        if debug: print('kv_parse_command_line:sys.argv[', argpos, ']:', sys.argv[argpos])
         logger.debug('sys.argv[%s]:%s', argpos, sys.argv[argpos])
 
         # skip this if the key is not populated
         if not key:
-            if debug:  print('kv_parse_command_line:key-not-populated-skipping-arg')
+            if debug: print('kv_parse_command_line:key-not-populated-skipping-arg')
             logger.debug('Key-not-populated-with-value-skipping-arg')
             continue
 
@@ -241,7 +241,7 @@ def kv_parse_command_line(optiondictconfig, raise_error=False, keymapdict=None, 
     # now that we have loaded and flattened out all file based settings
     # move these settings to the final proper destination
     for key, value in confargs.items():
-        if not key in cmdlineargs:
+        if key not in cmdlineargs:
             # this file value has no associated command line override
             # value not overridden by value on commmand line
             if isinstance(value, str):
@@ -260,7 +260,7 @@ def kv_parse_command_line(optiondictconfig, raise_error=False, keymapdict=None, 
     for key, value in cmdlineargs.items():
         # logic to bring in "default/implied optiondict values if key passed is not part of app definition
         if key not in optiondictconfig and key in defaultdictconfig:
-            if debug:  print('kv_parse_command_line:key-not-in-optiondictconfig-but-in-defaultoptiondictconfig:', key)
+            if debug: print('kv_parse_command_line:key-not-in-optiondictconfig-but-in-defaultoptiondictconfig:', key)
             logger.debug('Key-not-in-optiondictconfig-but-in-defaultoptiondictconfig:%s', key)
             # copy over this default into optiondict
             optiondictconfig[key] = defaultdictconfig[key].copy()
@@ -276,7 +276,7 @@ def kv_parse_command_line(optiondictconfig, raise_error=False, keymapdict=None, 
         if key in optiondict:
             # debug message on type
             if 'type' in optiondictconfig[key]:
-                if debug:  print('type:', optiondictconfig[key]['type'])
+                if debug: print('type:', optiondictconfig[key]['type'])
                 logger.debug('Key:%stype:%s', key, optiondictconfig[key]['type'])
 
             if 'type' not in optiondictconfig[key]:
@@ -300,13 +300,13 @@ def kv_parse_command_line(optiondictconfig, raise_error=False, keymapdict=None, 
                 optiondict[key] = datetimezone_from_str(value)
             elif optiondictconfig[key]['type'] == 'inlist':
                 # value must be from a predefined list of acceptable values
-                if not 'valid' in optiondictconfig[key]:
+                if 'valid' not in optiondictconfig[key]:
                     if debug: print('missing optiondictconfig setting [valid] for key:', key)
                     logger.error('Missing optiondictconfig setting [valid] for key:%s', key)
                     raise Exception(u'Missing optiondictconfig setting [valid] for key:{}'.format(key))
                 if value not in optiondictconfig[key]['valid']:
-                    if debug:  print('value:', value, ':not in defined list of valid values:',
-                                     optiondictconfig[key]['valid'])
+                    if debug: print('value:', value, ':not in defined list of valid values:',
+                                    optiondictconfig[key]['valid'])
                     logger.error('Invalid value passed in for [%s]:%s', key, value)
                     logger.error('List of valid values are:%s', optiondictconfig[key]['valid'])
                     raise Exception(u'Invalid value passed in for [{}]:{}'.format(key, value))
@@ -320,7 +320,7 @@ def kv_parse_command_line(optiondictconfig, raise_error=False, keymapdict=None, 
             logger.error('Unknown command line option:%s', key)
             raise Exception(u'Unknown command line option:{}'.format(key))
         else:
-            if debug:  print('kv_parse_command_line:unknown-option:', key)
+            if debug: print('kv_parse_command_line:unknown-option:', key)
             logger.warning('Unknown option:%s', key)
 
         # special processing if we are asking for help
@@ -339,7 +339,7 @@ def kv_parse_command_line(optiondictconfig, raise_error=False, keymapdict=None, 
     missingoption = []
     for key in optiondictconfig:
         if 'required' in optiondictconfig[key]:
-            if optiondictconfig[key]['required'] and optiondict[key] == None:
+            if optiondictconfig[key]['required'] and optiondict[key] is None:
                 # required field but is populated with None
                 missingoption.append('%s:required field not populated' % key)
                 optiondictconfig[key]['error'] = 'required value not populated'
@@ -358,7 +358,7 @@ def kv_parse_command_line(optiondictconfig, raise_error=False, keymapdict=None, 
         # sys.exit(1)
 
     # debug when we are done
-    if debug:  print('kv_parse_command_line:optiondict:', optiondict)
+    if debug: print('kv_parse_command_line:optiondict:', optiondict)
     logger.debug('optiondict:%s', optiondict)
 
     # check to see if we want to dump the optiondict out to a file
@@ -377,10 +377,10 @@ def kv_parse_command_line(optiondictconfig, raise_error=False, keymapdict=None, 
 
 
 # update the value of a two level deep key if it is not already set
-def set_when_not_set(dict, key1, key2, value):
-    if key1 in dict:
-        if key2 not in dict[key1]:
-            dict[key1][key2] = value
+def set_when_not_set(input_dict, key1, key2, value):
+    if key1 in input_dict:
+        if key2 not in input_dict[key1]:
+            input_dict[key1][key2] = value
             return True
     return False
 
@@ -449,7 +449,7 @@ def kv_parse_command_line_display(optiondictconfig, defaultoptions={}, optiondic
         print('| ------ | ---- | ----- | ----------- |')
 
     # define the string format for each cell in the table
-    tblFmt = ' {} |'
+    tbl_fmt = ' {} |'
 
     # step through the sorted list and display things
     for row in sorted(opt2sort):
@@ -466,7 +466,7 @@ def kv_parse_command_line_display(optiondictconfig, defaultoptions={}, optiondic
             fldout = ''
             if fld in optiondictconfig[opt]:
                 fldout = optiondictconfig[opt][fld]
-            print(tblFmt.format(fldout), end="")
+            print(tbl_fmt.format(fldout), end="")
             # output the value - may not be populated
             fld = 'value'
             fldout = ''
@@ -474,7 +474,7 @@ def kv_parse_command_line_display(optiondictconfig, defaultoptions={}, optiondic
                 fldout = optiondictconfig[opt][fld]
             if opt in optiondict and fld in optiondict[opt]:
                 fldout = optiondict[opt][fld]
-            print(tblFmt.format(fldout), end="")
+            print(tbl_fmt.format(fldout), end="")
             # output the type - may not be populated
             fld = 'description'
             fldout = ''
@@ -487,7 +487,7 @@ def kv_parse_command_line_display(optiondictconfig, defaultoptions={}, optiondic
                         fldout += '<br>'
                     fldout += 'valid:{}'.format(optiondictconfig[opt][fld])
             # output this field - but this time with a <newline>
-            print(tblFmt.format(fldout))
+            print(tbl_fmt.format(fldout))
         else:
             # linear output 
             if 'type' in optiondictconfig[opt]:
@@ -576,7 +576,7 @@ def filename_split(filename, path_blank=False):
         file_path = os.path.dirname(filename2)
     else:
         file_path = os.path.normpath(os.path.dirname(filename2))
-    return (file_path, base_filename, file_ext)
+    return file_path, base_filename, file_ext
 
 
 # function to get back a full list of broken up file path
@@ -634,50 +634,51 @@ def filename_list(filename=None, filenamelist=None, fileglob=None, strippath=Fal
 
 
 # create a full filename and optionally validate directory exists and is writeabile (UT)
-def filename_proper(filename_full, dir=None, create_dir=False, write_check=False):
+def filename_proper(filename_full, file_dir=None, create_dir=False, write_check=False, debug=False):
     filename = os.path.basename(filename_full)
-    if not dir:
-        dir = os.path.dirname(filename_full)
+    if not file_dir:
+        file_dir = os.path.dirname(filename_full)
 
     # if there is no directory then make it the current directory
-    if not dir:
-        dir = './'
+    if not file_dir:
+        file_dir = './'
 
-    # wondering if we need to extract directory and compare if set (future feature) - and if they are different - what action should we take?
+    # wondering if we need to extract directory and compare if set (future feature)
+    # and if they are different - what action should we take?
 
     # check the directory and determine if we need it to be created
-    if not os.path.exists(dir):
+    if not os.path.exists(file_dir):
         # directory needs to be created
         if create_dir:
             # needs to be created and we have enabled this option
             try:
-                os.makedirs(dir)
+                os.makedirs(file_dir)
             except Exception as e:
                 if debug: print('kvutil:filename_proper:makedirs:%s' % e)
                 logger.error('makedirs:%s' % e)
                 raise Exception(u'kvutil:filename_proper:makedirs:{}'.format(e))
         else:
             # needs to be created - option not enabled - raise an error
-            if debug: print('kvutil:filename_proper:directory does not exist:%s' % dir)
-            logger.error('Directory does not exist:%s', dir)
-            raise Exception(u'kvutil:filename_proper:directory does not exist:{}'.format(dir))
+            if debug: print('kvutil:filename_proper:directory does not exist:%s' % file_dir)
+            logger.error('Directory does not exist:%s', file_dir)
+            raise Exception(u'kvutil:filename_proper:directory does not exist:{}'.format(file_dir))
 
     # check to see if the directory is writeable if the flag is set
     if write_check:
-        if not os.access(dir, os.W_OK):
-            if debug: print('kvutil:filename_proper:directory is not writeable:%s' % dir)
-            logger.error('Directory is not writeable:%s', dir)
-            raise Exception(u'kvutil:filename_proper:directory is not writeable:{}'.format(dir))
+        if not os.access(file_dir, os.W_OK):
+            if debug: print('kvutil:filename_proper:directory is not writeable:%s' % file_dir)
+            logger.error('Directory is not writeable:%s', file_dir)
+            raise Exception(u'kvutil:filename_proper:directory is not writeable:{}'.format(file_dir))
 
     # build a full filename
-    full_filename = os.path.join(dir, filename)
+    full_filename = os.path.join(file_dir, filename)
 
     # return the calculated filename
     return os.path.normpath(full_filename)
 
 
 # create a unique filename
-def filename_unique(filename=None, filename_href={}):
+def filename_unique(filename=None, filename_href={}, debug=False):
     # check input
     if isinstance(filename, dict):
         filename_href = filename
@@ -749,7 +750,7 @@ def filename_unique(filename=None, filename_href={}):
 
     # check to see if we have and field issues
     if field_issues:
-        if debug:  print('kvutil:filename_unique:missing values for: {}'.format(','.join(field_issues)))
+        if debug: print('kvutil:filename_unique:missing values for: {}'.format(','.join(field_issues)))
         logger.error('Missing values for:%s', ','.join(field_issues))
         raise Exception(u'kvutil:filename_unique:missing values for: {}'.format(','.join(field_issues)))
 
@@ -818,7 +819,7 @@ def filename_unique(filename=None, filename_href={}):
     # print('file_unique:filename:final:', filename)
 
     # return the final filename
-    return filename_proper(filename, dir=default_options['file_path'])
+    return filename_proper(filename, file_dir=default_options['file_path'])
 
 
 # , \
@@ -828,9 +829,9 @@ def filename_unique(filename=None, filename_href={}):
 # cloudpath - create an absolute path to a folder that is local for cloud drive
 def cloudpath(filepath, filename=''):
     userdir = ''
-    if filepath == None:
+    if filepath is None:
         filepath = ''
-    if filename == None:
+    if filename is None:
         filename = ''
     # determine if the path is a cloud path
     for cloudprovider in ('Box Sync', 'Dropbox', 'OneDrive'):
@@ -943,9 +944,9 @@ def remove_dir(dirname, calledfrom='', debug=False, maxretry=20):
             logger.warning('Catch WinError:%s', str(f))
 
 
-### Date Time Functions ####
+# -- Date Time Functions -- #
 
-### TODO - pull out to a different package ####
+# TODO - pull out to a different package
 
 def current_timezone_string():
     now = datetime.datetime.now()
@@ -957,7 +958,7 @@ def current_timezone_string():
 
 def datetime2utcdatetime(dt, default_tz=None, no_tz=False):
     # define it because it was not passed in
-    if default_tz == None:
+    if default_tz is None:
         default_tz = tz.gettz()
     else:
         default_tz = tz.gettz(default_tz)
@@ -1070,7 +1071,7 @@ def show_timezones(sublist=None, debug=False):
     elif sublist.upper() in ('US', 'USA'):
         display_zonenames = [x for x in sorted_zonenames if x.startswith('US/')]
     elif sublist.upper() in ('SHORT', 'ABBR'):
-        display_zonenames = [x for x in sorted_zonenames if not '/' in x]
+        display_zonenames = [x for x in sorted_zonenames if '/' not in x]
     else:
         display_zonenames = sorted_zonenames
 
@@ -1079,8 +1080,8 @@ def show_timezones(sublist=None, debug=False):
         print(tzname)
 
 
-### END Date Time Functions ####
-### TODO End ###
+# -- END Date Time Functions -- #
+# TODO End
 
 
 # return the function name of the function that called this
@@ -1102,7 +1103,7 @@ def loggingAppStart(logger, optiondict, pgm=None):
 
 
 def scriptinfo():
-    '''
+    """
     Returns a dictionary with information about the running top level Python
     script:
     ---------------------------------------------------------------------------
@@ -1114,9 +1115,12 @@ def scriptinfo():
     When running code compiled by py2exe or cx_freeze, "source" contains
     the name of the originating Python script.
     If compiled by PyInstaller, "source" contains no meaningful information.
-    '''
+    """
 
-    import os, sys, inspect
+    import os
+    import sys
+    import inspect
+
     # ---------------------------------------------------------------------------
     # scan through call stack for caller information
     # ---------------------------------------------------------------------------
