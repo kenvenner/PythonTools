@@ -3,7 +3,7 @@ from __future__ import print_function
 '''
 @author:   Ken Venner
 @contact:  ken@venerllc.com
-@version:  1.56
+@version:  1.57
 
 Library of tools used in general by KV
 '''
@@ -11,7 +11,7 @@ Library of tools used in general by KV
 import glob
 import os
 import datetime
-from dateutil import tz
+# from dateutil import tz
 from dateutil.zoneinfo import get_zonefile_instance
 import sys
 import errno
@@ -24,7 +24,10 @@ import logging
 logger = logging.getLogger(__name__)
 
 # set the module version number
-AppVersion = '1.56'
+AppVersion = '1.57'
+
+HELP_KEYS = ('help', 'helpall')
+HELP_VALUE_TABLE = ('tbl', 'table', 'helptbl', 'fmt')
 
 
 # import ast
@@ -148,7 +151,7 @@ def kv_parse_command_line(optiondictconfig, raise_error=False, keymapdict=None, 
             # the user specified a value value
             optiondict[key] = optiondictconfig[key]['value']
             # debugging
-            logger.debug('assigning [%s] value from optiondictconfig:%s', key, optiondict[key])
+            logger.debug('Assigning [%s] value from optiondictconfig:%s', key, optiondict[key])
         else:
             # no value option - set to None
             optiondict[key] = None
@@ -158,8 +161,9 @@ def kv_parse_command_line(optiondictconfig, raise_error=False, keymapdict=None, 
     for argpos in range(1, len(sys.argv)):
         # check to see if they have an equal in the string
         if not '=' in sys.argv[argpos]:
-            logger.error('command line arguements must be key=value - there is no equal:%s', sys.argv[argpos])
-            raise Exception(u'command line arguements must be key=value - there is no equal:{}'.format(sys.argv[argpos]))
+            logger.error('Command line arguements must be key=value - there is no equal:%s', sys.argv[argpos])
+            raise Exception(
+                u'Command line arguements must be key=value - there is no equal:{}'.format(sys.argv[argpos]))
 
         # get the argument and split it into key and value
         (key, value) = sys.argv[argpos].split('=')
@@ -171,13 +175,13 @@ def kv_parse_command_line(optiondictconfig, raise_error=False, keymapdict=None, 
         # skip this if the key is not populated
         if not key:
             if debug:  print('kv_parse_command_line:key-not-populated-skipping-arg')
-            logger.debug('key-not-populated-with-value-skipping-arg')
+            logger.debug('Key-not-populated-with-value-skipping-arg')
             continue
 
         # check to see if we should use the keymapping
         if keymapdict:
             if key in keymapdict and key not in optiondict and key not in defaultdictconfig:
-                logger.debug('remapping:%s:to:%s', key, keymapdict[key])
+                logger.debug('Remapping:%s:to:%s', key, keymapdict[key])
                 key = keymapdict[key]
 
         # put this into cmdlineargs dictionary
@@ -188,7 +192,7 @@ def kv_parse_command_line(optiondictconfig, raise_error=False, keymapdict=None, 
     if 'conf_json' in cmdlineargs:
         # config files defined in the command line
         conf_json_files = cmdlineargs['conf_json'].split(',')
-        logger.debug('config files defined on command line:%s', conf_json_files)
+        logger.debug('Config files defined on command line:%s', conf_json_files)
     elif 'conf_json' in optiondict and optiondict['conf_json']:
         # value passed in via optiondictconfig
         if isinstance(optiondict['conf_json'], list):
@@ -200,7 +204,7 @@ def kv_parse_command_line(optiondictconfig, raise_error=False, keymapdict=None, 
             logger.warning('conf_json entered as a string vs list - format converted')
             conf_json_files = [optiondict['conf_json']]
             optiondict['conf_json'] = conf_json_files
-        logger.debug('config files defined on optiondictconfig:%s', conf_json_files)
+        logger.debug('Config files defined on optiondictconfig:%s', conf_json_files)
 
     # step through all the configuration files reading in the settings
     # and flatten them out into a final configuratin file based dictionary
@@ -217,9 +221,9 @@ def kv_parse_command_line(optiondictconfig, raise_error=False, keymapdict=None, 
         else:
             if ('conf_mustload' in optiondict and optiondict['conf_mustload']) or (
                     'conf_mustload' in cmdlineargs and cmdlineargs['conf_mustload']):
-                raise Exception(u'missing config file: {}'.format(conf_json_file))
+                raise Exception(u'Missing config file: {}'.format(conf_json_file))
             else:
-                logger.warning('skipped missing config file:%s', conf_json_file)
+                logger.warning('Skipped missing config file:%s', conf_json_file)
     if conf_files_read:
         # populate the list of config files with the actual files read in
         optiondict['conf_json'] = conf_files_read
@@ -257,7 +261,7 @@ def kv_parse_command_line(optiondictconfig, raise_error=False, keymapdict=None, 
         # logic to bring in "default/implied optiondict values if key passed is not part of app definition
         if key not in optiondictconfig and key in defaultdictconfig:
             if debug:  print('kv_parse_command_line:key-not-in-optiondictconfig-but-in-defaultoptiondictconfig:', key)
-            logger.debug('key-not-in-optiondictconfig-but-in-defaultoptiondictconfig:%s', key)
+            logger.debug('Key-not-in-optiondictconfig-but-in-defaultoptiondictconfig:%s', key)
             # copy over this default into optiondict
             optiondictconfig[key] = defaultdictconfig[key].copy()
             # tag the defaultdictconfig that we used this key
@@ -273,13 +277,13 @@ def kv_parse_command_line(optiondictconfig, raise_error=False, keymapdict=None, 
             # debug message on type
             if 'type' in optiondictconfig[key]:
                 if debug:  print('type:', optiondictconfig[key]['type'])
-                logger.debug('key:%stype:%s', key, optiondictconfig[key]['type'])
+                logger.debug('Key:%stype:%s', key, optiondictconfig[key]['type'])
 
             if 'type' not in optiondictconfig[key]:
                 # user did not specify the type of this option
                 optiondict[key] = value
                 if debug: print('type not in optiondictconfig[key]')
-                logger.debug('type not in optiondictconfig[key] for key:%s', key)
+                logger.debug('Type not in optiondictconfig[key] for key:%s', key)
             elif optiondictconfig[key]['type'] == 'bool':
                 optiondict[key] = bool(strtobool(value))
             elif optiondictconfig[key]['type'] == 'int':
@@ -298,32 +302,32 @@ def kv_parse_command_line(optiondictconfig, raise_error=False, keymapdict=None, 
                 # value must be from a predefined list of acceptable values
                 if not 'valid' in optiondictconfig[key]:
                     if debug: print('missing optiondictconfig setting [valid] for key:', key)
-                    logger.error('missing optiondictconfig setting [valid] for key:%s', key)
-                    raise Exception(u'missing optiondictconfig setting [valid] for key:{}'.format(key))
+                    logger.error('Missing optiondictconfig setting [valid] for key:%s', key)
+                    raise Exception(u'Missing optiondictconfig setting [valid] for key:{}'.format(key))
                 if value not in optiondictconfig[key]['valid']:
                     if debug:  print('value:', value, ':not in defined list of valid values:',
                                      optiondictconfig[key]['valid'])
-                    logger.error('invalid value passed in for [%s]:%s', key, value)
-                    logger.error('list of valid values are:%s', optiondictconfig[key]['valid'])
-                    raise Exception(u'invalid value passed in for [{}]:{}'.format(key, value))
+                    logger.error('Invalid value passed in for [%s]:%s', key, value)
+                    logger.error('List of valid values are:%s', optiondictconfig[key]['valid'])
+                    raise Exception(u'Invalid value passed in for [{}]:{}'.format(key, value))
                 optiondict[key] = value
             else:
                 # user set a type but we don't know what to do with this type
                 optiondict[key] = value
                 if debug: print('type not known:', type)
-                logger.debug('type unknown:%s', type)
+                logger.debug('Type unknown:%s', type)
         elif raise_error:
-            logger.error('unknown command line option:%s', key)
-            raise Exception(u'unknown command line option:{}'.format(key))
+            logger.error('Unknown command line option:%s', key)
+            raise Exception(u'Unknown command line option:{}'.format(key))
         else:
             if debug:  print('kv_parse_command_line:unknown-option:', key)
-            logger.warning('unknown option:%s', key)
+            logger.warning('Unknown option:%s', key)
 
         # special processing if we are asking for help
-        if key in ('help', 'helpall'):
+        if key in HELP_KEYS:
             # user asked for help - display help and then exit
             tblfmt = False
-            if value in ('tbl', 'table', 'helptbl', 'fmt'):
+            if value in HELP_VALUE_TABLE:
                 tblfmt = True
             # determine if we are also display the additional options
             defaultoptions = {}
@@ -526,9 +530,9 @@ def filename_maxmin(file_glob, reverse=False):
     logger.debug('filelist:%s', filelist)
     # if we got no files - return none
     if not filelist:
-        logger.debug('return none')
+        logger.debug('Return none')
         return None
-    logger.debug('file:%s', sorted(filelist, reverse=reverse)[0])
+    logger.debug('File:%s', sorted(filelist, reverse=reverse)[0])
     # sort this list - and return the desired value
     return sorted(filelist, reverse=reverse)[0]
 
@@ -655,14 +659,14 @@ def filename_proper(filename_full, dir=None, create_dir=False, write_check=False
         else:
             # needs to be created - option not enabled - raise an error
             if debug: print('kvutil:filename_proper:directory does not exist:%s' % dir)
-            logger.error('directory does not exist:%s', dir)
+            logger.error('Directory does not exist:%s', dir)
             raise Exception(u'kvutil:filename_proper:directory does not exist:{}'.format(dir))
 
     # check to see if the directory is writeable if the flag is set
     if write_check:
         if not os.access(dir, os.W_OK):
             if debug: print('kvutil:filename_proper:directory is not writeable:%s' % dir)
-            logger.error('directory is not writeable:%s', dir)
+            logger.error('Directory is not writeable:%s', dir)
             raise Exception(u'kvutil:filename_proper:directory is not writeable:{}'.format(dir))
 
     # build a full filename
@@ -746,7 +750,7 @@ def filename_unique(filename=None, filename_href={}):
     # check to see if we have and field issues
     if field_issues:
         if debug:  print('kvutil:filename_unique:missing values for: {}'.format(','.join(field_issues)))
-        logger.error('missing values for:%s', ','.join(field_issues))
+        logger.error('Missing values for:%s', ','.join(field_issues))
         raise Exception(u'kvutil:filename_unique:missing values for: {}'.format(','.join(field_issues)))
 
     # check that we have valid values
@@ -757,7 +761,7 @@ def filename_unique(filename=None, filename_href={}):
     # check to see if we have and field issues
     if field_issues:
         if debug: print('kvutil:filename_unique:invalid values for: {}'.format(','.join(field_issues)))
-        logger.error('invalid values for:%s', ','.join(field_issues))
+        logger.error('Invalid values for:%s', ','.join(field_issues))
         raise Exception(u'kvutil:filename_unique:invalid values for: {}'.format(','.join(field_issues)))
 
     # create a filename if it does not exist
@@ -806,8 +810,9 @@ def filename_unique(filename=None, filename_href={}):
         # test to see if we exceeded the max count and if so error out.
         if unique_counter >= default_options['maxcnt']:
             if debug: print('kvutil:filename_unique:reached maximum count and not unique filename:', filename)
-            logger.error('reached maximum count and not unique filename:%d:%s', unique_counter, filename)
-            raise Exception(u'kvutil:filename_unique:reached maximum count and not unique filename: {}'.format(filename))
+            logger.error('Reached maximum count and not unique filename:%d:%s', unique_counter, filename)
+            raise Exception(
+                u'kvutil:filename_unique:reached maximum count and not unique filename: {}'.format(filename))
 
     # debugging
     # print('file_unique:filename:final:', filename)
@@ -879,7 +884,7 @@ def read_list_from_file_lines(filename, stripblank=False, trim=False, encoding=N
 #    maxretry - int - number of times we try to delete and then give up (default: 20)
 #
 def remove_filename(filename, calledfrom='', debug=False, maxretry=20):
-    logger.debug('remove:%s:calledfrom:%s:maxretry:%d', filename, calledfrom, maxretry)
+    logger.debug('Remove:%s:calledfrom:%s:maxretry:%d', filename, calledfrom, maxretry)
     cnt = 0
     if calledfrom:  calledfrom += ':'
     while os.path.exists(filename):
@@ -900,8 +905,8 @@ def remove_filename(filename, calledfrom='', debug=False, maxretry=20):
                 logger.error('%s:%s:exceeded maxretry attempts:%d:raise error', calledfrom, filename, maxretry)
                 raise e
         except WinError as f:
-            if debug: print('catch WinError:', str(f))
-            logger.warning('catch WinError:%s', str(f))
+            if debug: print('Catch WinError:', str(f))
+            logger.warning('Catch WinError:%s', str(f))
 
 
 # utility used to remove a folder - in windows sometimes we have a delay
@@ -934,8 +939,8 @@ def remove_dir(dirname, calledfrom='', debug=False, maxretry=20):
                 logger.error('%s:%s:maxretry attempts:%d', calledfrom, dirname, maxretry)
                 raise e
         except WinError as f:
-            if debug: print('catch WinError:', str(f))
-            logger.warning('catch WinError:%s', str(f))
+            if debug: print('Catch WinError:', str(f))
+            logger.warning('Catch WinError:%s', str(f))
 
 
 ### Date Time Functions ####
@@ -1060,9 +1065,7 @@ def show_timezones(sublist=None, debug=False):
     sorted_zonenames = sorted(list(get_zonefile_instance().zones))
     sections = set([x.split('/')[0] for x in sorted_zonenames if '/' in x])
 
-    if sublist is None:
-        display_zonenames = sorted_zonenames
-    elif sublist.capitalize() in sections:
+    if sublist.capitalize() in sections:
         display_zonenames = [x for x in sorted_zonenames if x.startswith(str(sublist.capitalize()) + '/')]
     elif sublist.upper() in ('US', 'USA'):
         display_zonenames = [x for x in sorted_zonenames if x.startswith('US/')]
@@ -1153,6 +1156,7 @@ def load_json_file_to_dict(filename):
     with open(filename, 'r') as json_in:
         json_dict = json.load(json_in)
     return json_dict
+
 
 # utility used to dump a dictionary to a file in json format
 def dump_dict_to_json_file(filename, optiondict):

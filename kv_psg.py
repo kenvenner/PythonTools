@@ -1,4 +1,4 @@
-__version__ = '1.07'
+__version__ = '1.08'
 
 import PySimpleGUI as sg
 import os
@@ -360,16 +360,16 @@ def create_settings_window(settings, values_key_2_settings_key, app_version):
     def TextInput(text, key=None):
         if key is None:
             key = f"-{text.upper()}-"
-        return [TextLabel(text), sg.Input(key=key, size=(70,1))]
+        return [TextLabel(text), sg.Input(key=key, size=(70, 1))]
 
     layout = [[sg.Text('Settings', font='Any 15')],
               TextInput('Token'),
               TextInput('URL'),
-              [TextLabel('Log Folder'), sg.Input(key='-LOG_PATH-', size=(62,1)), sg.FolderBrowse(target='-LOG_PATH-')],
+              [TextLabel('Log Folder'), sg.Input(key='-LOG_PATH-', size=(62, 1)), sg.FolderBrowse(target='-LOG_PATH-')],
               [TextLabel('Log to console:'), sg.Checkbox('', default=False, key='-LOG_CONSOLE-')],
               [TextLabel('Log to file:'), sg.Checkbox('', default=True, key='-LOG_FILE-')],
               [TextLabel('Application version'), sg.Text(app_version)],
-              [TextLabel('Settings file'), sg.Input(key='-SETTINGS_FILE-', size=(70,1))],
+              [TextLabel('Settings file'), sg.Input(key='-SETTINGS_FILE-', size=(70, 1))],
               [sg.Button('Save'), sg.Button('Exit'),
                sg.Input(key='-SAVE_AS-', visible=False, enable_events=True),
                sg.FileSaveAs('SaveAs', key='-SAVE_AS-', file_types=(('Cfg', '*.json'),),
@@ -429,14 +429,14 @@ def process_change_settings(vargs, settings, v2s, parent, debug=False):
                     # the entered parent is not a dir - so we need to skip
                     window['-SETTINGS_FILE-'].update(value=settings['settings_file'])
                     window.Refresh()
-                    sg.popup('Improper path to file settings', 'Correct or try using the SaveAs button', 'Data not saved')
+                    sg.popup('Improper path to file settings', 'Correct or try using the SaveAs button',
+                             'Data not saved')
                     continue
-                
+
                 # valid file capture value and continue on
                 settings['settings_file'] = values['-SETTINGS_FILE-']
                 # capture the filename from the save as
                 settings_file = values['-SETTINGS_FILE-']
-                
 
             # save screen data to file
             save_settings(settings_file, settings, values, v2s)
