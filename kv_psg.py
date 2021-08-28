@@ -1,4 +1,4 @@
-__version__ = '1.09'
+__version__ = '1.10'
 
 import PySimpleGUI as sg
 import os
@@ -147,7 +147,12 @@ def output_logger_console_window(window, called_function, *args):
 
     """
     # call the function and allow its logging data to be output to the GUI window
-    result = called_function(*args)
+    error = None
+    try:
+        result = called_function(*args)
+    except Exception as e:
+        error = e
+
     # when done - enable the done button so we can now click it
     window.find_element('Done').Update(disabled=False)
     # put out the final logging message
@@ -167,6 +172,62 @@ def output_logger_console_window(window, called_function, *args):
 
     # return back what came back from the function call
     return result
+
+
+# right in and start execution and then only need the Done button
+def output_logger_console_window_with_err_handler(window, called_function, *args):
+    """
+    function to cause logger output from "called_function" to be output to GUI window
+
+    this function is called instead of calling the console based function
+    and you pass in function name and argument list of hte function you would have called as 
+    the console function
+
+    when done - we clean up and close out the console GUI window
+
+    example:
+    if vargs.gui:
+         logger_window = kv_psg.setup_logger_console_window()
+         call_some_intermediate_function()
+         kv_psg.output_logger_console_window(logger_window, validate_input_and_exit_early, req_flds, vargs)
+    else:
+         validate_input_and_exit_early(req_flds, vargs)
+
+
+    called as:  kv_psg.output_logger_console_window(vargs['window'], function, function_args)
+
+    :params window: (PySimpleGui.Window)
+    :params called_function:  (function ref)
+    :params *args: (arguments list) to called_function
+
+    """
+    # call the function and allow its logging data to be output to the GUI window
+    error = None
+    try:
+        result = called_function(*args)
+    except Exception as e:
+        error = e
+        logging.info(e)
+
+    # when done - enable the done button so we can now click it
+    window.find_element('Done').Update(disabled=False)
+    # put out the final logging message
+    logging.info('Finished...press the Done Button...')
+
+    # then drop into the event loop to capture the Done button
+    while True:
+        event, values = window.read()
+        if event == sg.WIN_CLOSED or event == 'Exit' or event == 'Done':
+            break
+
+    # close the window that displayed this work
+    window.close()
+
+    # now remove the last added handler
+    logging.getLogger().handlers.pop()
+
+    # return back what came back from the function call
+    return error
 
 
 # ************  GUI based logger output *******************
@@ -249,6 +310,11 @@ def load_settings(settings_file, default_settings, values_key_2_settings_key):
         settings['settings_file'] = str(settings_file)
         save_settings(settings_file, settings, None, values_key_2_settings_key)
 
+    # fill in missing default values
+    for k, v in default_settings.items():
+        if k not in settings:
+            settings[k] = v
+
     return settings
 
 
@@ -319,6 +385,7 @@ def save_settings(settings_file, settings, values, values_key_2_settings_key):
         sg.popup_quick_message(f'\nFailed to create settings_file:\n{settings_file}\nError:{e}\n', keep_on_top=True,
                                background_color='red', text_color='white')
 
+
 # ***************** Make a settings window ***********************
 def update_windows_values(window, settings, values_key_2_settings_key):
     # update window with the values read from settings file
@@ -364,16 +431,16 @@ def create_settings_window(settings, values_key_2_settings_key, app_version):
     def TextInput(text, key=None):
         if key is None:
             key = f"-{text.upper()}-"
-        return [TextLabel(text), sg.Input(key=key, size=(70,1))]
+        return [TextLabel(text), sg.Input(key=key, size=(70, 1))]
 
     layout = [[sg.Text('Settings', font='Any 15')],
               TextInput('Token'),
               TextInput('URL'),
-              [TextLabel('Log Folder'), sg.Input(key='-LOG_PATH-', size=(62,1)), sg.FolderBrowse(target='-LOG_PATH-')],
+              [TextLabel('Log Folder'), sg.Input(key='-LOG_PATH-', size=(62, 1)), sg.FolderBrowse(target='-LOG_PATH-')],
               [TextLabel('Log to console:'), sg.Checkbox('', default=False, key='-LOG_CONSOLE-')],
               [TextLabel('Log to file:'), sg.Checkbox('', default=True, key='-LOG_FILE-')],
               [TextLabel('Application version'), sg.Text(app_version)],
-              [TextLabel('Settings file'), sg.Input(key='-SETTINGS_FILE-', size=(70,1))],
+              [TextLabel('Settings file'), sg.Input(key='-SETTINGS_FILE-', size=(70, 1))],
               [sg.Button('Save'), sg.Button('Exit'),
                sg.Input(key='-SAVE_AS-', visible=False, enable_events=True),
                sg.FileSaveAs('SaveAs', key='-SAVE_AS-', file_types=(('Cfg', '*.json'),),
@@ -433,14 +500,14 @@ def process_change_settings(vargs, settings, v2s, parent, debug=False):
                     # the entered parent is not a dir - so we need to skip
                     window['-SETTINGS_FILE-'].update(value=settings['settings_file'])
                     window.Refresh()
-                    sg.popup('Improper path to file settings', 'Correct or try using the SaveAs button', 'Data not saved')
+                    sg.popup('Improper path to file settings', 'Correct or try using the SaveAs button',
+                             'Data not saved')
                     continue
-                
+
                 # valid file capture value and continue on
                 settings['settings_file'] = values['-SETTINGS_FILE-']
                 # capture the filename from the save as
                 settings_file = values['-SETTINGS_FILE-']
-                
 
             # save screen data to file
             save_settings(settings_file, settings, values, v2s)
