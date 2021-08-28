@@ -1,4 +1,4 @@
-__version__ = '1.02'
+__version__ = '1.03'
 
 import pandas
 import os
@@ -18,7 +18,7 @@ logger = logging.getLogger(__name__)
 
 # Columns output in the ts listing
 TS_DUMP_RAW_COLS = ['ts_name',
-                    'mount_id', 'share_guid',
+                    'mount_id', 'share_guid', 'is_owner',
                     'created', 'last_modified', 'expires_at',
                     'category', 'type',
                     'is_single_file', 'is_offline',
