@@ -1,4 +1,4 @@
-__version__ = '1.08'
+__version__ = '1.09'
 
 import PySimpleGUI as sg
 import os
@@ -245,7 +245,8 @@ def load_settings(settings_file, default_settings, values_key_2_settings_key):
                                background_color='red', text_color='white')
         settings = default_settings
         settings['cfg_folder'] = os.path.dirname(settings_file)
-        settings['settings_file'] = settings_file
+        # make this a str not a WindowsPath in order to make it JSON able
+        settings['settings_file'] = str(settings_file)
         save_settings(settings_file, settings, None, values_key_2_settings_key)
 
     return settings
@@ -309,11 +310,14 @@ def save_settings(settings_file, settings, values, values_key_2_settings_key):
     update_settings(settings, values, values_key_2_settings_key)
 
     # save the settings values out to the file
-    with open(settings_file, 'w') as f:
-        json.dump(settings, f)
+    try:
+        with open(settings_file, 'w') as f:
+            json.dump(settings, f)
 
-    sg.popup('Settings saved at:\n' + settings_file)
-
+            sg.popup('Settings saved at:\n' + settings_file)
+    except Exception as e:
+        sg.popup_quick_message(f'\nFailed to create settings_file:\n{settings_file}\nError:{e}\n', keep_on_top=True,
+                               background_color='red', text_color='white')
 
 # ***************** Make a settings window ***********************
 def update_windows_values(window, settings, values_key_2_settings_key):
@@ -360,16 +364,16 @@ def create_settings_window(settings, values_key_2_settings_key, app_version):
     def TextInput(text, key=None):
         if key is None:
             key = f"-{text.upper()}-"
-        return [TextLabel(text), sg.Input(key=key, size=(70, 1))]
+        return [TextLabel(text), sg.Input(key=key, size=(70,1))]
 
     layout = [[sg.Text('Settings', font='Any 15')],
               TextInput('Token'),
               TextInput('URL'),
-              [TextLabel('Log Folder'), sg.Input(key='-LOG_PATH-', size=(62, 1)), sg.FolderBrowse(target='-LOG_PATH-')],
+              [TextLabel('Log Folder'), sg.Input(key='-LOG_PATH-', size=(62,1)), sg.FolderBrowse(target='-LOG_PATH-')],
               [TextLabel('Log to console:'), sg.Checkbox('', default=False, key='-LOG_CONSOLE-')],
               [TextLabel('Log to file:'), sg.Checkbox('', default=True, key='-LOG_FILE-')],
               [TextLabel('Application version'), sg.Text(app_version)],
-              [TextLabel('Settings file'), sg.Input(key='-SETTINGS_FILE-', size=(70, 1))],
+              [TextLabel('Settings file'), sg.Input(key='-SETTINGS_FILE-', size=(70,1))],
               [sg.Button('Save'), sg.Button('Exit'),
                sg.Input(key='-SAVE_AS-', visible=False, enable_events=True),
                sg.FileSaveAs('SaveAs', key='-SAVE_AS-', file_types=(('Cfg', '*.json'),),
@@ -429,14 +433,14 @@ def process_change_settings(vargs, settings, v2s, parent, debug=False):
                     # the entered parent is not a dir - so we need to skip
                     window['-SETTINGS_FILE-'].update(value=settings['settings_file'])
                     window.Refresh()
-                    sg.popup('Improper path to file settings', 'Correct or try using the SaveAs button',
-                             'Data not saved')
+                    sg.popup('Improper path to file settings', 'Correct or try using the SaveAs button', 'Data not saved')
                     continue
-
+                
                 # valid file capture value and continue on
                 settings['settings_file'] = values['-SETTINGS_FILE-']
                 # capture the filename from the save as
                 settings_file = values['-SETTINGS_FILE-']
+                
 
             # save screen data to file
             save_settings(settings_file, settings, values, v2s)
