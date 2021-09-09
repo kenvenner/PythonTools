@@ -47,6 +47,32 @@ def create_copy_list(srcdir, destdir, mtime_diff=False, diff=False, no_diff_chk=
             if not result_ascii:
                 continue
 
+        # now inspect the file to see if there is a version number in the file
+        with open(srcfile, 'r') as t:
+            filelines = t.readlines()
+
+            src_version_lines = [x.strip('\n') for x in filelines if '__version__' in x or 'AppVersion' in x]
+            
+        with open(destfile, 'r') as t:
+            filelines = t.readlines()
+
+            dest_version_lines = [x.strip('\n') for x in filelines if '__version__' in x or 'AppVersion' in x]
+
+        if False:
+            print('src_version_lines:', src_version_lines)
+            print('dest_version_lines:', dest_version_lines)
+
+        if src_version_lines and dest_version_lines:
+            if dest_version_lines[0] > src_version_lines[0]:
+                if False:
+                    print('swapped order:')
+                    print(srcfile)
+                    print(destfile)
+                    print(src_version_lines[0])
+                    print(dest_version_lines[0])
+
+                destfile, srcfile = srcfile, destfile
+
         # generate the output command
         print(f'{cmd} "{srcfile}" "{destfile}"')
 

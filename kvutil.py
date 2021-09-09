@@ -3,7 +3,7 @@ from __future__ import print_function
 '''
 @author:   Ken Venner
 @contact:  ken@venerllc.com
-@version:  1.58
+@version:  1.59
 
 Library of tools used in general by KV
 '''
@@ -11,7 +11,7 @@ Library of tools used in general by KV
 import glob
 import os
 import datetime
-# from dateutil import tz
+from dateutil import tz
 from dateutil.zoneinfo import get_zonefile_instance
 import sys
 import errno
@@ -24,7 +24,7 @@ import logging
 logger = logging.getLogger(__name__)
 
 # set the module version number
-AppVersion = '1.58'
+AppVersion = '1.59'
 
 HELP_KEYS = ('help', 'helpall')
 HELP_VALUE_TABLE = ('tbl', 'table', 'helptbl', 'fmt')

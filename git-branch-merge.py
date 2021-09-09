@@ -1,4 +1,4 @@
-__version__ = '1.01'
+__version__ = '1.03'
 
 import argparse
 import sys
@@ -17,7 +17,6 @@ then go to each of the other branches - and merge them with the desired branch
 push any updates back to the remote repository
 """
 
-
 def list_git_branches():
     """
     run the command to get the local list of git branches
@@ -28,7 +27,6 @@ def list_git_branches():
     output = subprocess.check_output(git_branch_cmd)
 
     return output.decode('ascii').split('\n')
-
 
 def filter_to_skip_branches(git_branches, skip_branches=None):
     """
@@ -55,7 +53,7 @@ def filter_to_skip_branches(git_branches, skip_branches=None):
             continue
         filtered_branches.append(branch)
     return filtered_branches
-
+    
 
 def git_branch_merge_command(git_branches, merge_branch=None):
     """
@@ -65,26 +63,42 @@ def git_branch_merge_command(git_branches, merge_branch=None):
     :params merge_branch: (string) - the branch we consider as the branch we puill to and then merge from
 
     """
-
+    
     if merge_branch is None:
         merge_branch = 'master'
-
+    print('@ECHO ON')
+    print(f'echo Pull from git {merge_branch}')
     print(f'git checkout {merge_branch}')
     print('git pull')
-
+    print('@ECHO OFF')
+    print('REM')
+    
     for line in git_branches:
         lstrip = line.strip()
         if lstrip.startswith('* '):
             lstrip = lstrip[2:]
+        print(f'echo Updating branch {lstrip}')
+        print('@ECHO ON')
         print(f'git checkout {lstrip}')
         print(f'git merge {merge_branch}')
+        print('@ECHO OFF')
+        print("""if %ERRORLEVEL% == 1 (
+    echo .
+    echo Git Merge had issues - please clean up and rerun
+    goto merge_issue
+)""")
+        print('@ECHO ON')
         print('git push')
-
+        
     print(f'git checkout {merge_branch}')
-
-
+    print('@ECHO OFF')
+    print('goto exit')
+    print(f':merge_issue')
+    print(f'echo Merge issues need to be cleaned up')
+    print(f':exit')
 # ---------------------------------------------------------------------------
 if __name__ == '__main__':
+
     parser = argparse.ArgumentParser(description='Git merge branches')
     parser.add_argument("--skip", '-s', nargs='+',
                         help="list of project names to skip merge in git branches")
