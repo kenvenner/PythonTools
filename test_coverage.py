@@ -1,4 +1,4 @@
-__version__ = '1.03'
+__version__ = '1.04'
 
 import argparse
 import sys
@@ -109,7 +109,7 @@ def parse_function_names(function_name_list):
                 func_test[func_name]['cnt'] += 1
                 func_test[func_name]['line'] = line
                 func_test[func_name]['idx'] = idx
-                func_test[func_name]['prior'] = prior_funct
+                func_test[func_name]['prior'] = prior_func
             else:
                 # first time seen
                 func_test[func_name] = {
