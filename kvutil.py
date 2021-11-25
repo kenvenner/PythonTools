@@ -3,7 +3,7 @@ from __future__ import print_function
 '''
 @author:   Ken Venner
 @contact:  ken@venerllc.com
-@version:  1.59
+@version:  1.60
 
 Library of tools used in general by KV
 '''
@@ -24,7 +24,7 @@ import logging
 logger = logging.getLogger(__name__)
 
 # set the module version number
-AppVersion = '1.59'
+AppVersion = '1.60'
 
 HELP_KEYS = ('help', 'helpall')
 HELP_VALUE_TABLE = ('tbl', 'table', 'helptbl', 'fmt')
@@ -36,7 +36,7 @@ HELP_VALUE_TABLE = ('tbl', 'table', 'helptbl', 'fmt')
 # ken's command line processor (UT)
 #   expects options defined as key=value pair strings on the command line
 # input:
-#   optiondictconfig - key = variable, value = dict with keys ( value, type, descr, required )
+#   optiondictconfig - key = variable, value = compare_dict with keys ( value, type, descr, required )
 #   raise_error - bool flag - if true and we get a command line setting we don't know raise exception
 #   keymapdict - dictionary of misspelled command line values that are mapped to the official values
 #
@@ -95,11 +95,16 @@ def kv_parse_command_line(optiondictconfig, raise_error=False, keymapdict=None, 
         },
         'help': {
             'value': None,
-            'description': 'when used we output program options.<br>If set to True, then we display in human readable format.<br> If value set to:  tbl,table,helptbl,fmt - then we output in markdown format to be added to readme.md files',
+            'description': 'when used we output program options.<br>If set to True, then we '
+                           'display in human readable format.<br> If value set to:  tbl,table,helptbl,fmt'
+                           ' - then we output in markdown format to be added to readme.md files',
         },
         'helpall': {
             'value': None,
-            'description': 'when used we output program options and defaultoptions.<br>If set to True, then we display in human readable format.<br>If value set to:  tbl,table,helptbl,fmt - then we output in markdown format to be added to readme.md files',
+            'description': 'when used we output program options and defaultoptions.<br>'
+                           'If set to True, then we display in human readable format.<br>If value set '
+                           'to:  tbl,table,helptbl,fmt - then we output in markdown format to be added '
+                           'to readme.md files',
         },
         'dumpconfig': {
             'value': False,
@@ -161,9 +166,9 @@ def kv_parse_command_line(optiondictconfig, raise_error=False, keymapdict=None, 
     for argpos in range(1, len(sys.argv)):
         # check to see if they have an equal in the string
         if '=' not in sys.argv[argpos]:
-            logger.error('Command line arguements must be key=value - there is no equal:%s', sys.argv[argpos])
+            logger.error('Command line arguments must be key=value - there is no equal:%s', sys.argv[argpos])
             raise Exception(
-                u'Command line arguements must be key=value - there is no equal:{}'.format(sys.argv[argpos]))
+                u'Command line arguments must be key=value - there is no equal:{}'.format(sys.argv[argpos]))
 
         # get the argument and split it into key and value
         (key, value) = sys.argv[argpos].split('=')
@@ -243,7 +248,7 @@ def kv_parse_command_line(optiondictconfig, raise_error=False, keymapdict=None, 
     for key, value in confargs.items():
         if key not in cmdlineargs:
             # this file value has no associated command line override
-            # value not overridden by value on commmand line
+            # value not overridden by value on command line
             if isinstance(value, str):
                 # what we have is a string - which is the only thing we can read from the command line
                 # stuff this into command line args
@@ -386,7 +391,12 @@ def set_when_not_set(input_dict, key1, key2, value):
 
 
 # display the optiondictconfig information in human readable format
-def kv_parse_command_line_display(optiondictconfig, defaultoptions={}, optiondict={}, tblfmt=False, debug=False):
+def kv_parse_command_line_display(optiondictconfig, defaultoptions=None, optiondict=None, tblfmt=False, debug=False):
+    if defaultoptions is None:
+        defaultoptions = {}
+    if optiondict is None:
+        optiondict = {}
+
     # set the sortorder for a known set of keys
     set_when_not_set(optiondictconfig, 'AppVersion', 'sortorder', 1)
     set_when_not_set(optiondictconfig, 'debug', 'sortorder', 9997)
@@ -538,7 +548,7 @@ def filename_maxmin(file_glob, reverse=False):
 
 
 # create a filename from part of a filename
-#   pull apart the filenaem passed in (if passed in) and then fill in the various file parts based
+#   pull apart the filename passed in (if passed in) and then fill in the various file parts based
 #   on the other attributes passed in
 def filename_create(filename=None, filename_path=None, filename_base=None, filename_ext=None, path_blank=False,
                     filename_base_append=None, filename_base_prepend=None, use_input_filename=None,
@@ -678,7 +688,10 @@ def filename_proper(filename_full, file_dir=None, create_dir=False, write_check=
 
 
 # create a unique filename
-def filename_unique(filename=None, filename_href={}, debug=False):
+def filename_unique(filename=None, filename_href=None, debug=False):
+    if filename_href is None:
+        filename_href = {}
+
     # check input
     if isinstance(filename, dict):
         filename_href = filename
@@ -991,15 +1004,15 @@ def datetime2utcdatetime(dt, default_tz=None, no_tz=False):
 def datetime_from_str(value, skipblank=False):
     import re
     datefmts = (
-        (re.compile('\d{1,2}\/\d{1,2}\/\d{2}$'), '%m/%d/%y'),
-        (re.compile('\d{1,2}\/\d{1,2}\/\d{4}$'), '%m/%d/%Y'),
-        (re.compile('\d{1,2}-\d{1,2}-\d{2}$'), '%m-%d-%y'),
-        (re.compile('\d{1,2}-\d{1,2}-\d{4}$'), '%m-%d-%Y'),
-        (re.compile('\d{4}-\d{1,2}-\d{1,2}T\d{1,2}:\d{1,2}:\d{1,2}\.\d+$'), '%Y-%m-%dT%H:%M:%S.%f'),
-        (re.compile('\d{4}-\d{1,2}-\d{1,2}\s\d{1,2}:\d{1,2}:\d{1,2}$'), '%Y-%m-%d %H:%M:%S'),
-        (re.compile('\d{4}-\d{1,2}-\d{1,2}\s\d{1,2}:\d{1,2}$'), '%Y-%m-%d %H:%M'),
-        (re.compile('\d{4}-\d{1,2}-\d{1,2}$'), '%Y-%m-%d'),
-        (re.compile('^\d{8}$'), '%Y%m%d'),
+        (re.compile(r'\d{1,2}/\d{1,2}/\d{2}$'), '%m/%d/%y'),
+        (re.compile(r'\d{1,2}/\d{1,2}/\d{4}$'), '%m/%d/%Y'),
+        (re.compile(r'\d{1,2}-\d{1,2}-\d{2}$'), '%m-%d-%y'),
+        (re.compile(r'\d{1,2}-\d{1,2}-\d{4}$'), '%m-%d-%Y'),
+        (re.compile(r'\d{4}-\d{1,2}-\d{1,2}T\d{1,2}:\d{1,2}:\d{1,2}\.\d+$'), '%Y-%m-%dT%H:%M:%S.%f'),
+        (re.compile(r'\d{4}-\d{1,2}-\d{1,2}\s\d{1,2}:\d{1,2}:\d{1,2}$'), '%Y-%m-%d %H:%M:%S'),
+        (re.compile(r'\d{4}-\d{1,2}-\d{1,2}\s\d{1,2}:\d{1,2}$'), '%Y-%m-%d %H:%M'),
+        (re.compile(r'\d{4}-\d{1,2}-\d{1,2}$'), '%Y-%m-%d'),
+        (re.compile(r'^\d{8}$'), '%Y%m%d'),
     )
 
     if skipblank and not value:
@@ -1027,13 +1040,13 @@ def datetime_from_str(value, skipblank=False):
 def datetimezone_from_str(value, skipblank=False):
     import re
     datefmtscleanup = (
-        (re.compile('(.*[+-])(\d{2}):(\d{2})$'), 'remove-colon-2'),
+        (re.compile(r'(.*[+-])(\d{2}):(\d{2})$'), 'remove-colon-2'),
     )
     datefmts = (
-        (re.compile('\d{4}-\d{1,2}-\d{1,2}T\d{1,2}:\d{1,2}:\d{1,2}\.\d+[+-]\d{4}$'), '%Y-%m-%dT%H:%M:%S.%f%z'),
-        (re.compile('\d{4}-\d{1,2}-\d{1,2} \d{1,2}:\d{1,2}:\d{1,2}\.\d+[+-]\d{4}$'), '%Y-%m-%d %H:%M:%S.%f%z'),
-        (re.compile('\d{4}-\d{1,2}-\d{1,2}T\d{1,2}:\d{1,2}:\d{1,2}[+-]\d{4}$'), '%Y-%m-%dT%H:%M:%S%z'),
-        (re.compile('\d{4}-\d{1,2}-\d{1,2} \d{1,2}:\d{1,2}:\d{1,2}[+-]\d{4}$'), '%Y-%m-%d %H:%M:%S%z'),
+        (re.compile(r'\d{4}-\d{1,2}-\d{1,2}T\d{1,2}:\d{1,2}:\d{1,2}\.\d+[+-]\d{4}$'), '%Y-%m-%dT%H:%M:%S.%f%z'),
+        (re.compile(r'\d{4}-\d{1,2}-\d{1,2} \d{1,2}:\d{1,2}:\d{1,2}\.\d+[+-]\d{4}$'), '%Y-%m-%d %H:%M:%S.%f%z'),
+        (re.compile(r'\d{4}-\d{1,2}-\d{1,2}T\d{1,2}:\d{1,2}:\d{1,2}[+-]\d{4}$'), '%Y-%m-%dT%H:%M:%S%z'),
+        (re.compile(r'\d{4}-\d{1,2}-\d{1,2} \d{1,2}:\d{1,2}:\d{1,2}[+-]\d{4}$'), '%Y-%m-%d %H:%M:%S%z'),
     )
 
     if skipblank and not value:
