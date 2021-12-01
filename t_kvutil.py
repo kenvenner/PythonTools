@@ -586,6 +586,12 @@ class TestKVUtilFilenames(unittest.TestCase):
     def test_datetime_from_str_p03_blank_stripblank(self):
         self.assertEqual(kvutil.datetime_from_str('', True),'' )
 
+    def test_datetime_from_str_p04_match_ts_maintain(self):
+        self.assertEqual(kvutil.datetime_from_str('2021-12-31'), datetime.datetime(2021, 12, 31))
+        self.assertEqual(kvutil.datetime_from_str('2021-12-31 00:00:00'), datetime.datetime(2021, 12, 31))
+        self.assertEqual(kvutil.datetime_from_str('12/31/2021'), datetime.datetime(2021, 12, 31))
+        self.assertEqual(kvutil.datetime_from_str('2021-12-31T00:00:00Z'), datetime.datetime(2021, 12, 31))
+    
     def test_datetime_from_str_f01_invalid_date(self):
         with self.assertRaises(Exception) as context:
             kvutil.datetime_from_str('20/1/19')

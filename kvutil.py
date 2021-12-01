@@ -996,11 +996,14 @@ def datetime2utcdatetime(dt, default_tz=None, no_tz=False):
 #  mm-dd-yyyy
 #  mm/dd/yy
 #  mm/dd/yyyy
+#  YYYY-MM-DDTHH:MM:SS
 #  YYYY-MM-DDTHH:MM:SS.mmmmm
 #  YYYY-MM-DD HH:MM:SS
 #  YYYY-MM-DD HH:MM
 #  YYYY-MM-DD
 #  YYYYMMDD
+#
+# and allow a Z to be on the end of this string that we will strip out
 #
 def datetime_from_str(value, skipblank=False):
     import re
@@ -1009,6 +1012,7 @@ def datetime_from_str(value, skipblank=False):
         (re.compile(r'\d{1,2}/\d{1,2}/\d{4}$'), '%m/%d/%Y'),
         (re.compile(r'\d{1,2}-\d{1,2}-\d{2}$'), '%m-%d-%y'),
         (re.compile(r'\d{1,2}-\d{1,2}-\d{4}$'), '%m-%d-%Y'),
+        (re.compile(r'\d{4}-\d{1,2}-\d{1,2}T\d{1,2}:\d{1,2}:\d{1,2}$'), '%Y-%m-%dT%H:%M:%S'),
         (re.compile(r'\d{4}-\d{1,2}-\d{1,2}T\d{1,2}:\d{1,2}:\d{1,2}\.\d+$'), '%Y-%m-%dT%H:%M:%S.%f'),
         (re.compile(r'\d{4}-\d{1,2}-\d{1,2}\s\d{1,2}:\d{1,2}:\d{1,2}$'), '%Y-%m-%d %H:%M:%S'),
         (re.compile(r'\d{4}-\d{1,2}-\d{1,2}\s\d{1,2}:\d{1,2}$'), '%Y-%m-%d %H:%M'),
@@ -1019,11 +1023,19 @@ def datetime_from_str(value, skipblank=False):
     if skipblank and not value:
         return value
 
+    orig_value = value
+    
+    # strip the Z on the end before processing
+    if value[-1].upper() == 'Z':
+        value = value[:-1]
+
+    print('value:', value)
+
     for (redate, datefmt) in datefmts:
         if redate.match(value):
             return datetime.datetime.strptime(value, datefmt)
 
-    raise Exception(u'Unable to convert to date time:{}'.format(value))
+    raise Exception(u'Unable to convert to date time:{}'.format(orig_value))
 
 
 # extract out a datetime value with timezone from a string if possible
