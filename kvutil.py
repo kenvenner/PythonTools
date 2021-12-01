@@ -3,7 +3,7 @@ from __future__ import print_function
 '''
 @author:   Ken Venner
 @contact:  ken@venerllc.com
-@version:  1.60
+@version:  1.62
 
 Library of tools used in general by KV
 '''
@@ -11,7 +11,8 @@ Library of tools used in general by KV
 import glob
 import os
 import datetime
-from dateutil import tz
+import dateutil
+# from dateutil import tz
 from dateutil.zoneinfo import get_zonefile_instance
 import sys
 import errno
@@ -24,7 +25,7 @@ import logging
 logger = logging.getLogger(__name__)
 
 # set the module version number
-AppVersion = '1.60'
+AppVersion = '1.62'
 
 HELP_KEYS = ('help', 'helpall')
 HELP_VALUE_TABLE = ('tbl', 'table', 'helptbl', 'fmt')
@@ -972,15 +973,15 @@ def current_timezone_string():
 def datetime2utcdatetime(dt, default_tz=None, no_tz=False):
     # define it because it was not passed in
     if default_tz is None:
-        default_tz = tz.gettz()
+        default_tz = dateutil.tz.gettz()
     else:
-        default_tz = tz.gettz(default_tz)
+        default_tz = dateutil.tz.gettz(default_tz)
 
     # convert the naive date to localize date
     local_dt = dt.replace(tzinfo=default_tz)
 
     # convert the local time to UTC time
-    utc_datetime = local_dt.astimezone(tz.UTC)
+    utc_datetime = local_dt.astimezone(dateutil.tz.UTC)
 
     # strip the timezone from datetime
     if no_tz:
@@ -1069,7 +1070,7 @@ def datetimezone_from_str(value, skipblank=False):
 
 
 def valid_tz_string(tzstr):
-    if tz.gettz(tzstr):
+    if dateutil.tz.gettz(tzstr):
         return True
     return False
 
@@ -1092,6 +1093,7 @@ def show_timezones(sublist=None, debug=False):
     for tzname in display_zonenames:
         print(tzname)
 
+    return display_zonenames
 
 # -- END Date Time Functions -- #
 # TODO End

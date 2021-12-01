@@ -1,9 +1,9 @@
-__version__ = '1.08'
+__version__ = '1.09'
 
 """
 @author:   Ken Venner
 @contact:  ken@venerllc.com
-@version:  1.08
+@version:  1.09
 
 Tooling that creates a new major/minor version on a file
 
@@ -53,7 +53,7 @@ sys.excepthook = handle_exception
 # application variables
 optiondictconfig = {
     'AppVersion': {
-        'value': '1.08',
+        'value': '1.09',
         'description': 'defines the version number for the app',
     },
     'input_folder': {
@@ -357,6 +357,11 @@ if __name__ == '__main__':
         logger.info('files to be processed:%s', filelist)
 
         for chk_file in filelist:
+            # check for the existance of the file
+            if not os.path.exists(chk_file):
+                print('File does not exist - skipped:', chk_file)
+                continue
+            
             appVer, newAppVer, filename, file_bak = update_file_version(chk_file,
                                                                         major_update=vargs['major_update'],
                                                                         test=vargs['test'],
@@ -377,6 +382,11 @@ if __name__ == '__main__':
             logger.info('no files to be checked for this folder')
 
         for chk_file in files_to_check:
+            # check for the existance of the file
+            if not os.path.exists(chk_file):
+                print('File does not exist - skipped:', chk_file)
+                continue
+            
             if vargs['debug']:
                 print('-' * 40, '\nInspecting for version  number file:', chk_file)
 

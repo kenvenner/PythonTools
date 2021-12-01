@@ -5,6 +5,7 @@ import os
 import sys
 import datetime
 import json
+import dateutil
 
 
 # logging
@@ -14,7 +15,7 @@ kvlogger.dictConfig(config)
 logger=kvlogger.getLogger(__name__)
 
 # set the module version number
-AppVersion = '1.20'
+AppVersion = '1.21'
 
 # global variables
 tst_filename='t_kvutil_tst'
@@ -558,13 +559,13 @@ class TestKVUtilFilenames(unittest.TestCase):
     # def test_current_timezone_string
     def test_datetime2utcdatetime_p01_datetime_2_utc(self):
         n_dt = datetime.datetime(2016,1,1,11,30)
-        utc_dt = datetime.datetime(2016, 1, 1, 19, 30, tzinfo=tzutc())
-        self.assertEqual(kvutil.datetime2utcdatetime(n_dt), utc_dtc)
+        utc_dt = datetime.datetime(2016, 1, 1, 19, 30, tzinfo=dateutil.tz.UTC)
+        self.assertEqual(kvutil.datetime2utcdatetime(n_dt), utc_dt)
     def test_datetime2utcdatetime_p02_datetime_2_utc_set_tz(self):
         n_dt = datetime.datetime(2016,1,1,11,30)
         tz = 'US/Eastern'
-        utc_dt = datetime.datetime(2016, 1, 1, 16, 30, tzinfo=tzutc())
-        self.assertEqual(kvutil.datetime2utcdatetime(n_dt, tz), utc_dtc)
+        utc_dt = datetime.datetime(2016, 1, 1, 16, 30, tzinfo=dateutil.tz.UTC)
+        self.assertEqual(kvutil.datetime2utcdatetime(n_dt, tz), utc_dt)
     
     # datetime from string
     def test_datetime_from_str_p01_zero_padded(self):
