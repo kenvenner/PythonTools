@@ -1,7 +1,7 @@
 '''
 @author:   Ken Venner
 @contact:  ken@venerllc.com
-@version:  1.20
+@version:  1.21
 
 Library of tools used to process XLS/XLSX files
 '''
@@ -22,7 +22,7 @@ import logging
 logger = logging.getLogger(__name__)
 
 # global variables
-AppVersion = '1.20'
+AppVersion = '1.21'
 
 # ----- OPTIONS ---------------------------------------
 # debug
@@ -1095,7 +1095,10 @@ def readxls2dict_findheader(xlsfile, dictkeys, req_cols=None, xlatdict=None, opt
 # write out a dict of (dict or aref) to an XLS/XLSX based on the filename passed in
 def writedict2xls(xlsfile, data, col_aref=None, optiondict={}, debug=False):
     # convert dict to array and then call writelist2xls
-    data2 = [data[key] for key in sorted(data.keys())]
+    if not data:
+        data2 = None
+    else:
+        data2 = [data[key] for key in sorted(data.keys())]
 
     # call the other library
     return writelist2xls(xlsfile, data2, col_aref=None, optiondict={}, debug=debug)
@@ -1135,8 +1138,15 @@ def writelist2xls(xlsfile, data, col_aref=None, optiondict=None, debug=False):
     if 'replace_sheet' in optiondict:  replace_sheet = optiondict['replace_sheet']
     if 'replace_index' in optiondict:   replace_index = optiondict['replace_index']
 
-    # set this value if the record we get is a list not a dictionary
-    if isinstance(data[0], list):    aref_result = True
+    # no data passed in - set up to create an empty file
+    if not data:
+        aref_result = True
+        if not isinstance(data, list):
+            data = list()
+    else:
+        # set this value if the record we get is a list not a dictionary
+        if isinstance(data[0], list):
+            aref_result = True
 
     # debugging
     if debug:
