@@ -3,7 +3,7 @@ from __future__ import print_function
 '''
 @author:   Ken Venner
 @contact:  ken@venerllc.com
-@version:  1.62
+@version:  1.56
 
 Library of tools used in general by KV
 '''
@@ -11,9 +11,8 @@ Library of tools used in general by KV
 import glob
 import os
 import datetime
-import dateutil
-# from dateutil import tz
-from dateutil.zoneinfo import get_zonefile_instance
+#from dateutil import tz
+#from dateutil.zoneinfo import get_zonefile_instance
 import sys
 import errno
 import json
@@ -25,10 +24,10 @@ import logging
 logger = logging.getLogger(__name__)
 
 # set the module version number
-AppVersion = '1.62'
-
-HELP_KEYS = ('help', 'helpall')
-HELP_VALUE_TABLE = ('tbl', 'table', 'helptbl', 'fmt')
+AppVersion = '1.56'
+__version__ = '1.56'
+HELP_KEYS = ('help', 'helpall',)
+HELP_VALUE_TABLE = ('tbl', 'table', 'helptbl', 'fmt',)
 
 
 # import ast
@@ -37,7 +36,7 @@ HELP_VALUE_TABLE = ('tbl', 'table', 'helptbl', 'fmt')
 # ken's command line processor (UT)
 #   expects options defined as key=value pair strings on the command line
 # input:
-#   optiondictconfig - key = variable, value = compare_dict with keys ( value, type, descr, required )
+#   optiondictconfig - key = variable, value = dict with keys ( value, type, descr, required )
 #   raise_error - bool flag - if true and we get a command line setting we don't know raise exception
 #   keymapdict - dictionary of misspelled command line values that are mapped to the official values
 #
@@ -1185,7 +1184,21 @@ def scriptinfo():
 def load_json_file_to_dict(filename):
     import json
     with open(filename, 'r') as json_in:
-        json_dict = json.load(json_in)
+        try:
+            json_dict = json.load(json_in)
+        except json.decoder.JSONDecodeError as e:
+            import re
+            with open(filename, 'r') as json_error:
+                json_lines = json_error.readlines()
+            err_line = re.search(r'line\s+(\d+)\s+', str(e))
+            print('-'*40)
+            if err_line:
+                err_line_int = int(err_line.group(1))
+                if err_line_int < len(json_lines):
+                    print('Error on line: ', err_line_int)
+                    print(json_lines[err_line_int-1])
+            print('-'*40)
+            raise
     return json_dict
 
 

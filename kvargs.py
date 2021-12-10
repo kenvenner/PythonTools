@@ -1,27 +1,67 @@
 """
 @author:   Ken Venner
 @contact:  ken@venerllc.com
-@version:  1.06
+@version:  1.07
 
 Library of tools used in command line processing with configuration files
 
 """
 
-import logging
+from attrdict import AttrDict
+# import argparse
+import json
+import os
+import re
+
+# import logging
 import logging.config
 import copy
 
 logger = logging.getLogger(__name__)
 
-from attrdict import AttrDict
-import argparse
-import json
-import os
+AppVersion = '1.07'
+__version__ = '1.07'
 
-AppVersion = '1.06'
+
+def load_json_file_to_dict(filename, logger=None):
+    """
+    Load a JSON file into a dictionary
+    and provide helpful information if we have JSON parsing issues
+
+    :param filename: (str) filename/path to json file
+    :param logger: (obj) logging object - if set we output a logger line
+
+    : returns json_data: (dict) of the json data loaded
+    """
+    with open(filename, 'r') as json_in:
+        try:
+            json_dict = json.load(json_in)
+        except json.decoder.JSONDecodeError as e:
+            with open(filename, 'r') as json_error:
+                json_lines = json_error.readlines()
+            err_line = re.search(r'line\s+(\d+)\s+', str(e))
+            print('-' * 40)
+            if err_line:
+                err_line_int = int(err_line.group(1))
+                if err_line_int < len(json_lines):
+                    print('Error on line: ', err_line_int)
+                    print(json_lines[err_line_int - 1])
+                    if logger:
+                        logger.error('Error loading JSON file: %s',
+                                     {'filename': filename,
+                                      'error_line': err_line.group(1),
+                                      'json_line': json_lines[err_line_int - 1],
+                                      'error': str(e)})
+            print('-' * 40)
+            raise
+    return json_dict
 
 
 def merge_settings(args, conf_files=None, args_default=None, req_flds=None):
+    """
+    Merge the values from the command line, configuration files, and default_values
+
+    """
     # set defaults if not passed in
     if conf_files is None:
         conf_files = []
@@ -50,20 +90,21 @@ def merge_settings(args, conf_files=None, args_default=None, req_flds=None):
     while conf_files:
         for conffile in conf_files:
             if os.path.exists(conffile):
-                with open(conffile, 'r') as json_conf:
-                    try:
-                        fileargs = json.load(json_conf)
-                    except Exception as e:
-                        print('ERROR:  {} not loaded due to error:  {}'.format(conffile, e))
-                        logger.error('skipped using: %s : due to error: %s', conffile, e)
-                        continue
+                try:
+                    fileargs = load_json_file_to_dict(conffile, logger)
+                except json.decoder.JSONDecodeError:
+                    # this error is handled in the function call
+                    logger.info('Skipped using: %s', conffile)
+                    continue
+                except Exception as e:
+                    logger.error('Skipped using: %s : due to error: %s', conffile, e)
+                    continue
                 confloaded.append(conffile)
                 if 'conf' in fileargs:
                     confadded.append(fileargs['conf'])
                 for k, v in fileargs.items():
-                    if (k in args_default and k in args and args[k] and args[k] != args_default[k]) or (
-                            k not in args_default and k in args and args[k]):
-                        # command line was changed from default setting - keep the command line setting
+                    if (k in args and args[k] is not None):
+                        # command line set the value - keep the command line setting
                         logger.debug(
                             'keep command line setting - ignore conf file setting-file:{}:key:{}'.format(conffile, k))
                         continue
@@ -81,7 +122,7 @@ def merge_settings(args, conf_files=None, args_default=None, req_flds=None):
 
     # set defaults if variable is not set - and it should have a default
     for k, v in args_default.items():
-        if k not in vargs or not vargs[k]:
+        if k not in vargs or vargs[k] is None:
             vargs[k] = v
 
     # create a configuration variable to capture files that were loaded

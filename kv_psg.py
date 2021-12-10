@@ -1,4 +1,4 @@
-__version__ = '1.11'
+__version__ = '1.12'
 
 import PySimpleGUI as sg
 import os
@@ -148,6 +148,7 @@ def output_logger_console_window(window, called_function, *args):
     """
     # call the function and allow its logging data to be output to the GUI window
     error = None
+    result = None
     try:
         result = called_function(*args)
     except Exception as e:
@@ -204,7 +205,7 @@ def output_logger_console_window_with_err_handler(window, called_function, *args
     # call the function and allow its logging data to be output to the GUI window
     error = None
     try:
-        result = called_function(*args)
+        _ = called_function(*args)
     except Exception as e:
         error = e
         logging.info(e)
@@ -301,9 +302,12 @@ def load_settings(settings_file, default_settings, values_key_2_settings_key):
     try:
         with open(settings_file, 'r') as f:
             settings = json.load(f)
+        settings['cfg_folder'] = os.path.dirname(settings_file)
     except Exception as e:
-        sg.popup_quick_message('\nNo settings file found... will create one for you\n', keep_on_top=True,
-                               background_color='red', text_color='white')
+        sg.popup_quick_message('\nNo settings file found... will create one for you\n',
+                               keep_on_top=True,
+                               background_color='red',
+                               text_color='white')
         settings = default_settings
         settings['cfg_folder'] = os.path.dirname(settings_file)
         # make this a str not a WindowsPath in order to make it JSON able
@@ -444,10 +448,10 @@ def create_settings_window(settings, values_key_2_settings_key, app_version):
               [sg.Button('Save'), sg.Button('Exit'),
                sg.Input(key='-SAVE_AS-', visible=False, enable_events=True),
                sg.FileSaveAs('SaveAs', key='-SAVE_AS-', file_types=(('Cfg', '*.json'),),
-                             initial_folder=settings['cfg_folder']),
+                             initial_folder=settings.get('cfg_folder', '')),
                sg.Input(key='-LOAD-', visible=False, enable_events=True),
                sg.FileBrowse('Load', key='-LOAD-', file_types=(('Cfg', '*.json'),),
-                             initial_folder=settings['cfg_folder'])]]
+                             initial_folder=settings.get('cfg_folder', ''))]]
 
     window = sg.Window('Settings', layout, finalize=True)
 
