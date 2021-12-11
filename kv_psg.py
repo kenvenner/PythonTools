@@ -1,13 +1,16 @@
-__version__ = '1.12'
+__version__ = '1.13'
 
 import PySimpleGUI as sg
 import os
 import json
 import copy
 from pathlib import Path, PurePath
+import sys
+import traceback
 import logging
 
 logger = logging.getLogger(__name__)
+
 
 # this is the reusable code to create a window to capture the logger output in GUI
 
@@ -153,6 +156,7 @@ def output_logger_console_window(window, called_function, *args):
         result = called_function(*args)
     except Exception as e:
         error = e
+        logger.error(e)
 
     # when done - enable the done button so we can now click it
     window.find_element('Done').Update(disabled=False)
@@ -208,7 +212,8 @@ def output_logger_console_window_with_err_handler(window, called_function, *args
         _ = called_function(*args)
     except Exception as e:
         error = e
-        logging.info(e)
+        logger.error('%s', traceback.format_exc())
+
 
     # when done - enable the done button so we can now click it
     window.find_element('Done').Update(disabled=False)
