@@ -1,7 +1,7 @@
 '''
 @author:   Ken Venner
 @contact:  ken@venerllc.com
-@version:  1.21
+@version:  1.22
 
 Library of tools used to process XLS/XLSX files
 '''
@@ -22,7 +22,7 @@ import logging
 logger = logging.getLogger(__name__)
 
 # global variables
-AppVersion = '1.21'
+AppVersion = '1.22'
 
 # ----- OPTIONS ---------------------------------------
 # debug
@@ -212,10 +212,12 @@ def readxls2dict(xlsfile, dictkeys, sheetname=None, save_row=False, dupkeyfail=F
 
 
 # read in the xls - output the first XX lines
-def readxls2dump(xlsfile, rows=10, sep=':', no_warnings=False, returnrecs=False, debug=False):
+def readxls2dump(xlsfile, rows=10, sep=':', no_warnings=False, returnrecs=False, sheet_name_col=None, debug=False):
+    if sheet_name_col is None:
+        sheet_name_col = 'sheet_name'
     fmtstr1 = sep.join(('{}', '{}', '{}', '{}', '{}')) + sep
     fmtstr2 = sep.join(('{}', '{}', '{:02d}', '{:03d}', '{}')) + sep
-    recheader = ['xlsfile', 'sheet_name', 'reccnt', 'colcnt', 'value']
+    recheader = ['xlsfile', sheet_name_col, 'reccnt', 'colcnt', 'value']
     xlslines = []
     xlsrecs = []
     optiondict = {'no_header': True, 'aref_result': True, 'save_row': True, 'max_rows': rows + 5,

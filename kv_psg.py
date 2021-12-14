@@ -1,4 +1,4 @@
-__version__ = '1.13'
+__version__ = '1.16'
 
 import PySimpleGUI as sg
 import os
@@ -11,11 +11,11 @@ import logging
 
 logger = logging.getLogger(__name__)
 
-
 # this is the reusable code to create a window to capture the logger output in GUI
 
 # Global variable used to capture log entries
 buffer = ''
+parent_get_log_filename = None
 
 
 class Handler(logging.StreamHandler):
@@ -81,6 +81,17 @@ class MsgPopup(object):
         """
         if self.disp_popup:
             sg.popup(*args)
+
+
+def set_get_log_filename(func_name):
+    """
+    Set the function name the determines the log file name
+
+    :param func_name: (func) that calculates the log filename
+    """
+    global parent_get_log_filename
+
+    parent_get_log_filename = func_name
 
 
 def setup_logger_console_window(key='log'):
@@ -156,7 +167,7 @@ def output_logger_console_window(window, called_function, *args):
         result = called_function(*args)
     except Exception as e:
         error = e
-        logger.error(e)
+        logger.error('%s', traceback.format_exc())
 
     # when done - enable the done button so we can now click it
     window.find_element('Done').Update(disabled=False)
@@ -213,7 +224,6 @@ def output_logger_console_window_with_err_handler(window, called_function, *args
     except Exception as e:
         error = e
         logger.error('%s', traceback.format_exc())
-
 
     # when done - enable the done button so we can now click it
     window.find_element('Done').Update(disabled=False)
@@ -308,7 +318,21 @@ def load_settings(settings_file, default_settings, values_key_2_settings_key):
         with open(settings_file, 'r') as f:
             settings = json.load(f)
         settings['cfg_folder'] = os.path.dirname(settings_file)
-    except Exception as e:
+    except json.decoder.JSONDecodeError as e:
+        # report error when we struggle to read the JSON 
+        import re
+        with open(settings_file, 'r') as json_error:
+            json_lines = json_error.readlines()
+        err_line = re.search(r'line\s+(\d+)\s+', str(e))
+        logger.warning('-' * 40)
+        if err_line:
+            err_line_int = int(err_line.group(1))
+            if err_line_int < len(json_lines):
+                logger.warning('Error on line: ', err_line_int)
+                logger.warning(json_lines[err_line_int - 1])
+            logger.warning('-' * 40)
+        raise
+    except FileNotFoundError:
         sg.popup_quick_message('\nNo settings file found... will create one for you\n',
                                keep_on_top=True,
                                background_color='red',
@@ -342,6 +366,7 @@ def update_settings(settings, values, values_key_2_settings_key):
     :params values_key_2_settings_key: (dict) - key mapping from GUI values to app settings
 
     """
+    global parent_get_log_filename
 
     # remove keys that should not remain
     for k in ('conf', 'conf_files_loaded'):
@@ -351,6 +376,12 @@ def update_settings(settings, values, values_key_2_settings_key):
     # update settings if there are values to update
     not_updated = dict()
     if values:
+        if '-LOG_PATH-' in values:
+            if parent_get_log_filename and Path(values['-LOG_PATH-']).is_dir():
+                print('change to get to a file')
+                values['-LOG_PATH-'] = parent_get_log_filename(values['-LOG_PATH-'])
+            values['-LOG_PATH-'] = str(values['-LOG_PATH-'])
+
         # update window with the values read from settings file
         for k, v in values_key_2_settings_key.items():
             try:
@@ -382,7 +413,11 @@ def save_settings(settings_file, settings, values, values_key_2_settings_key):
     """
 
     # if there are stuff specified by another window, fill in those values
-    update_settings(settings, values, values_key_2_settings_key)
+    try:
+        update_settings(settings, values, values_key_2_settings_key)
+    except Exception as e:
+        print(e)
+        raise
 
     # save the settings values out to the file
     try:
@@ -401,20 +436,27 @@ def update_windows_values(window, settings, values_key_2_settings_key):
     for k, v in values_key_2_settings_key.items():
         if v in window.AllKeysDict:
             try:
-                window[v].update(value=settings[k])
+                if k in ('settings_file', 'log_path', 'cfg_folder',):
+                    window[v].update(value=str(Path(settings[k])))
+                else:
+                    window[v].update(value=settings[k])
             except Exception:
                 # print(f'Problem updating PySimpleGUI window from settings. Key = {k}')
                 pass
 
     # special processing - capturing the settings_file
-    k = 'settings_file'
-    v = f"-{k.upper()}-"
-    if v in window.AllKeysDict:
-        try:
-            window[v].update(value=settings[k])
-        except Exception:
-            # print(f'Problem updating PySimpleGUI window from settings. Key = {k}')
-            pass
+    # may be able to remove this section
+    for k in ('settings_file', 'log_path'):
+        # k = 'settings_file'
+        v = f"-{k.upper()}-"
+        if v in window.AllKeysDict:
+            try:
+                window[v].update(value=str(Path(settings[k])))
+            except Exception:
+                # print(f'Problem updating PySimpleGUI window from settings. Key = {k}')
+                pass
+
+    window.Refresh()
 
 
 def create_settings_window(settings, values_key_2_settings_key, app_version):
@@ -428,6 +470,7 @@ def create_settings_window(settings, values_key_2_settings_key, app_version):
         log_path
         log_console
         log_file
+        clear_logs
 
     :params settings: (dict) - key/value application settings
     :params values_key_2_settings_key: (dict) - mapping from settings to GUI keys
@@ -448,6 +491,7 @@ def create_settings_window(settings, values_key_2_settings_key, app_version):
               [TextLabel('Log Folder'), sg.Input(key='-LOG_PATH-', size=(62, 1)), sg.FolderBrowse(target='-LOG_PATH-')],
               [TextLabel('Log to console:'), sg.Checkbox('', default=False, key='-LOG_CONSOLE-')],
               [TextLabel('Log to file:'), sg.Checkbox('', default=True, key='-LOG_FILE-')],
+              [TextLabel('Clear log on startup:'), sg.Checkbox('', default=False, key='-CLEAR_LOGS-')],
               [TextLabel('Application version'), sg.Text(app_version)],
               [TextLabel('Settings file'), sg.Input(key='-SETTINGS_FILE-', size=(70, 1))],
               [sg.Button('Save'), sg.Button('Exit'),
@@ -467,16 +511,47 @@ def create_settings_window(settings, values_key_2_settings_key, app_version):
 
 
 def reinitialize_logging(vargs, settings, parent):
-    logger.info('check for change in logging: ')
+    logger.info('Check for change in logging: ')
     value_diff = False
     for k in ('log_path', 'log_console', 'log_file'):
         if vargs[k] != settings[k]:
-            logger.info('setting changed: %s - %s - %s', k, vargs[k], settings[k])
+            logger.info('Setting changed: %s - %s - %s', k, vargs[k], settings[k])
             value_diff = True
             break
     if value_diff:
-        logger.info('calling to change logging settings')
+        logger.info('Calling to change logging settings')
         parent.initialize_logging(settings['log_path'], settings['log_console'], settings['log_file'])
+
+
+def clear_logs(vargs, settings, p_get_log_filename=None):
+    global parent_get_log_filename
+
+    # if we are not clearing logs - no action here
+    if not (vargs.get('clear_logs', False) or settings.get('clear_logs', False)):
+        print(settings)
+        print('clear logs not set')
+        return
+
+    # set the function
+    if p_get_log_filename:
+        parent_get_log_filename = p_get_log_filename
+
+    # make sure we set the get_log_filename
+    if not parent_get_log_filename:
+        print('must set parent_get_log_filename before calling this function')
+        raise Exception
+
+    # print - shutting down logging
+    logging.shutdown()
+
+    log_path = str(parent_get_log_filename(vargs.get('log_path', '')))
+    if os.path.isfile(log_path):
+        print('Removing cfg_folder log file: ', log_path)
+        os.remove(log_path)
+    log_path = str(parent_get_log_filename(settings.get('log_path', '')))
+    if os.path.isfile(log_path):
+        print('Removing cfg_folder log file: ', log_path)
+        os.remove(log_path)
 
 
 def process_change_settings(vargs, settings, v2s, parent, debug=False):
@@ -534,11 +609,18 @@ def process_change_settings(vargs, settings, v2s, parent, debug=False):
             if not settings_file:
                 # user cancelled - just get out
                 continue
+
+            # get it in the right string structure
+            settings_file = str(Path(settings_file))
+
             if not Path(settings_file).parent.is_dir():
                 sg.popup('Selected directory does not exist')
                 continue
 
             settings['settings_file'] = settings_file
+
+            # force the value to change - it may not have been updated on the screen
+            values['-SETTINGS_FILE-'] = settings_file
 
             # and now save out to this file
             save_settings(settings_file, settings, values, v2s)
@@ -558,7 +640,7 @@ def process_change_settings(vargs, settings, v2s, parent, debug=False):
                 continue
             if not os.path.exists(settings_file):
                 continue
-            # and now read in this data
+            # and now read in this data 
             settings = load_settings(settings_file, settings, v2s)
             # set the variable
             settings['settings_file'] = settings_file
