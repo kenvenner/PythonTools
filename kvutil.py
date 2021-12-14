@@ -3,7 +3,7 @@ from __future__ import print_function
 '''
 @author:   Ken Venner
 @contact:  ken@venerllc.com
-@version:  1.63
+@version:  1.64
 
 Library of tools used in general by KV
 '''
@@ -11,8 +11,11 @@ Library of tools used in general by KV
 import glob
 import os
 import datetime
-#from dateutil import tz
-#from dateutil.zoneinfo import get_zonefile_instance
+
+# these were pulled out and put in kvdate.py
+# from dateutil import tz
+# from dateutil.zoneinfo import get_zonefile_instance
+
 import sys
 import errno
 import json
@@ -24,8 +27,8 @@ import logging
 logger = logging.getLogger(__name__)
 
 # set the module version number
-AppVersion = '1.63'
-__version__ = '1.63'
+AppVersion = '1.64'
+__version__ = '1.64'
 HELP_KEYS = ('help', 'helpall',)
 HELP_VALUE_TABLE = ('tbl', 'table', 'helptbl', 'fmt',)
 
@@ -972,15 +975,15 @@ def current_timezone_string():
 def datetime2utcdatetime(dt, default_tz=None, no_tz=False):
     # define it because it was not passed in
     if default_tz is None:
-        default_tz = dateutil.tz.gettz()
+        default_tz = tz.gettz()
     else:
-        default_tz = dateutil.tz.gettz(default_tz)
+        default_tz = tz.gettz(default_tz)
 
     # convert the naive date to localize date
     local_dt = dt.replace(tzinfo=default_tz)
 
     # convert the local time to UTC time
-    utc_datetime = local_dt.astimezone(dateutil.tz.UTC)
+    utc_datetime = local_dt.astimezone(tz.UTC)
 
     # strip the timezone from datetime
     if no_tz:
@@ -1081,7 +1084,7 @@ def datetimezone_from_str(value, skipblank=False):
 
 
 def valid_tz_string(tzstr):
-    if dateutil.tz.gettz(tzstr):
+    if tz.gettz(tzstr):
         return True
     return False
 
