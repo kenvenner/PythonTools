@@ -1,7 +1,7 @@
 '''
 @author:   Ken Venner
 @contact:  ken@venerllc.com
-@version:  1.22
+@version:  1.23
 
 Library of tools used to process XLS/XLSX files
 '''
@@ -11,7 +11,7 @@ import xlrd  # xls (read)
 import xlwt  # xls (write)
 import os  # determine if a file exists
 
-import kvutil
+import kvdate
 import kvmatch
 import datetime
 import re
@@ -22,7 +22,7 @@ import logging
 logger = logging.getLogger(__name__)
 
 # global variables
-AppVersion = '1.22'
+AppVersion = '1.23'
 
 # ----- OPTIONS ---------------------------------------
 # debug
@@ -59,8 +59,8 @@ def strip_xls_illegal_chars(value):
 # utility used to convert an xls date number into a datetime object
 def xldate_to_datetime(xldate, skipblank=False):
     if isinstance(xldate, str):
-        logger.debug('converting xldate string to date using kvutil.datetime_from_str:%s', xldate)
-        return kvutil.datetime_from_str(xldate, skipblank)
+        logger.debug('converting xldate string to date using kvdate.datetime_from_str:%s', xldate)
+        return kvdate.datetime_from_str(xldate, skipblank)
     else:
         logger.debug('converting xldate float to date:%s', xldate)
         temp = datetime.datetime(1899, 12, 30)
