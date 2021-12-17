@@ -1,7 +1,7 @@
 '''
 @author:   Ken Venner
 @contact:  ken@venerllc.com
-@version:  1.02
+@version:  1.03
 
 Library of tools used to manage logging
 '''
@@ -46,7 +46,10 @@ def get_logger(logger_name, logfile=LOG_FILE):
     return logger
 
 
-def get_config(log_path=LOG_FILE, fhandler='logging.handlers.RotatingFileHandler', loggerlevel='INFO'):
+def get_config(log_path=LOG_FILE, fhandler='logging.handlers.RotatingFileHandler', loggerlevel='INFO', maxBytes=None):
+    if maxBytes is None:
+        maxBytes = 1000
+
     config = {
         'disable_existing_loggers': False,
         'version': 1,
@@ -70,7 +73,7 @@ def get_config(log_path=LOG_FILE, fhandler='logging.handlers.RotatingFileHandler
                 'class': fhandler,
                 'formatter': 'default',
                 'filename': log_path,
-                'maxBytes': 1024 * 1000,
+                'maxBytes': 1024 * maxBytes,
                 'backupCount': 3
             }
         },
