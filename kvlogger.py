@@ -46,9 +46,12 @@ def get_logger(logger_name, logfile=LOG_FILE):
     return logger
 
 
-def get_config(log_path=LOG_FILE, fhandler='logging.handlers.RotatingFileHandler', loggerlevel='INFO', maxBytes=None):
+def get_config(log_path=LOG_FILE,
+               fhandler='logging.handlers.RotatingFileHandler',
+               loggerlevel='INFO',
+               maxBytes=None):
     if maxBytes is None:
-        maxBytes = 1000
+        maxBytes = 1024 * 1000
 
     config = {
         'disable_existing_loggers': False,
@@ -73,7 +76,7 @@ def get_config(log_path=LOG_FILE, fhandler='logging.handlers.RotatingFileHandler
                 'class': fhandler,
                 'formatter': 'default',
                 'filename': log_path,
-                'maxBytes': 1024 * maxBytes,
+                'maxBytes': maxBytes,
                 'backupCount': 3
             }
         },

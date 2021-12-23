@@ -4,6 +4,7 @@ import json
 import os
 import argparse
 import copy
+from attrdict import AttrDict
 
 conf = 'kvargs1.json'
 args_default = {
@@ -18,6 +19,23 @@ conf2 = {
     'setting2': 'middle2',
     'setting3': 'middle3',
 }
+
+
+#
+def setup_parser():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--token")
+    parser.add_argument("--disp_vargs", action="store_true")
+    parser.add_argument("--console", action="store_true", dest="display")
+    parser.add_argument("--no_console", action="store_false", dest="display")
+    parser.add_argument("--url", dest="uri", default="http")
+    parser.add_argument("--conf")
+    return parser
+
+
+def write_conf(filename, conf_dict):
+    with open(filename, 'w') as f:
+        json.dump(conf_dict, f, indent=4)
 
 
 # ----------------------------------------
@@ -348,6 +366,432 @@ def test_parser_extract_default_and_set_to_none_p09_true_toggle_default_true():
 
 # ----------------------------------------
 
+def test_parser_defaults_p01_pass():
+    parser = setup_parser()
+
+    args_parser_default = kvargs.parser_defaults(parser)
+    assert args_parser_default == {
+        'console': {
+            'cmd': '--console',
+            'const': True,
+            'dest': 'display',
+            'first': True,
+            'value': False
+        },
+        'disp_vargs': {
+            'cmd': '--disp_vargs',
+            'const': True,
+            'dest': 'disp_vargs',
+            'first': True,
+            'value': False
+        },
+        'no_console': {
+            'cmd': '--no_console',
+            'const': True,
+            'dest': 'display',
+            'first': False,
+            'value': False
+        },
+        'url': {
+            'cmd': '--url',
+            'const': False,
+            'dest': 'uri',
+            'first': True,
+            'value': 'http'},
+    }
+
+
+def test_parser_defaults_p02_pass():
+    parser = setup_parser()
+
+    args_parser_default = kvargs.parser_defaults(parser, set_to_none=True)
+    assert args_parser_default == {
+        'console': {
+            'cmd': '--console',
+            'const': True,
+            'dest': 'display',
+            'first': True,
+            'value': False
+        },
+        'disp_vargs': {
+            'cmd': '--disp_vargs',
+            'const': True,
+            'dest': 'disp_vargs',
+            'first': True,
+            'value': False
+        },
+        'no_console': {
+            'cmd': '--no_console',
+            'const': True,
+            'dest': 'display',
+            'first': False,
+            'value': False
+        },
+        'url': {
+            'cmd': '--url',
+            'const': False,
+            'dest': 'uri',
+            'first': True,
+            'value': 'http'},
+    }
+
+
+def test_parser_defaults_p03_pass():
+    parser = setup_parser()
+
+    args_parser_default = kvargs.parser_defaults(parser, set_to_none=True)
+    args_parser_default = kvargs.parser_defaults(parser, set_to_none=True)
+    assert args_parser_default == {}
+
+
+# ----------------------------------------
+
+def test_parse_and_parser_merge_settings_p01_blank_cmdline_no_parse():
+    parser = setup_parser()
+    cmd_line = []
+
+    args = parser.parse_args(cmd_line)
+    vargs = vars(args)
+    assert vargs == {
+        'conf': None,
+        'disp_vargs': False,
+        'display': False,
+        'token': None,
+        'uri': 'http'
+    }
+
+
+def test_parse_and_parser_merge_settings_p02_blank_cmdline_parsed():
+    parser = setup_parser()
+    cmd_line = []
+    args_default = {}
+    args_parser_default = kvargs.parser_defaults(parser, set_to_none=True)
+    vargs = kvargs.parse_and_parser_merge_settings(parser,
+                                                   args_parser_default=args_parser_default,
+                                                   args_default=args_default,
+                                                   cmd_line=cmd_line)
+    assert vargs == {
+        'conf': None,
+        'disp_vargs': False,
+        'display': False,
+        'token': None,
+        'uri': 'http'
+    }
+
+
+def test_parse_and_parser_merge_settings_p03_blank_cmdline_parsed_arg_default_flag():
+    parser = setup_parser()
+    cmd_line = []
+    args_default = {'disp_vargs': True}
+    args_parser_default = kvargs.parser_defaults(parser, set_to_none=True)
+    vargs = kvargs.parse_and_parser_merge_settings(parser,
+                                                   args_parser_default=args_parser_default,
+                                                   args_default=args_default,
+                                                   cmd_line=cmd_line)
+    assert vargs == {
+        'conf': None,
+        'disp_vargs': True,
+        'display': False,
+        'token': None,
+        'uri': 'http'
+    }
+
+
+def test_parse_and_parser_merge_settings_p04_blank_cmdline_parsed_arg_default_flag_false():
+    parser = setup_parser()
+    cmd_line = []
+    args_default = {'disp_vargs': False}
+    args_parser_default = kvargs.parser_defaults(parser, set_to_none=True)
+    vargs = kvargs.parse_and_parser_merge_settings(parser,
+                                                   args_parser_default=args_parser_default,
+                                                   args_default=args_default,
+                                                   cmd_line=cmd_line)
+    assert vargs == {
+        'conf': None,
+        'disp_vargs': False,
+        'display': False,
+        'token': None,
+        'uri': 'http'
+    }
+
+
+def test_parse_and_parser_merge_settings_p04_blank_cmdline_parsed_arg_default_flag_dest_true():
+    parser = setup_parser()
+    cmd_line = []
+    args_default = {'display': True}
+    args_parser_default = kvargs.parser_defaults(parser, set_to_none=True)
+    vargs = kvargs.parse_and_parser_merge_settings(parser,
+                                                   args_parser_default=args_parser_default,
+                                                   args_default=args_default,
+                                                   cmd_line=cmd_line)
+    assert vargs == {
+        'conf': None,
+        'disp_vargs': False,
+        'display': True,
+        'token': None,
+        'uri': 'http'
+    }
+
+
+def test_parse_and_parser_merge_settings_p05_blank_cmdline_parsed_arg_default_str():
+    parser = setup_parser()
+    cmd_line = []
+    args_default = {'token': 'default_token'}
+    args_parser_default = kvargs.parser_defaults(parser, set_to_none=True)
+    vargs = kvargs.parse_and_parser_merge_settings(parser,
+                                                   args_parser_default=args_parser_default,
+                                                   args_default=args_default,
+                                                   cmd_line=cmd_line)
+    assert vargs == {
+        'conf': None,
+        'disp_vargs': False,
+        'display': False,
+        'token': 'default_token',
+        'uri': 'http'
+    }
+
+
+def test_parse_and_parser_merge_settings_p06_blank_cmdline_parsed_arg_default_str_blank():
+    parser = setup_parser()
+    cmd_line = []
+    args_default = {'token': 'default_token', 'uri': ''}
+    args_parser_default = kvargs.parser_defaults(parser, set_to_none=True)
+    vargs = kvargs.parse_and_parser_merge_settings(parser,
+                                                   args_parser_default=args_parser_default,
+                                                   args_default=args_default,
+                                                   cmd_line=cmd_line)
+    assert vargs == {
+        'conf': None,
+        'disp_vargs': False,
+        'display': False,
+        'token': 'default_token',
+        'uri': ''
+    }
+
+
+def test_parse_and_parser_merge_settings_p06_blank_cmdline_parsed_arg_default_str_blank_dest():
+    parser = setup_parser()
+    cmd_line = []
+    args_default = {'token': 'default_token', 'uri': ''}
+    args_parser_default = kvargs.parser_defaults(parser, set_to_none=True)
+    vargs = kvargs.parse_and_parser_merge_settings(parser,
+                                                   args_parser_default=args_parser_default,
+                                                   args_default=args_default,
+                                                   cmd_line=cmd_line)
+    assert vargs == {
+        'conf': None,
+        'disp_vargs': False,
+        'display': False,
+        'token': 'default_token',
+        'uri': ''
+    }
+
+
+def test_parse_and_parser_merge_settings_p06_blank_cmdline_parsed_arg_default_str_blank_cmd():
+    parser = setup_parser()
+    cmd_line = []
+    args_default = {'token': 'default_token', 'url': ''}
+    args_parser_default = kvargs.parser_defaults(parser, set_to_none=True)
+    vargs = kvargs.parse_and_parser_merge_settings(parser,
+                                                   args_parser_default=args_parser_default,
+                                                   args_default=args_default,
+                                                   cmd_line=cmd_line)
+    # url is added because we are not making cmdline expansions
+    assert vargs == {
+        'conf': None,
+        'disp_vargs': False,
+        'display': False,
+        'token': 'default_token',
+        'uri': 'http',
+        'url': ''
+    }
+
+
+def test_parse_and_parser_merge_settings_p07_blank_cmdline_parsed_arg_default_new_value():
+    parser = setup_parser()
+    cmd_line = []
+    args_default = {'new_value': 'new_value'}
+    args_parser_default = kvargs.parser_defaults(parser, set_to_none=True)
+    vargs = kvargs.parse_and_parser_merge_settings(parser,
+                                                   args_parser_default=args_parser_default,
+                                                   args_default=args_default,
+                                                   cmd_line=cmd_line)
+    assert vargs == {
+        'conf': None,
+        'disp_vargs': False,
+        'display': False,
+        'token': None,
+        'uri': 'http',
+        'new_value': 'new_value'
+    }
+
+
+# ----------------------------------------
+
+def test_parse_and_parser_merge_settings_p01_cmdline_v1_parsed():
+    parser = setup_parser()
+    cmd_line = ['--disp_vargs']
+    args_default = {}
+    args_parser_default = kvargs.parser_defaults(parser, set_to_none=True)
+    vargs = kvargs.parse_and_parser_merge_settings(parser,
+                                                   args_parser_default=args_parser_default,
+                                                   args_default=args_default,
+                                                   cmd_line=cmd_line)
+    assert vargs == {
+        'conf': None,
+        'disp_vargs': True,
+        'display': False,
+        'token': None,
+        'uri': 'http'
+    }
+
+
+def test_parse_and_parser_merge_settings_p02_cmdline_v2_parsed():
+    parser = setup_parser()
+    cmd_line = ['--console']
+    args_default = {}
+    args_parser_default = kvargs.parser_defaults(parser, set_to_none=True)
+    vargs = kvargs.parse_and_parser_merge_settings(parser,
+                                                   args_parser_default=args_parser_default,
+                                                   args_default=args_default,
+                                                   cmd_line=cmd_line)
+    assert vargs == {
+        'conf': None,
+        'disp_vargs': False,
+        'display': True,
+        'token': None,
+        'uri': 'http'
+    }
+
+
+def test_parse_and_parser_merge_settings_p03_cmdline_v3_parsed():
+    parser = setup_parser()
+    cmd_line = ['--no_console']
+    args_default = {}
+    args_parser_default = kvargs.parser_defaults(parser, set_to_none=True)
+    vargs = kvargs.parse_and_parser_merge_settings(parser,
+                                                   args_parser_default=args_parser_default,
+                                                   args_default=args_default,
+                                                   cmd_line=cmd_line)
+    assert vargs == {
+        'conf': None,
+        'disp_vargs': False,
+        'display': False,
+        'token': None,
+        'uri': 'http'
+    }
+
+
+def test_parse_and_parser_merge_settings_p04_cmdline_v4_parsed():
+    parser = setup_parser()
+    cmd_line = ['--token', 'cmdline_token']
+    args_default = {}
+    args_parser_default = kvargs.parser_defaults(parser, set_to_none=True)
+    vargs = kvargs.parse_and_parser_merge_settings(parser,
+                                                   args_parser_default=args_parser_default,
+                                                   args_default=args_default,
+                                                   cmd_line=cmd_line)
+    assert vargs == {
+        'conf': None,
+        'disp_vargs': False,
+        'display': False,
+        'token': 'cmdline_token',
+        'uri': 'http'
+    }
+
+
+# ----------------------------------------
+
+def test_ken():
+    parser = setup_parser()
+    write_conf(conf, {'disp_vargs': True})
+    cmd_line = ['--conf', 'kvargs1.json']
+    parser.parse_args(cmd_line)
+
+
+def test_parse_and_parser_merge_settings_p02_conf_cmdline_parsed():
+    parser = setup_parser()
+    write_conf(conf, {'disp_vargs': True})
+    cmd_line = ['--conf', conf]
+    args_default = {}
+    args_parser_default = kvargs.parser_defaults(parser, set_to_none=True)
+    vargs = kvargs.parse_and_parser_merge_settings(parser,
+                                                   args_parser_default=args_parser_default,
+                                                   args_default=args_default,
+                                                   cmd_line=cmd_line)
+    assert vargs == {
+        'conf': conf,
+        'conf_files_loaded': ['kvargs1.json'],
+        'disp_vargs': True,
+        'display': False,
+        'token': None,
+        'uri': 'http'
+    }
+    os.remove(conf)
+
+
+def test_parse_and_parser_merge_settings_p03_conf_cmdline_parsed():
+    parser = setup_parser()
+    write_conf(conf, {'disp_vargs': True, 'url': 'https://conf_set'})
+    cmd_line = ['--conf', conf]
+    args_default = {}
+    args_parser_default = kvargs.parser_defaults(parser, set_to_none=True)
+    vargs = kvargs.parse_and_parser_merge_settings(parser,
+                                                   args_parser_default=args_parser_default,
+                                                   args_default=args_default,
+                                                   cmd_line=cmd_line)
+    assert vargs == {
+        'conf': conf,
+        'conf_files_loaded': ['kvargs1.json'],
+        'disp_vargs': True,
+        'display': False,
+        'token': None,
+        'uri': 'https://conf_set'
+    }
+    os.remove(conf)
+
+
+def test_parse_and_parser_merge_settings_p04_conf_cmdline_parsed():
+    parser = setup_parser()
+    write_conf(conf, {'no_console': True, 'url': 'https://conf_set'})
+    cmd_line = ['--conf', conf]
+    args_default = {}
+    args_parser_default = kvargs.parser_defaults(parser, set_to_none=True)
+    print('args_parser_default:', args_parser_default)
+    vargs = kvargs.parse_and_parser_merge_settings(parser,
+                                                   args_parser_default=args_parser_default,
+                                                   args_default=args_default,
+                                                   cmd_line=cmd_line)
+    assert vargs == {
+        'conf': conf,
+        'conf_files_loaded': ['kvargs1.json'],
+        'disp_vargs': False,
+        'display': False,
+        'token': None,
+        'uri': 'https://conf_set'
+    }
+
+    print('*' * 80)
+
+    cmd_line = ['--conf', conf, '--console']
+    vargs = kvargs.parse_and_parser_merge_settings(parser,
+                                                   args_parser_default=args_parser_default,
+                                                   args_default=args_default,
+                                                   cmd_line=cmd_line)
+    assert vargs == {
+        'conf': conf,
+        'conf_files_loaded': ['kvargs1.json'],
+        'disp_vargs': False,
+        'display': True,
+        'token': None,
+        'uri': 'https://conf_set'
+    }
+
+    os.remove(conf)
+
+
+# ----------------------------------------
+
 def test_parse_and_parser_merge_settings_p01_str_simple():
     cmd_line = []
     parser = argparse.ArgumentParser()
@@ -463,13 +907,15 @@ def test_parse_and_parser_merge_settings_p08_text_simple_defaults_conf():
     parser.add_argument("--token")
     assert parser.get_default("token") is None
 
-    args_default = kvargs.parser_extract_default_and_set_to_none(parser, {'token': 'set_default'})
-    assert args_default == {'token': 'set_default'}
+    #    args_default = kvargs.parser_extract_default_and_set_to_none(parser, {'token': 'set_default'})
+    args_parser_default = kvargs.parser_defaults(parser, set_to_none=True)
+    args_default = {'token': 'set_default'}
     vargs = kvargs.parse_and_parser_merge_settings(parser,
+                                                   args_parser_default=args_parser_default,
                                                    args_default=args_default,
                                                    cmd_line=cmd_line,
                                                    test_args_conf=test_args_conf)
-    test_args_conf['conf_files_loaded'] = 'test_args_conf'
+    test_args_conf['conf_files_loaded'] = ['test_args_conf']
     assert dict(vargs) == test_args_conf
     assert parser.get_default("token") is None
 
@@ -481,14 +927,15 @@ def test_parse_and_parser_merge_settings_p09_store_true_conf():
     parser.add_argument("--token", action="store_true")
     assert parser.get_default("token") is False
 
-    args_default = kvargs.parser_extract_default_and_set_to_none(parser)
-    assert args_default == {'token': False}
+    args_parser_default = kvargs.parser_defaults(parser, set_to_none=True)
+    args_default = {}
     vargs = kvargs.parse_and_parser_merge_settings(parser,
                                                    args_default=args_default,
+                                                   args_parser_default=args_parser_default,
                                                    cmd_line=cmd_line,
                                                    test_args_conf=test_args_conf)
 
-    test_args_conf['conf_files_loaded'] = 'test_args_conf'
+    test_args_conf['conf_files_loaded'] = ['test_args_conf']
     assert dict(vargs) == test_args_conf
     assert parser.get_default("token") is None
 
@@ -501,14 +948,14 @@ def test_parse_and_parser_merge_settings_p10_store_true_empty_conf_default():
     parser.add_argument("--token", action="store_true")
     assert parser.get_default("token") is False
 
-    args_default = kvargs.parser_extract_default_and_set_to_none(parser, args_default)
-    assert args_default == {'token': True}
+    args_parser_default = kvargs.parser_defaults(parser, set_to_none=True)
     vargs = kvargs.parse_and_parser_merge_settings(parser,
                                                    args_default=args_default,
+                                                   args_parser_default=args_parser_default,
                                                    cmd_line=cmd_line,
                                                    test_args_conf=test_args_conf)
 
-    args_default['conf_files_loaded'] = 'test_args_conf'
+    args_default['conf_files_loaded'] = ['test_args_conf']
     assert dict(vargs) == args_default
     assert parser.get_default("token") is None
 
@@ -517,13 +964,14 @@ def test_parse_and_parser_merge_settings_p10_store_true_empty_conf_default():
 
 def test_prep_parse_and_parser_merge_settings_p01_str_simple():
     cmd_line = []
+    args_default = {}
     parser = argparse.ArgumentParser()
     parser.add_argument("--token", default="ken")
     assert parser.get_default("token") == "ken"
     vargs = kvargs.prep_parse_and_merge_settings(parser,
                                                  args_default=args_default,
                                                  cmd_line=cmd_line)
-    assert vargs == {'token': 'ken'}
+    assert dict(vargs) == {'token': 'ken'}
     assert parser.get_default("token") is None
 
 
