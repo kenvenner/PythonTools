@@ -1,7 +1,7 @@
 '''
 @author:   Ken Venner
 @contact:  ken@venerllc.com
-@version:  1.03
+@version:  1.04
 
 Library of tools used to manage logging
 '''
@@ -76,6 +76,7 @@ def get_config(log_path=LOG_FILE,
                 'class': fhandler,
                 'formatter': 'default',
                 'filename': log_path,
+                'encoding': 'UTF-8',
                 'maxBytes': maxBytes,
                 'backupCount': 3
             }
