@@ -67,10 +67,16 @@ def test_conf_settings_p01_conf_in_conf():
     with open(conf1['conf'], 'w') as f:
         json.dump(conf2, f)
 
-    vargs, conf_loaded = kvargs.conf_settings(conf)
+    vargs, conf_loaded, vargs_updated_by = kvargs.conf_settings(conf)
 
-    assert vargs == finalconf
+    assert dict(vargs) == finalconf
     assert conf_loaded == finalconf['conf_files_loaded']
+    assert vargs_updated_by == {
+        'conf': ['conf:kvargs1.json'],
+        'setting1': ['conf:kvargs1.json'],
+        'setting2': ['conf:kvargs2.json'],
+        'setting3': ['conf:kvargs2.json'],
+    }
 
     os.unlink(conf)
     os.unlink(conf1['conf'])
@@ -93,10 +99,16 @@ def test_conf_settings_p02_conf_in_conf_overlap():
     with open(conf1['conf'], 'w') as f:
         json.dump(conf2, f)
 
-    vargs, conf_loaded = kvargs.conf_settings(conf)
+    vargs, conf_loaded, vargs_updated_by = kvargs.conf_settings(conf)
 
     assert vargs == finalconf
     assert conf_loaded == finalconf['conf_files_loaded']
+    assert vargs_updated_by == {
+        'conf': ['conf:kvargs1.json'],
+        'setting1': ['conf:kvargs1.json'],
+        'setting2': ['conf:kvargs1.json', 'conf:kvargs2.json'],
+        'setting3': ['conf:kvargs2.json'],
+    }
 
     os.unlink(conf)
     os.unlink(conf1['conf'])
@@ -120,10 +132,16 @@ def test_conf_settings_p03_conf_in_conf_overlap_conf():
     with open(conf1['conf'], 'w') as f:
         json.dump(conf2a, f)
 
-    vargs, conf_loaded = kvargs.conf_settings(conf)
+    vargs, conf_loaded, vargs_updated_by = kvargs.conf_settings(conf)
 
     assert dict(vargs) == finalconf
     assert conf_loaded == finalconf['conf_files_loaded']
+    assert vargs_updated_by == {
+        'conf': ['conf:kvargs1.json', 'conf:kvargs2.json'],
+        'setting1': ['conf:kvargs1.json'],
+        'setting2': ['conf:kvargs2.json'],
+        'setting3': ['conf:kvargs2.json'],
+    }
 
     os.unlink(conf)
     os.unlink(conf1['conf'])
@@ -172,7 +190,7 @@ def test_merge_settings_p02_set_by_default_no_conf():
 
     vargs = kvargs.merge_settings(args, '', args_default)
 
-    assert vargs == finalconf
+    assert dict(vargs) == finalconf
 
 
 def test_merge_settings_p03_set_by_default_no_conf_no_value():
@@ -187,7 +205,7 @@ def test_merge_settings_p03_set_by_default_no_conf_no_value():
 
     vargs = kvargs.merge_settings(args, '', args_default)
 
-    assert vargs == finalconf
+    assert dict(vargs) == finalconf
 
 
 def test_merge_settings_p04_set_by_default_no_conf_blank_value():
@@ -213,6 +231,7 @@ def test_merge_settings_p04_all_set_cmd_line():
         'setting3': 'cmd3',
     }
     finalconf = args
+    finalconf['conf_files_loaded'] = []
 
     vargs = kvargs.merge_settings(args, '', args_default)
 
@@ -475,7 +494,12 @@ def test_parse_and_parser_merge_settings_p02_blank_cmdline_parsed():
         'disp_vargs': False,
         'display': False,
         'token': None,
-        'uri': 'http'
+        'uri': 'http',
+        'vargs_updated_by': {
+            'disp_vargs': ['args_parser_default'],
+            'display': ['args_parser_default'],
+            'uri': ['args_parser_default']
+        },
     }
 
 
@@ -493,7 +517,12 @@ def test_parse_and_parser_merge_settings_p03_blank_cmdline_parsed_arg_default_fl
         'disp_vargs': True,
         'display': False,
         'token': None,
-        'uri': 'http'
+        'uri': 'http',
+        'vargs_updated_by': {
+            'disp_vargs': ['args_default'],
+            'display': ['args_parser_default'],
+            'uri': ['args_parser_default']
+        },
     }
 
 
@@ -511,7 +540,12 @@ def test_parse_and_parser_merge_settings_p04_blank_cmdline_parsed_arg_default_fl
         'disp_vargs': False,
         'display': False,
         'token': None,
-        'uri': 'http'
+        'uri': 'http',
+        'vargs_updated_by': {
+            'disp_vargs': ['args_default'],
+            'display': ['args_parser_default'],
+            'uri': ['args_parser_default']
+        },
     }
 
 
@@ -529,7 +563,12 @@ def test_parse_and_parser_merge_settings_p04_blank_cmdline_parsed_arg_default_fl
         'disp_vargs': False,
         'display': True,
         'token': None,
-        'uri': 'http'
+        'uri': 'http',
+        'vargs_updated_by': {
+            'disp_vargs': ['args_parser_default'],
+            'display': ['args_default'],
+            'uri': ['args_parser_default']
+        },
     }
 
 
@@ -547,7 +586,13 @@ def test_parse_and_parser_merge_settings_p05_blank_cmdline_parsed_arg_default_st
         'disp_vargs': False,
         'display': False,
         'token': 'default_token',
-        'uri': 'http'
+        'uri': 'http',
+        'vargs_updated_by': {
+            'disp_vargs': ['args_parser_default'],
+            'display': ['args_parser_default'],
+            'token': ['args_default'],
+            'uri': ['args_parser_default']
+        },
     }
 
 
@@ -565,7 +610,13 @@ def test_parse_and_parser_merge_settings_p06_blank_cmdline_parsed_arg_default_st
         'disp_vargs': False,
         'display': False,
         'token': 'default_token',
-        'uri': ''
+        'uri': '',
+        'vargs_updated_by': {
+            'disp_vargs': ['args_parser_default'],
+            'display': ['args_parser_default'],
+            'token': ['args_default'],
+            'uri': ['args_default']
+        },
     }
 
 
@@ -583,7 +634,13 @@ def test_parse_and_parser_merge_settings_p06_blank_cmdline_parsed_arg_default_st
         'disp_vargs': False,
         'display': False,
         'token': 'default_token',
-        'uri': ''
+        'uri': '',
+        'vargs_updated_by': {
+            'disp_vargs': ['args_parser_default'],
+            'display': ['args_parser_default'],
+            'token': ['args_default'],
+            'uri': ['args_default']
+        },
     }
 
 
@@ -603,7 +660,13 @@ def test_parse_and_parser_merge_settings_p06_blank_cmdline_parsed_arg_default_st
         'display': False,
         'token': 'default_token',
         'uri': 'http',
-        'url': ''
+        'url': '',
+        'vargs_updated_by': {
+            'disp_vargs': ['args_parser_default'],
+            'display': ['args_parser_default'],
+            'token': ['args_default'],
+            'uri': ['args_parser_default'],
+            'url': ['args_default']},
     }
 
 
@@ -622,7 +685,13 @@ def test_parse_and_parser_merge_settings_p07_blank_cmdline_parsed_arg_default_ne
         'display': False,
         'token': None,
         'uri': 'http',
-        'new_value': 'new_value'
+        'new_value': 'new_value',
+        'vargs_updated_by': {
+            'disp_vargs': ['args_parser_default'],
+            'display': ['args_parser_default'],
+            'new_value': ['args_default'],
+            'uri': ['args_parser_default']
+        },
     }
 
 
@@ -642,7 +711,13 @@ def test_parse_and_parser_merge_settings_p01_cmdline_v1_parsed():
         'disp_vargs': True,
         'display': False,
         'token': None,
-        'uri': 'http'
+        'uri': 'http',
+        'vargs_updated_by': {
+            'disp_vargs': ['args_parser_default',
+                           'cmdline'],
+            'display': ['args_parser_default'],
+            'uri': ['args_parser_default']
+        },
     }
 
 
@@ -660,7 +735,13 @@ def test_parse_and_parser_merge_settings_p02_cmdline_v2_parsed():
         'disp_vargs': False,
         'display': True,
         'token': None,
-        'uri': 'http'
+        'uri': 'http',
+        'vargs_updated_by': {
+            'disp_vargs': ['args_parser_default'],
+            'display': ['args_parser_default',
+                        'cmdline'],
+            'uri': ['args_parser_default']
+        },
     }
 
 
@@ -678,7 +759,14 @@ def test_parse_and_parser_merge_settings_p03_cmdline_v3_parsed():
         'disp_vargs': False,
         'display': False,
         'token': None,
-        'uri': 'http'
+        'uri': 'http',
+        'vargs_updated_by': {
+            'disp_vargs': ['args_parser_default'],
+            'display': ['args_parser_default',
+                        'cmdline'],
+            'uri': ['args_parser_default']
+        },
+
     }
 
 
@@ -696,7 +784,13 @@ def test_parse_and_parser_merge_settings_p04_cmdline_v4_parsed():
         'disp_vargs': False,
         'display': False,
         'token': 'cmdline_token',
-        'uri': 'http'
+        'uri': 'http',
+        'vargs_updated_by': {
+            'disp_vargs': ['args_parser_default'],
+            'display': ['args_parser_default'],
+            'token': ['cmdline'],
+            'uri': ['args_parser_default']
+        },
     }
 
 
@@ -719,13 +813,20 @@ def test_parse_and_parser_merge_settings_p02_conf_cmdline_parsed():
                                                    args_parser_default=args_parser_default,
                                                    args_default=args_default,
                                                    cmd_line=cmd_line)
-    assert vargs == {
+    assert dict(vargs) == {
         'conf': conf,
-        'conf_files_loaded': ['kvargs1.json'],
+        'conf_files_loaded': [conf],
         'disp_vargs': True,
         'display': False,
         'token': None,
-        'uri': 'http'
+        'uri': 'http',
+        'vargs_updated_by': {
+            'conf': ['cmdline'],
+            'disp_vargs': ['args_parser_default',
+                           'conf:kvargs1.json'],
+            'display': ['args_parser_default'],
+            'uri': ['args_parser_default']
+        },
     }
     os.remove(conf)
 
@@ -746,7 +847,15 @@ def test_parse_and_parser_merge_settings_p03_conf_cmdline_parsed():
         'disp_vargs': True,
         'display': False,
         'token': None,
-        'uri': 'https://conf_set'
+        'uri': 'https://conf_set',
+        'vargs_updated_by': {
+            'conf': ['cmdline'],
+            'disp_vargs': ['args_parser_default',
+                           'conf:kvargs1.json'],
+            'display': ['args_parser_default'],
+            'uri': ['args_parser_default',
+                    'conf:kvargs1.json']
+        },
     }
     os.remove(conf)
 
@@ -768,7 +877,13 @@ def test_parse_and_parser_merge_settings_p04_conf_cmdline_parsed():
         'disp_vargs': False,
         'display': False,
         'token': None,
-        'uri': 'https://conf_set'
+        'uri': 'https://conf_set',
+        'vargs_updated_by': {
+            'conf': ['cmdline'],
+            'disp_vargs': ['args_parser_default'],
+            'display': ['args_parser_default', 'conf:kvargs1.json'],
+            'uri': ['args_parser_default', 'conf:kvargs1.json']
+        },
     }
 
     print('*' * 80)
@@ -778,13 +893,22 @@ def test_parse_and_parser_merge_settings_p04_conf_cmdline_parsed():
                                                    args_parser_default=args_parser_default,
                                                    args_default=args_default,
                                                    cmd_line=cmd_line)
-    assert vargs == {
+    assert dict(vargs) == {
         'conf': conf,
         'conf_files_loaded': ['kvargs1.json'],
         'disp_vargs': False,
         'display': True,
         'token': None,
-        'uri': 'https://conf_set'
+        'uri': 'https://conf_set',
+        'vargs_updated_by': {
+            'conf': ['cmdline'],
+            'disp_vargs': ['args_parser_default'],
+            'display': ['args_parser_default',
+                        'conf:kvargs1.json',
+                        'cmdline'],
+            'uri': ['args_parser_default',
+                    'conf:kvargs1.json']
+        },
     }
 
     os.remove(conf)
@@ -803,7 +927,7 @@ def test_parse_and_parser_merge_settings_p01_str_simple():
     vargs = kvargs.parse_and_parser_merge_settings(parser,
                                                    args_default=args_default,
                                                    cmd_line=cmd_line)
-    assert vargs == {'token': 'ken'}
+    assert dict(vargs) == {'token': 'ken', 'vargs_updated_by': {'token': ['args_default']}}
     assert parser.get_default("token") is None
 
 
@@ -818,7 +942,13 @@ def test_parse_and_parser_merge_settings_p02_str_set_cmd():
     vargs = kvargs.parse_and_parser_merge_settings(parser,
                                                    args_default=args_default,
                                                    cmd_line=cmd_line)
-    assert vargs == {'token': 'sue'}
+    assert vargs == {
+        'token': 'sue',
+        'vargs_updated_by': {
+            'token': ['args_default',
+                      'cmdline']
+        },
+    }
     assert parser.get_default("token") is None
 
 
@@ -829,11 +959,18 @@ def test_parse_and_parser_merge_settings_p03_store_true_simple():
     assert parser.get_default("token") is False
 
     args_default = kvargs.parser_extract_default_and_set_to_none(parser)
-    assert args_default == {'token': False}
+    assert args_default == {
+        'token': False,
+    }
     vargs = kvargs.parse_and_parser_merge_settings(parser,
                                                    args_default=args_default,
                                                    cmd_line=cmd_line)
-    assert vargs == {'token': False}
+    assert dict(vargs) == {
+        'token': False,
+        'vargs_updated_by': {
+            'token': ['args_default']
+        }
+    }
     assert parser.get_default("token") is None
 
 
@@ -848,7 +985,13 @@ def test_parse_and_parser_merge_settings_p04_store_true_set_cmd():
     vargs = kvargs.parse_and_parser_merge_settings(parser,
                                                    args_default=args_default,
                                                    cmd_line=cmd_line)
-    assert vargs == {'token': True}
+    assert vargs == {
+        'token': True,
+        'vargs_updated_by': {
+            'token': ['args_default',
+                      'cmdline']
+        },
+    }
     assert parser.get_default("token") is None
 
 
@@ -865,7 +1008,12 @@ def test_parse_and_parser_merge_settings_p05_two_flags():
     vargs = kvargs.parse_and_parser_merge_settings(parser,
                                                    args_default=args_default,
                                                    cmd_line=cmd_line)
-    assert vargs == {'token': True}
+    assert vargs == {
+        'token': True,
+        'vargs_updated_by': {
+            'token': ['args_default']
+        }
+    }
     assert parser.get_default("token") is None
 
 
@@ -881,7 +1029,13 @@ def test_parse_and_parser_merge_settings_p06_two_flags_set_cmd():
     vargs = kvargs.parse_and_parser_merge_settings(parser,
                                                    args_default=args_default,
                                                    cmd_line=cmd_line)
-    assert vargs == {'token': False}
+    assert vargs == {
+        'token': False,
+        'vargs_updated_by': {
+            'token': ['args_default',
+                      'cmdline']
+        },
+    }
     assert parser.get_default("token") is None
 
 
@@ -896,7 +1050,10 @@ def test_parse_and_parser_merge_settings_p07_text_simple_defaults():
     vargs = kvargs.parse_and_parser_merge_settings(parser,
                                                    args_default=args_default,
                                                    cmd_line=cmd_line)
-    assert vargs == {'token': 'set_default'}
+    assert vargs == {
+        'token': 'set_default',
+        'vargs_updated_by': {'token': ['args_default']}
+    }
     assert parser.get_default("token") is None
 
 
@@ -915,8 +1072,14 @@ def test_parse_and_parser_merge_settings_p08_text_simple_defaults_conf():
                                                    args_default=args_default,
                                                    cmd_line=cmd_line,
                                                    test_args_conf=test_args_conf)
-    test_args_conf['conf_files_loaded'] = ['test_args_conf']
-    assert dict(vargs) == test_args_conf
+    assert dict(vargs) == {
+        'conf_files_loaded': ['test_args_conf'],
+        'token': 'set_by_conf',
+        'vargs_updated_by': {
+            'token': ['args_default',
+                      'conf:test_args_conf']
+        },
+    }
     assert parser.get_default("token") is None
 
 
@@ -935,8 +1098,15 @@ def test_parse_and_parser_merge_settings_p09_store_true_conf():
                                                    cmd_line=cmd_line,
                                                    test_args_conf=test_args_conf)
 
-    test_args_conf['conf_files_loaded'] = ['test_args_conf']
-    assert dict(vargs) == test_args_conf
+    assert dict(vargs) == {
+        'conf_files_loaded': ['test_args_conf'],
+        'token': True,
+        'vargs_updated_by': {
+            'token': ['args_parser_default',
+                      'conf:test_args_conf']
+        },
+    }
+
     assert parser.get_default("token") is None
 
 
@@ -955,6 +1125,7 @@ def test_parse_and_parser_merge_settings_p10_store_true_empty_conf_default():
                                                    cmd_line=cmd_line,
                                                    test_args_conf=test_args_conf)
 
+    args_default['vargs_updated_by'] = {'token': ['args_default']}
     args_default['conf_files_loaded'] = ['test_args_conf']
     assert dict(vargs) == args_default
     assert parser.get_default("token") is None
@@ -971,7 +1142,11 @@ def test_prep_parse_and_parser_merge_settings_p01_str_simple():
     vargs = kvargs.prep_parse_and_merge_settings(parser,
                                                  args_default=args_default,
                                                  cmd_line=cmd_line)
-    assert dict(vargs) == {'token': 'ken'}
+    assert dict(vargs) == {
+        'token': 'ken',
+        'vargs_updated_by': {'token': ['args_parser_default']
+                             }
+    }
     assert parser.get_default("token") is None
 
 

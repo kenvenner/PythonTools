@@ -1,7 +1,7 @@
 '''
 @author:   Ken Venner
 @contact:  ken@venerllc.com
-@version:  1.04
+@version:  1.05
 
 Library of tools used to manage logging
 '''
@@ -9,6 +9,7 @@ Library of tools used to manage logging
 import logging
 import logging.config
 
+import os
 import sys
 from logging.handlers import TimedRotatingFileHandler
 
@@ -32,10 +33,11 @@ def get_file_handler(logfile=LOG_FILE):
     return file_handler
 
 
-def get_logger(logger_name, logfile=LOG_FILE):
+def get_logger(logger_name, logfile=LOG_FILE, loggerlevel=None):
     logger = logging.getLogger(logger_name)
 
-    logger.setLevel(logging.DEBUG)  # better to have too much log than not enough
+    if loggerlevel is not None:
+        logger.setLevel(loggerlevel)  # better to have too much log than not enough
 
     logger.addHandler(get_console_handler())
     logger.addHandler(get_file_handler(logfile))
@@ -48,10 +50,13 @@ def get_logger(logger_name, logfile=LOG_FILE):
 
 def get_config(log_path=LOG_FILE,
                fhandler='logging.handlers.RotatingFileHandler',
-               loggerlevel='INFO',
+               loggerlevel=None,
                maxBytes=None):
     if maxBytes is None:
         maxBytes = 1024 * 1000
+
+    if loggerlevel is None:
+        loggerlevel = 'DEBUG'
 
     config = {
         'disable_existing_loggers': False,
@@ -72,7 +77,7 @@ def get_config(log_path=LOG_FILE,
                 'stream': 'ext://sys.stdout'
             },
             'file': {
-                'level': 'DEBUG',
+                'level': loggerlevel,
                 'class': fhandler,
                 'formatter': 'default',
                 'filename': log_path,
@@ -112,6 +117,14 @@ def dictConfig(config):
 
 def getLogger(name):
     return logging.getLogger(name)
+
+
+def clear_logs(config, logger):
+    log_file = config['handlers']['file']['filename']
+    logging.shutdown()
+    os.remove(log_file)
+    dictConfig(config)
+    logger.info('Logs cleared at startup: %s', log_file)
 
 
 """
