@@ -1,4 +1,4 @@
-__version__ = '1.16'
+__version__ = '1.17'
 
 import PySimpleGUI as sg
 import os
@@ -422,7 +422,7 @@ def save_settings(settings_file, settings, values, values_key_2_settings_key):
     # save the settings values out to the file
     try:
         with open(settings_file, 'w') as f:
-            json.dump(settings, f)
+            json.dump(settings, f, indent=4)
 
             sg.popup('Settings saved at:\n' + settings_file)
     except Exception as e:
@@ -432,7 +432,14 @@ def save_settings(settings_file, settings, values, values_key_2_settings_key):
 
 # ***************** Make a settings window ***********************
 def update_windows_values(window, settings, values_key_2_settings_key):
-    # update window with the values read from settings file
+    """
+    Update displayed window with values read in from settings file
+
+    :param window:
+    :param settings:
+    :param values_key_2_settings_key:
+    """
+
     for k, v in values_key_2_settings_key.items():
         if v in window.AllKeysDict:
             try:
@@ -494,13 +501,16 @@ def create_settings_window(settings, values_key_2_settings_key, app_version):
               [TextLabel('Clear log on startup:'), sg.Checkbox('', default=False, key='-CLEAR_LOGS-')],
               [TextLabel('Application version'), sg.Text(app_version)],
               [TextLabel('Settings file'), sg.Input(key='-SETTINGS_FILE-', size=(70, 1))],
-              [sg.Button('Save'), sg.Button('Exit'),
+              [sg.Button('Save'),
+               sg.Button('Exit'),
                sg.Input(key='-SAVE_AS-', visible=False, enable_events=True),
                sg.FileSaveAs('SaveAs', key='-SAVE_AS-', file_types=(('Cfg', '*.json'),),
                              initial_folder=settings.get('cfg_folder', '')),
                sg.Input(key='-LOAD-', visible=False, enable_events=True),
                sg.FileBrowse('Load', key='-LOAD-', file_types=(('Cfg', '*.json'),),
-                             initial_folder=settings.get('cfg_folder', ''))]]
+                             initial_folder=settings.get('cfg_folder', '')),
+               sg.Button('Edit'),
+               sg.Button('ViewLog')]]
 
     window = sg.Window('Settings', layout, finalize=True)
 
@@ -508,6 +518,16 @@ def create_settings_window(settings, values_key_2_settings_key, app_version):
     update_windows_values(window, settings, values_key_2_settings_key)
 
     return window
+
+
+def open_in_notepad(input):
+    """
+    Cause the settings file JSON to be opened in notepad
+
+    :param input: (str) filename of the file to be opened
+    """
+    logger.info('Edit file in notepad: %s', input)
+    editted_file = os.system(f'notepad "{input}"')
 
 
 def reinitialize_logging(vargs, settings, parent):
@@ -528,8 +548,9 @@ def clear_logs(vargs, settings, p_get_log_filename=None):
 
     # if we are not clearing logs - no action here
     if not (vargs.get('clear_logs', False) or settings.get('clear_logs', False)):
-        print(settings)
-        print('clear logs not set')
+        logger.warning("REMOVE THIS: %s",
+                       {'settings': settings,
+                        'msg': 'clear logs not set'})
         return
 
     # set the function
@@ -538,7 +559,7 @@ def clear_logs(vargs, settings, p_get_log_filename=None):
 
     # make sure we set the get_log_filename
     if not parent_get_log_filename:
-        print('must set parent_get_log_filename before calling this function')
+        logger.error('must set parent_get_log_filename before calling this function')
         raise Exception
 
     # print - shutting down logging
@@ -546,11 +567,13 @@ def clear_logs(vargs, settings, p_get_log_filename=None):
 
     log_path = str(parent_get_log_filename(vargs.get('log_path', '')))
     if os.path.isfile(log_path):
-        print('Removing cfg_folder log file: ', log_path)
+        # logger.info('Removing cfg_folder vargs log file: ', log_path)
+        print('kv_psg:clear_logs:Removing cfg_folder vargs log file: ', log_path)
         os.remove(log_path)
     log_path = str(parent_get_log_filename(settings.get('log_path', '')))
     if os.path.isfile(log_path):
-        print('Removing cfg_folder log file: ', log_path)
+        # logger.info('Removing cfg_folder settings log file: ', log_path)
+        print('kv_psg:clear_logs:Removing cfg_folder settings log file: ', log_path)
         os.remove(log_path)
 
 
@@ -649,6 +672,62 @@ def process_change_settings(vargs, settings, v2s, parent, debug=False):
 
             # update the logging if we changed something
             reinitialize_logging(vargs, settings, parent)
+
+        if event == 'Edit':
+            logger.info('User will edit the file in notepad')
+            # make sure field is set properly
+            if values['-SETTINGS_FILE-'] != settings['settings_file']:
+                # the field was changed - lets see if what we have is a valid folder and filename
+                if not Path(values['-SETTINGS_FILE-']).parent.is_dir():
+                    # the entered parent is not a dir - so we need to skip
+                    window['-SETTINGS_FILE-'].update(value=settings['settings_file'])
+                    window.Refresh()
+                    sg.popup('Improper path to file settings', 'Correct or try using the SaveAs button',
+                             'Data not saved')
+                    continue
+
+                # valid file capture value and continue on
+                settings['settings_file'] = values['-SETTINGS_FILE-']
+                # capture the filename from the save as
+                settings_file = values['-SETTINGS_FILE-']
+
+            # save screen data to file
+            # save_settings(settings_file, settings, values, v2s)
+
+            # copy the current definitoin of settings in case the edit file can not be loaded
+            settings_copy = copy.deepcopy(settings)
+
+            # edit the file we just saved
+            open_in_notepad(settings_file)
+
+            # reload the editted file
+            try:
+                settings = load_settings(settings_file, settings, v2s)
+                logger.info('Loaded edits made to the file')
+            except:
+                logger.info('edits could not be loaded - restoring prior version')
+                save_settings(settings_file, settings_copy, values, v2s)
+
+            # update the screen
+            update_windows_values(window, settings, v2s)
+
+            # update the logging if we changed something
+            reinitialize_logging(vargs, settings, parent)
+
+        if event == 'ViewLog':
+            global parent_get_log_filename
+
+            if parent_get_log_filename is None:
+                logger.warning('Log file function not set up - nothing to view')
+                return
+
+            # check for the log file
+            log_path = str(parent_get_log_filename(vargs.get('log_path', '')))
+            if os.path.isfile(log_path):
+                logger.info('User will view the log file in notepad')
+
+                # open the file in notepad
+                open_in_notepad(log_path)
 
     window.close()
     return settings, settings_file
