@@ -378,7 +378,7 @@ def update_settings(settings, values, values_key_2_settings_key):
     if values:
         if '-LOG_PATH-' in values:
             if parent_get_log_filename and Path(values['-LOG_PATH-']).is_dir():
-                print('change to get to a file')
+                # print('change to get to a file')
                 values['-LOG_PATH-'] = parent_get_log_filename(values['-LOG_PATH-'])
             values['-LOG_PATH-'] = str(values['-LOG_PATH-'])
 
