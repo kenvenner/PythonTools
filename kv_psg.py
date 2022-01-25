@@ -1,4 +1,4 @@
-__version__ = '1.17'
+__version__ = '1.19'
 
 import PySimpleGUI as sg
 import os
@@ -16,7 +16,6 @@ logger = logging.getLogger(__name__)
 # Global variable used to capture log entries
 buffer = ''
 parent_get_log_filename = None
-
 
 class Handler(logging.StreamHandler):
     """
@@ -328,7 +327,7 @@ def load_settings(settings_file, default_settings, values_key_2_settings_key):
         if err_line:
             err_line_int = int(err_line.group(1))
             if err_line_int < len(json_lines):
-                logger.warning('Error on line: ', err_line_int)
+                logger.warning('Error on line: %s', err_line_int)
                 logger.warning(json_lines[err_line_int - 1])
             logger.warning('-' * 40)
         raise
@@ -377,6 +376,7 @@ def update_settings(settings, values, values_key_2_settings_key):
     not_updated = dict()
     if values:
         if '-LOG_PATH-' in values:
+            # TODO - not sure why we are changing this to a file name and not just a path
             if parent_get_log_filename and Path(values['-LOG_PATH-']).is_dir():
                 # print('change to get to a file')
                 values['-LOG_PATH-'] = parent_get_log_filename(values['-LOG_PATH-'])
@@ -526,32 +526,49 @@ def open_in_notepad(input):
 
     :param input: (str) filename of the file to be opened
     """
-    logger.info('Edit file in notepad: %s', input)
+    logger.info('Editted file in notepad: %s', input)
     editted_file = os.system(f'notepad "{input}"')
 
 
 def reinitialize_logging(vargs, settings, parent):
-    logger.info('Check for change in logging: ')
+    logger.info('Check for change in logging settings')
     value_diff = False
+    # force the value to be a directory not a full filename
+    if not os.path.isdir(vargs['log_path']):
+        vargs['log_path'] = os.path.dirname(vargs['log_path'])
+    if not os.path.isdir(settings['log_path']):
+        settings['log_path'] = os.path.dirname(settings['log_path'])
+    # now check for differences
     for k in ('log_path', 'log_console', 'log_file'):
         if vargs[k] != settings[k]:
-            logger.info('Setting changed: %s - %s - %s', k, vargs[k], settings[k])
+            logger.info('Setting changed: %s',
+                        {'key': k,
+                         'vargs[key]': vargs[k],
+                         'settings[key]': settings[k]})
             value_diff = True
             break
     if value_diff:
-        logger.info('Calling to change logging settings')
+        logger.info('Calling to change logging settings: %s',
+                    {'log_path': settings['log_path'],
+                     'log_console': settings['log_console'],
+                     'log_file': settings['log_file']})
         parent.initialize_logging(settings['log_path'], settings['log_console'], settings['log_file'])
-
+        logger.info('Logging settings changed: %s',
+                    {'old_log_path': vargs['log_path'],
+                     'new_log_path': settings['log_path']})
 
 def clear_logs(vargs, settings, p_get_log_filename=None):
     global parent_get_log_filename
 
+    logs_cleared = False
+    
     # if we are not clearing logs - no action here
     if not (vargs.get('clear_logs', False) or settings.get('clear_logs', False)):
-        logger.warning("REMOVE THIS: %s",
-                       {'settings': settings,
-                        'msg': 'clear logs not set'})
-        return
+        if False:
+            logger.warning("REMOVE THIS: %s",
+                           {'settings': settings,
+                            'msg': 'clear logs not set'})
+        return logs_cleared
 
     # set the function
     if p_get_log_filename:
@@ -570,11 +587,15 @@ def clear_logs(vargs, settings, p_get_log_filename=None):
         # logger.info('Removing cfg_folder vargs log file: ', log_path)
         print('kv_psg:clear_logs:Removing cfg_folder vargs log file: ', log_path)
         os.remove(log_path)
+        logs_cleared = True
     log_path = str(parent_get_log_filename(settings.get('log_path', '')))
     if os.path.isfile(log_path):
         # logger.info('Removing cfg_folder settings log file: ', log_path)
         print('kv_psg:clear_logs:Removing cfg_folder settings log file: ', log_path)
         os.remove(log_path)
+        logs_cleared = True
+
+    return logs_cleared
 
 
 def process_change_settings(vargs, settings, v2s, parent, debug=False):
@@ -592,11 +613,21 @@ def process_change_settings(vargs, settings, v2s, parent, debug=False):
         event, values = window.read()
 
         # debugging
+        
         if debug:
-            print(f'event: {event}\nvalues: {values}')
+            print(f'event: [{event}]\nvalues: {values}')
 
         # generic event to exit out
         if event in (sg.WIN_CLOSED, 'Exit'):
+            # check to see if the log_path was changed in the screen
+            if Path(settings['log_path']) != Path(values['-LOG_PATH-']):
+                # post into existing log file
+                logger.info('Changing log dir to: %s', values['-LOG_PATH-'])
+                # update settings
+                old_settings = {'log_path': settings['log_path']}
+                settings['log_path'] = values['-LOG_PATH-']
+                # update the logging if we changed something
+                reinitialize_logging(old_settings, settings, parent)
             break
 
         if event == 'Save':
@@ -674,7 +705,6 @@ def process_change_settings(vargs, settings, v2s, parent, debug=False):
             reinitialize_logging(vargs, settings, parent)
 
         if event == 'Edit':
-            logger.info('User will edit the file in notepad')
             # make sure field is set properly
             if values['-SETTINGS_FILE-'] != settings['settings_file']:
                 # the field was changed - lets see if what we have is a valid folder and filename
@@ -693,6 +723,7 @@ def process_change_settings(vargs, settings, v2s, parent, debug=False):
 
             # save screen data to file
             # save_settings(settings_file, settings, values, v2s)
+            logger.info('Editting settings in notepad: %s', settings_file)
 
             # copy the current definitoin of settings in case the edit file can not be loaded
             settings_copy = copy.deepcopy(settings)
@@ -703,28 +734,32 @@ def process_change_settings(vargs, settings, v2s, parent, debug=False):
             # reload the editted file
             try:
                 settings = load_settings(settings_file, settings, v2s)
-                logger.info('Loaded edits made to the file')
+                logger.info('Loaded editted settings file')
             except:
-                logger.info('edits could not be loaded - restoring prior version')
+                logger.info('Editted settings file could not be loaded - restoring prior version')
                 save_settings(settings_file, settings_copy, values, v2s)
 
             # update the screen
             update_windows_values(window, settings, v2s)
 
             # update the logging if we changed something
-            reinitialize_logging(vargs, settings, parent)
+            reinitialize_logging(settings_copy, settings, parent)
 
         if event == 'ViewLog':
             global parent_get_log_filename
 
+            # we have not set this - set it
             if parent_get_log_filename is None:
-                logger.warning('Log file function not set up - nothing to view')
-                return
-
+                parent_get_log_filename = parent.get_log_filename
+            
             # check for the log file
-            log_path = str(parent_get_log_filename(vargs.get('log_path', '')))
+            try:
+                log_path = str(parent_get_log_filename(settings.get('log_path', '')))
+            except Exception as e:
+                logger.exception('Trying to get log path')
+                
             if os.path.isfile(log_path):
-                logger.info('User will view the log file in notepad')
+                logger.info('User viewed this log file in notepad: %s', log_path)
 
                 # open the file in notepad
                 open_in_notepad(log_path)
