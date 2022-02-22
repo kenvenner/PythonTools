@@ -3,7 +3,7 @@ from __future__ import print_function
 '''
 @author:   Ken Venner
 @contact:  ken@venerllc.com
-@version:  1.65
+@version:  1.66
 
 Library of tools used in general by KV
 '''
@@ -27,8 +27,8 @@ import logging
 logger = logging.getLogger(__name__)
 
 # set the module version number
-AppVersion = '1.65'
-__version__ = '1.65'
+AppVersion = '1.66'
+__version__ = '1.66'
 HELP_KEYS = ('help', 'helpall',)
 HELP_VALUE_TABLE = ('tbl', 'table', 'helptbl', 'fmt',)
 
@@ -612,7 +612,7 @@ def filename_splitall(path):
 # create a list of filenames given a name, a list of names, file glob,
 # list of include files in a file, list of exclue files in a file
 def filename_list(filename=None, filenamelist=None, fileglob=None, strippath=False, includelist_filename=None,
-                  excludefilenamelist=None, excludelist_filename=None):
+                  excludefilenamelist=None, excludelist_filename=None, glob_filename=None):
     # local variable
     flist = []
     xlist = []
@@ -629,8 +629,18 @@ def filename_list(filename=None, filenamelist=None, fileglob=None, strippath=Fal
     if filenamelist:
         flist.extend(filenamelist)
     if filename:
-        flist.append(filename)
-
+        if glob_filename:
+            if isinstance(filename, list):
+                for fname in filename:
+                    flist.extend(glob.glob(fname))
+            else:
+                flist.append(glob.glob(filename))
+        else:
+            if isinstance(filename, list):
+                flist.extend(filename)
+            else:
+                flist.append(filename)
+            
     # remove records if exclude definitions provided
     if xlist:
         for excludefile in xlist:

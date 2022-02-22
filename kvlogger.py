@@ -1,7 +1,7 @@
 '''
 @author:   Ken Venner
 @contact:  ken@venerllc.com
-@version:  1.05
+@version:  1.06
 
 Library of tools used to manage logging
 '''
@@ -53,7 +53,7 @@ def get_config(log_path=LOG_FILE,
                loggerlevel=None,
                maxBytes=None):
     if maxBytes is None:
-        maxBytes = 1024 * 1000
+        maxBytes = 1024 * 1000 * 100
 
     if loggerlevel is None:
         loggerlevel = 'DEBUG'

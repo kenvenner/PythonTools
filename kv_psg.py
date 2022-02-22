@@ -1,4 +1,4 @@
-__version__ = '1.19'
+__version__ = '1.20'
 
 import PySimpleGUI as sg
 import os
@@ -301,6 +301,7 @@ def config_folder(sub_folder_list):
     return app_folder
 
 
+
 def load_settings(settings_file, default_settings, values_key_2_settings_key):
     """
     Load in the settings from the settings_file
@@ -540,11 +541,11 @@ def reinitialize_logging(vargs, settings, parent):
         settings['log_path'] = os.path.dirname(settings['log_path'])
     # now check for differences
     for k in ('log_path', 'log_console', 'log_file'):
-        if vargs[k] != settings[k]:
+        if vargs.get(k) != settings.get(k):
             logger.info('Setting changed: %s',
                         {'key': k,
-                         'vargs[key]': vargs[k],
-                         'settings[key]': settings[k]})
+                         'vargs[key]': vargs.get(k),
+                         'settings[key]': settings.get(k)})
             value_diff = True
             break
     if value_diff:

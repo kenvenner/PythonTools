@@ -1,9 +1,9 @@
-__version__ = '1.09'
+__version__ = '1.10'
 
 """
 @author:   Ken Venner
 @contact:  ken@venerllc.com
-@version:  1.09
+@version:  1.10
 
 Tooling that creates a new major/minor version on a file
 
@@ -53,7 +53,7 @@ sys.excepthook = handle_exception
 # application variables
 optiondictconfig = {
     'AppVersion': {
-        'value': '1.09',
+        'value': '1.10',
         'description': 'defines the version number for the app',
     },
     'input_folder': {
@@ -316,7 +316,7 @@ if __name__ == '__main__':
     req_flds = list()
 
     parser = argparse.ArgumentParser(description='Increment version of files')
-    parser.add_argument("input_file", nargs="?",
+    parser.add_argument("input_file", nargs="*",
                         help="file we are updating the version on")
     parser.add_argument("--input_folder", default="./",
                         help="folder of files to be analyzed and processed")
@@ -334,12 +334,16 @@ if __name__ == '__main__':
                         help="Run in test mode")
     parser.add_argument("--debug", action="store_true",
                         help="Run in debug mode")
+    parser.add_argument("--disp_vargs", action="store_true",
+                        help="Display command line options")
     parser.add_argument('-v', '--version', action='version', version='%(prog)s ' + __version__)
 
-    args = parser.parse_args()
+    vargs = kvargs.prep_parse_and_merge_settings(parser, args_default)
 
-    # get the merged settings
-    vargs = kvargs.merge_settings(args, args.conf, args_default, req_flds)
+    # display the settings
+    if vargs.disp_vargs:
+        print('vargs:')
+        pp.pprint(vargs)
 
     if vargs.major_update and vargs.minor_update:
         print("Set only one true:  minor_update, major_update")
@@ -348,7 +352,7 @@ if __name__ == '__main__':
         vargs.minor_update = True
 
     # get the list of files to be processed
-    filelist = kvutil.filename_list(vargs['input_file'], vargs['input_list'], vargs['input_glob'])
+    filelist = kvutil.filename_list(vargs['input_file'], vargs['input_list'], vargs['input_glob'], glob_filename=True)
 
     # our behavior is controlled if we set the input_file, if we don't the we do the git evaluation
     if filelist:
