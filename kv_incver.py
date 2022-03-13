@@ -1,9 +1,9 @@
-__version__ = '1.10'
+__version__ = '1.11'
 
 """
 @author:   Ken Venner
 @contact:  ken@venerllc.com
-@version:  1.10
+@version:  1.11
 
 Tooling that creates a new major/minor version on a file
 
@@ -53,7 +53,7 @@ sys.excepthook = handle_exception
 # application variables
 optiondictconfig = {
     'AppVersion': {
-        'value': '1.10',
+        'value': '1.11',
         'description': 'defines the version number for the app',
     },
     'input_folder': {

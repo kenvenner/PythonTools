@@ -615,14 +615,14 @@ def filename_list(filename=None, filenamelist=None, fileglob=None, strippath=Fal
                   excludefilenamelist=None, excludelist_filename=None, glob_filename=None):
     # local variable
     flist = []
-    xlist = []
+    exclude_list = []
     # read list from files provide
     if includelist_filename:
         flist = read_list_from_file_lines(includelist_filename, trim=True)
     if excludelist_filename:
-        xlist = read_list_from_file_lines(excludelist_filename, trim=True)
+        exclude_list = read_list_from_file_lines(excludelist_filename, trim=True)
     if excludefilenamelist:
-        xlist.extend(excludefilenamelist)
+        exclude_list.extend(excludefilenamelist)
     # read list from records provided
     if fileglob:
         flist.extend(glob.glob(fileglob))
@@ -642,8 +642,8 @@ def filename_list(filename=None, filenamelist=None, fileglob=None, strippath=Fal
                 flist.append(filename)
             
     # remove records if exclude definitions provided
-    if xlist:
-        for excludefile in xlist:
+    if exclude_list:
+        for excludefile in exclude_list:
             if excludefile in flist:
                 flist.remove(excludefile)
 

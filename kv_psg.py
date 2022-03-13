@@ -17,6 +17,7 @@ logger = logging.getLogger(__name__)
 buffer = ''
 parent_get_log_filename = None
 
+
 class Handler(logging.StreamHandler):
     """
     Logging handler that puts outputs into a GUI window
@@ -301,7 +302,6 @@ def config_folder(sub_folder_list):
     return app_folder
 
 
-
 def load_settings(settings_file, default_settings, values_key_2_settings_key):
     """
     Load in the settings from the settings_file
@@ -558,11 +558,12 @@ def reinitialize_logging(vargs, settings, parent):
                     {'old_log_path': vargs['log_path'],
                      'new_log_path': settings['log_path']})
 
+
 def clear_logs(vargs, settings, p_get_log_filename=None):
     global parent_get_log_filename
 
     logs_cleared = False
-    
+
     # if we are not clearing logs - no action here
     if not (vargs.get('clear_logs', False) or settings.get('clear_logs', False)):
         if False:
@@ -614,7 +615,7 @@ def process_change_settings(vargs, settings, v2s, parent, debug=False):
         event, values = window.read()
 
         # debugging
-        
+
         if debug:
             print(f'event: [{event}]\nvalues: {values}')
 
@@ -752,13 +753,13 @@ def process_change_settings(vargs, settings, v2s, parent, debug=False):
             # we have not set this - set it
             if parent_get_log_filename is None:
                 parent_get_log_filename = parent.get_log_filename
-            
+
             # check for the log file
             try:
                 log_path = str(parent_get_log_filename(settings.get('log_path', '')))
             except Exception as e:
                 logger.exception('Trying to get log path')
-                
+
             if os.path.isfile(log_path):
                 logger.info('User viewed this log file in notepad: %s', log_path)
 
