@@ -1,4 +1,4 @@
-__version__ = '1.20'
+__version__ = '1.21'
 
 import PySimpleGUI as sg
 import os
@@ -387,7 +387,7 @@ def update_settings(settings, values, values_key_2_settings_key):
         for k, v in values_key_2_settings_key.items():
             try:
                 if v in values:
-                    settings[k] = values[v]
+                    settings[k] = values[v] if not isinstance(values[v], str) else values[v].strip()
             except Exception as e:
                 #
                 # pass
