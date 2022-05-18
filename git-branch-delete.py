@@ -1,4 +1,4 @@
-__version__ = '1.01'
+__version__ = '1.02'
 
 import argparse
 import sys
@@ -34,6 +34,7 @@ def filter_to_jira_branches(git_branches, jira_branches=None):
 
 
 def git_branch_delete_command(git_branches):
+    print('rem Remove any entry here that is also listed in git web page\n')
     print('git checkout master')
 
     for line in git_branches:

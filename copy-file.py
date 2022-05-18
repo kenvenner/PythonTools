@@ -1,4 +1,4 @@
-__version__ = '1.04'
+__version__ = '1.05'
 
 import argparse
 import sys
@@ -6,14 +6,19 @@ from attrdict import AttrDict
 from pathlib import Path, PurePath
 import subprocess
 
-def create_copy_list(srcdir, destdir, mtime_diff=False, diff=False, no_diff_chk=False):
+def create_copy_list(srcdir, destdir, mtime_diff=False, diff=False, no_diff_chk=False, ext=None):
+    if ext is None:
+        ext = 'py'
+
     cmd = 'diff' if diff else 'copy'
     
     srcdir = Path(srcdir)
     destdir = Path(destdir)
 
-    srcfiles = list(srcdir.glob('*.py'))
-    destfiles = list(destdir.glob('*.py'))
+    file_glob_string = '*.' + ext
+    
+    srcfiles = list(srcdir.glob(file_glob_string))
+    destfiles = list(destdir.glob(file_glob_string))
                     
     srcfilenames = [x.name for x in srcfiles]
     destfilenames = [x.name for x in destfiles]
@@ -77,10 +82,15 @@ def create_copy_list(srcdir, destdir, mtime_diff=False, diff=False, no_diff_chk=
         print(f'{cmd} "{srcfile}" "{destfile}"')
 
 
-def create_compile_list(srcdir):
+def create_compile_list(srcdir, ext=None):
+    if ext is None:
+        ext = 'py'
+
+    file_glob_string = '*.' + ext
+
     srcdir = Path(srcdir)
 
-    for file in srcdir.glob('*.py'):
+    for file in srcdir.glob(file_glob_string):
         print(f'python -m py_compile {file}')
 
 
@@ -92,6 +102,8 @@ if __name__ == '__main__':
                         help="Destination directory to compare")
     parser.add_argument("--src", '-s', default=Path('.'),
                         help="Source directory (default: current directory)")
+    parser.add_argument("--ext",
+                        help="File extension we are looking for - no period (default: py)")
     parser.add_argument('--mtime', action="store_true", default=False,
                         help="Copy when time stamps are different")
     parser.add_argument('--diff', action="store_true", default=False,
@@ -115,5 +127,5 @@ if __name__ == '__main__':
             sys.exit(1)
 
 
-    create_copy_list(args.src, args.dest, args.mtime, args.diff, args.no_diff_chk)
+    create_copy_list(args.src, args.dest, args.mtime, args.diff, args.no_diff_chk, args.ext)
 
