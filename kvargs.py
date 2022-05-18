@@ -1,7 +1,7 @@
 """
 @author:   Ken Venner
 @contact:  ken@venerllc.com
-@version:  1.12
+@version:  1.13
 
 Library of tools used in command line processing with configuration files
 
@@ -23,8 +23,8 @@ pp = pprint.PrettyPrinter(indent=4)
 
 logger = logging.getLogger(__name__)
 
-AppVersion = '1.12'
-__version__ = '1.12'
+AppVersion = '1.13'
+__version__ = '1.13'
 
 
 def load_json_file_to_dict(filename):
@@ -407,7 +407,7 @@ def parser_merge_settings(parser, args, conf_files=None, args_default=None, args
         parser_list = [v['cmd'] for v in args_update.values()]
         # print('parser_list:', parser_list)
         # parse them to get their values
-        args = vars(parser.parse_args(parser_list))
+        args = vars(parser.parse_args(parser_list[0]))
         # print('args-parser-list:', args)
         # for things that got updated based on this
         for k, v in args_update.items():

@@ -1,4 +1,4 @@
-__version__ = '1.23'
+__version__ = '1.20'
 
 import PySimpleGUI as sg
 import os
@@ -16,7 +16,6 @@ logger = logging.getLogger(__name__)
 # Global variable used to capture log entries
 buffer = ''
 parent_get_log_filename = None
-
 
 class Handler(logging.StreamHandler):
     """
@@ -302,6 +301,7 @@ def config_folder(sub_folder_list):
     return app_folder
 
 
+
 def load_settings(settings_file, default_settings, values_key_2_settings_key):
     """
     Load in the settings from the settings_file
@@ -318,9 +318,6 @@ def load_settings(settings_file, default_settings, values_key_2_settings_key):
         with open(settings_file, 'r') as f:
             settings = json.load(f)
         settings['cfg_folder'] = os.path.dirname(settings_file)
-        logger.info('Load settings file: %s',
-                    {'settings_file': settings_file,
-                     'cfg_folder': settings['cfg_folder']})
     except json.decoder.JSONDecodeError as e:
         # report error when we struggle to read the JSON 
         import re
@@ -561,29 +558,26 @@ def reinitialize_logging(vargs, settings, parent):
                     {'old_log_path': vargs['log_path'],
                      'new_log_path': settings['log_path']})
 
-
 def clear_logs(vargs, settings, p_get_log_filename=None):
     global parent_get_log_filename
 
     logs_cleared = False
-
-    # set the function
-    if p_get_log_filename:
-        logger.info("Set parent_get_log_filename to passed in function: %s", p_get_log_filename)
-        parent_get_log_filename = p_get_log_filename
-
+    
     # if we are not clearing logs - no action here
     if not (vargs.get('clear_logs', False) or settings.get('clear_logs', False)):
         if False:
-            logger.warning('REMOVE this code - logs not cleared')
             logger.warning("REMOVE THIS: %s",
                            {'settings': settings,
                             'msg': 'clear logs not set'})
         return logs_cleared
 
+    # set the function
+    if p_get_log_filename:
+        parent_get_log_filename = p_get_log_filename
+
     # make sure we set the get_log_filename
     if not parent_get_log_filename:
-        logger.error('Must set parent_get_log_filename before calling this function')
+        logger.error('must set parent_get_log_filename before calling this function')
         raise Exception
 
     # print - shutting down logging
@@ -595,17 +589,12 @@ def clear_logs(vargs, settings, p_get_log_filename=None):
         print('kv_psg:clear_logs:Removing cfg_folder vargs log file: ', log_path)
         os.remove(log_path)
         logs_cleared = True
-    else:
-        print('kv_psg:clear_logs:NOT FOUND vargs log file: ', log_path)
-
     log_path = str(parent_get_log_filename(settings.get('log_path', '')))
     if os.path.isfile(log_path):
         # logger.info('Removing cfg_folder settings log file: ', log_path)
         print('kv_psg:clear_logs:Removing cfg_folder settings log file: ', log_path)
         os.remove(log_path)
         logs_cleared = True
-    else:
-        print('kv_psg:clear_logs:NOT FOUND settings log file: ', log_path)
 
     return logs_cleared
 
@@ -625,7 +614,7 @@ def process_change_settings(vargs, settings, v2s, parent, debug=False):
         event, values = window.read()
 
         # debugging
-
+        
         if debug:
             print(f'event: [{event}]\nvalues: {values}')
 
@@ -705,7 +694,6 @@ def process_change_settings(vargs, settings, v2s, parent, debug=False):
                 # user selected cancel
                 continue
             if not os.path.exists(settings_file):
-                logger.warning('Settings file does not exist: %s', settings_file)
                 continue
             # and now read in this data 
             settings = load_settings(settings_file, settings, v2s)
@@ -713,9 +701,6 @@ def process_change_settings(vargs, settings, v2s, parent, debug=False):
             settings['settings_file'] = settings_file
             # update the screen
             update_windows_values(window, settings, v2s)
-
-            # see if this works
-            clear_logs(vargs, settings)
 
             # update the logging if we changed something
             reinitialize_logging(vargs, settings, parent)
@@ -767,13 +752,13 @@ def process_change_settings(vargs, settings, v2s, parent, debug=False):
             # we have not set this - set it
             if parent_get_log_filename is None:
                 parent_get_log_filename = parent.get_log_filename
-
+            
             # check for the log file
             try:
                 log_path = str(parent_get_log_filename(settings.get('log_path', '')))
             except Exception as e:
                 logger.exception('Trying to get log path')
-
+                
             if os.path.isfile(log_path):
                 logger.info('User viewed this log file in notepad: %s', log_path)
 
