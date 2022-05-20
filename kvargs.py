@@ -1,7 +1,7 @@
 """
 @author:   Ken Venner
 @contact:  ken@venerllc.com
-@version:  1.13
+@version:  1.14
 
 Library of tools used in command line processing with configuration files
 
@@ -12,6 +12,7 @@ from attrdict import AttrDict
 import json
 import os
 import re
+import sys
 
 # import logging
 import logging.config
@@ -23,8 +24,8 @@ pp = pprint.PrettyPrinter(indent=4)
 
 logger = logging.getLogger(__name__)
 
-AppVersion = '1.13'
-__version__ = '1.13'
+AppVersion = '1.14'
+__version__ = '1.14'
 
 
 def load_json_file_to_dict(filename):
@@ -405,9 +406,12 @@ def parser_merge_settings(parser, args, conf_files=None, args_default=None, args
     if args_update:
         # get the list of command line commands
         parser_list = [v['cmd'] for v in args_update.values()]
+        # pull in the original command line arguments add them to this
+        # as their may be required values we need to parse
+        parser_list.extend(sys.argv)
         # print('parser_list:', parser_list)
         # parse them to get their values
-        args = vars(parser.parse_args(parser_list[0]))
+        args = vars(parser.parse_args(parser_list))
         # print('args-parser-list:', args)
         # for things that got updated based on this
         for k, v in args_update.items():
