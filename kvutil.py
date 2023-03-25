@@ -12,6 +12,9 @@ import glob
 import os
 import datetime
 
+# moved datetime processing to its own module
+import kvdate
+
 # these were pulled out and put in kvdate.py
 # from dateutil import tz
 # from dateutil.zoneinfo import get_zonefile_instance
@@ -27,8 +30,8 @@ import logging
 logger = logging.getLogger(__name__)
 
 # set the module version number
-AppVersion = '1.66'
-__version__ = '1.66'
+AppVersion = '1.67'
+__version__ = '1.67'
 HELP_KEYS = ('help', 'helpall',)
 HELP_VALUE_TABLE = ('tbl', 'table', 'helptbl', 'fmt',)
 
@@ -303,9 +306,9 @@ def kv_parse_command_line(optiondictconfig, raise_error=False, keymapdict=None, 
             elif optiondictconfig[key]['type'] == 'liststr':
                 optiondict[key] = value.split(',')
             elif optiondictconfig[key]['type'] == 'date':
-                optiondict[key] = datetime_from_str(value)
+                optiondict[key] = kvdate.datetime_from_str(value)
             elif optiondictconfig[key]['type'] == 'datetimezone':
-                optiondict[key] = datetimezone_from_str(value)
+                optiondict[key] = kvdate.datetimezone_from_str(value)
             elif optiondictconfig[key]['type'] == 'inlist':
                 # value must be from a predefined list of acceptable values
                 if 'valid' not in optiondictconfig[key]:

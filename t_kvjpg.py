@@ -4,7 +4,7 @@ import datetime
 import os
 import re
 
-__version__ = '1.05'
+__version__ = '1.06'
 
 datestr = '2018-10-18'
 dateval = datetime.datetime.strptime(datestr, '%Y-%m-%d')
@@ -72,19 +72,20 @@ class TestKVJpg(unittest.TestCase):
         #self.assertIsNone( kvjpg.display_exif_attributes("IMG_2666.JPG") )
 
     def test_get_exif_datetime_attribute_from_jpg_p01_simple(self):
-        self.assertEqual(kvjpg.get_exif_datetime_attribute_from_jpg('2019-11-02-CNT00340-DSC02121.JPG', debug=True), datetime.datetime(2019, 11, 2, 4, 32, 15))
+        # based on files in C:\Users\ken\Dropbox\LinuxShare\JPGReorder
+        self.assertEqual(kvjpg.get_exif_datetime_attribute_from_jpg('../../JPGReorder/2019-11-02-CNT00340-DSC02121.JPG', debug=True), datetime.datetime(2019, 11, 2, 4, 32, 15))
 
 
     def test_get_date_sorted_filelists_p01_simple(self):
-        (filelist, datefilelistsorted, sameorder) = kvjpg.get_date_sorted_filelists( '*.jpg' )
+        (filelist, datefilelistsorted, sameorder) = kvjpg.get_date_sorted_filelists( '../../JPGReorder/*.jpg' )
         # based on files in C:\Users\ken\Dropbox\LinuxShare\JPGReorder
-        self.assertEqual(filelist[-1], 'IMG_2666.JPG')  
-        self.assertEqual(datefilelistsorted[0][1], 'IMG_2666.JPG')
+        self.assertEqual(filelist[-1], '../../JPGReorder\\IMG_2666.JPG')  
+        self.assertEqual(datefilelistsorted[0][1], '../../JPGReorder\\IMG_2666.JPG')
     def test_get_date_sorted_filelists_p02_cleanup(self):
-        (filelist, datefilelistsorted, sameorder) = kvjpg.get_date_sorted_filelists( '*.jpg', datefrom='cleanup' )
+        (filelist, datefilelistsorted, sameorder) = kvjpg.get_date_sorted_filelists( '../../JPGReorder/*.jpg', datefrom='cleanup' )
         # based on files in C:\Users\ken\Dropbox\LinuxShare\JPGReorder
-        self.assertEqual(filelist[-1], '2019-11-02-CNT00540-IMG_5260.JPG')  
-        self.assertEqual(datefilelistsorted[1][1], 'IMG_2666.JPG')
+        self.assertEqual(filelist[-1], '../../JPGReorder\\2019-11-02-CNT00540-IMG_5260.JPG')  
+        self.assertEqual(datefilelistsorted[1][1], '../../JPGReorder\\IMG_2666.JPG')
         
 
     def test_create_file_action_list_p01_ren_simple(self):

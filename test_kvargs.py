@@ -1,9 +1,10 @@
-# import pytest
+import pytest
 import kvargs
 import json
 import os
 import argparse
 import copy
+import sys
 from attrdict import AttrDict
 
 conf = 'kvargs1.json'
@@ -465,6 +466,46 @@ def test_parser_defaults_p03_pass():
 
 # ----------------------------------------
 
+# the function name: def updated_by(updated_dict, key, value):
+def test_updated_by_p01_simple_dict_key_exist_value():
+    updated_dict = {'key': ['value']}
+    kvargs.updated_by(updated_dict, 'key', 'value2')
+    assert updated_dict == {'key': ['value', 'value2']}
+
+def test_updated_by_p02_simple_dict_key_exist_list():
+    updated_dict = {'key': ['value']}
+    kvargs.updated_by(updated_dict, 'key', ['value2', 'value3'])
+    assert updated_dict == {'key': ['value', 'value2', 'value3']}
+
+def test_updated_by_p03_simple_dict_key_not_exist_value():
+    updated_dict = {}
+    kvargs.updated_by(updated_dict, 'key', 'value2')
+    assert updated_dict == {'key': ['value2']}
+
+def test_updated_by_p04_simple_dict_key_not_exist_list():
+    updated_dict = {}
+    kvargs.updated_by(updated_dict, 'key', ['value2', 'value3'])
+    assert updated_dict == {'key': ['value2', 'value3']}
+
+def test_updated_by_f01_simple_not_dict():
+    updated_dict = 'string'
+    with pytest.raises(Exception):
+        kvargs.updated_by(updated_dict, 'key', ['value2', 'value3'])
+
+
+# ----------------------------------------
+# the function name: def parser_merge_settings(parser, args, conf_files=None, args_default=None, args_parser_default=None,
+def test_parser_merge_settings_p01_pass():
+    parser = setup_parser()
+    cmd_line = []
+
+    args = parser.parse_args(cmd_line)
+    vargs = vars(args)
+
+
+# ----------------------------------------
+
+
 def test_parse_and_parser_merge_settings_p01_blank_cmdline_no_parse():
     parser = setup_parser()
     cmd_line = []
@@ -796,6 +837,7 @@ def test_parse_and_parser_merge_settings_p04_cmdline_v4_parsed():
 
 # ----------------------------------------
 
+
 def test_ken():
     parser = setup_parser()
     write_conf(conf, {'disp_vargs': True})
@@ -809,10 +851,15 @@ def test_parse_and_parser_merge_settings_p02_conf_cmdline_parsed():
     cmd_line = ['--conf', conf]
     args_default = {}
     args_parser_default = kvargs.parser_defaults(parser, set_to_none=True)
+    # just clear sys.argv in order to test properly
+    orig_sysargv = sys.argv
+    sys.argv = ['pytest']
     vargs = kvargs.parse_and_parser_merge_settings(parser,
                                                    args_parser_default=args_parser_default,
                                                    args_default=args_default,
                                                    cmd_line=cmd_line)
+    # and return it back to its original value
+    sys.argv = orig_sysargv
     assert dict(vargs) == {
         'conf': conf,
         'conf_files_loaded': [conf],
@@ -837,10 +884,15 @@ def test_parse_and_parser_merge_settings_p03_conf_cmdline_parsed():
     cmd_line = ['--conf', conf]
     args_default = {}
     args_parser_default = kvargs.parser_defaults(parser, set_to_none=True)
+    # just clear sys.argv in order to test properly
+    orig_sysargv = sys.argv
+    sys.argv = ['pytest']
     vargs = kvargs.parse_and_parser_merge_settings(parser,
                                                    args_parser_default=args_parser_default,
                                                    args_default=args_default,
                                                    cmd_line=cmd_line)
+    # and return it back to its original value
+    sys.argv = orig_sysargv
     assert vargs == {
         'conf': conf,
         'conf_files_loaded': ['kvargs1.json'],
@@ -867,10 +919,15 @@ def test_parse_and_parser_merge_settings_p04_conf_cmdline_parsed():
     args_default = {}
     args_parser_default = kvargs.parser_defaults(parser, set_to_none=True)
     print('args_parser_default:', args_parser_default)
+    # just clear sys.argv in order to test properly
+    orig_sysargv = sys.argv
+    sys.argv = ['pytest']
     vargs = kvargs.parse_and_parser_merge_settings(parser,
                                                    args_parser_default=args_parser_default,
                                                    args_default=args_default,
                                                    cmd_line=cmd_line)
+    # return to its original value
+    sys.argv = orig_sysargv
     assert vargs == {
         'conf': conf,
         'conf_files_loaded': ['kvargs1.json'],
@@ -889,10 +946,15 @@ def test_parse_and_parser_merge_settings_p04_conf_cmdline_parsed():
     print('*' * 80)
 
     cmd_line = ['--conf', conf, '--console']
+    # just clear sys.argv in order to test properly
+    orig_sysargv = sys.argv
+    sys.argv = ['pytest']
     vargs = kvargs.parse_and_parser_merge_settings(parser,
                                                    args_parser_default=args_parser_default,
                                                    args_default=args_default,
                                                    cmd_line=cmd_line)
+    # return to its original value
+    sys.argv = orig_sysargv
     assert dict(vargs) == {
         'conf': conf,
         'conf_files_loaded': ['kvargs1.json'],
@@ -1092,12 +1154,17 @@ def test_parse_and_parser_merge_settings_p09_store_true_conf():
 
     args_parser_default = kvargs.parser_defaults(parser, set_to_none=True)
     args_default = {}
+    # just clear sys.argv in order to test properly
+    orig_sysargv = sys.argv
+    sys.argv = ['pytest']
     vargs = kvargs.parse_and_parser_merge_settings(parser,
                                                    args_default=args_default,
                                                    args_parser_default=args_parser_default,
                                                    cmd_line=cmd_line,
                                                    test_args_conf=test_args_conf)
 
+    # return to its original value
+    sys.argv = orig_sysargv
     assert dict(vargs) == {
         'conf_files_loaded': ['test_args_conf'],
         'token': True,
@@ -1149,6 +1216,11 @@ def test_prep_parse_and_parser_merge_settings_p01_str_simple():
     }
     assert parser.get_default("token") is None
 
+
+# ----------------------------------------
+
+# the function name: def prep_parse_and_merge_settings(parser, args_default=None, cmd_line=None, test_args_conf=None):
+# def test_prep_parse_and_merge_settings_p01_pass():
 
 # ----------------------------------------
 
