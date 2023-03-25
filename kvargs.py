@@ -270,7 +270,7 @@ def parser_merge_settings(parser, args, conf_files=None, args_default=None, args
     Merge the values from the command line, configuration files, and default_values
 
     :param parser: (obj) - argparse object
-    :param args: (obj) - output from parser.args_parse()
+    :param args: (obj) - output from parser.args_parse() - becomes args_cmdline/args_cmdline_set
     :param conf_files: (list) - list of config files to load
     :param args_default: (dict) - dictionary of program defined default values (key=value)
     :param args_parser_default: (dict) - extract of argparse defaults - multi-level dict
@@ -301,8 +301,13 @@ def parser_merge_settings(parser, args, conf_files=None, args_default=None, args
     # create the dictionary housing only values set on the command line
     args_cmdline_set = {k: v for k, v in args_cmdline.items() if v is not None}
 
+    # DEBUGGING
+    print('args:', args)
+    print('args_cmdline:', args_cmdline)
+    print('args_cmdline_set:', args_cmdline_set)
+    
     # -- GET DEFAULT ARGS / SET VARGS --
-
+    
     # we build up the answer by updating
     # args_default
     # args_parser_default - that are not set in args_default
@@ -311,7 +316,7 @@ def parser_merge_settings(parser, args, conf_files=None, args_default=None, args
     # args_conf - for keys where const, execute these command option if value = True and not in args_cmdline_set
     #
     # step through args_conf
-    # args_conf - where key not matched to vargs key
+    # args_conf - where key not matched to vargs key
     # args_cmdline
     vargs = AttrDict(copy.deepcopy(args_default))
 
@@ -394,8 +399,9 @@ def parser_merge_settings(parser, args, conf_files=None, args_default=None, args
             args_update[k] = v
 
     # update vargs
-    # print('args-conf-for-conf-const:', args_conf)
-    # print('vargs-conf-const:', vargs)
+    print('args-conf-for-conf-const:', args_conf)
+    print('vargs-conf-const:', vargs)
+    print('args_update:', args_update)
 
     # been through all - if we have any that need to be called call them
     # so that they process like they were done on the commadn line
@@ -406,9 +412,13 @@ def parser_merge_settings(parser, args, conf_files=None, args_default=None, args
     if args_update:
         # get the list of command line commands
         parser_list = [v['cmd'] for v in args_update.values()]
+        # DEBUGGING
+        print('parser_list:', parser_list)
+        print('sys.argv:', sys.argv)
         # pull in the original command line arguments add them to this
         # as their may be required values we need to parse
         # exclude the program that was called in position 0
+        print('sys.argv[1:]:', sys.argv[1:])
         parser_list.extend(sys.argv[1:])
         # print('parser_list:', parser_list)
         # parse them to get their values
