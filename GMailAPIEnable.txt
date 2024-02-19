@@ -1,0 +1,14 @@
+Following these instructions:'
+
+https://developers.google.com/gmail/api/quickstart/python
+
+We created the project:  Wine-Email-Connectivity
+
+On the OATH screen we selected external so we could invite in other email acconts
+
+And we added in the email as tester:  210608thSt@gmail.com, wines@vennerllc.com
+
+Continue following directions and installed google libraries:
+
+pip install --upgrade google-api-python-client google-auth-httplib2 google-auth-oauthlib
+
