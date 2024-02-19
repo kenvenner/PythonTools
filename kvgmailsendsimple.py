@@ -21,6 +21,11 @@ This will create OATH json files to be used when executing.
 And will require a one time authentication by the "email_from" user account
 and approval to use this application
 
+you will need to  install the following to make this work
+
+pip install --upgrade google-api-python-client google-auth-httplib2 google-auth-oauthlib
+
+
 @author:  Ken Venner
 @contact: ken@vennerllc.com
 @version: 1.01
@@ -95,7 +100,7 @@ def google_creds_from_json(scopes=None, file_token_json=None, file_credentials_j
 
   return creds
 
-def gmail_send_simple_message(email_from, email_to, email_subject, email_body, scope=None, file_token_json=None, file_credentials_json=None):
+def gmail_send_simple_message(email_from, email_to, email_subject, email_body, scopes=None, file_token_json=None, file_credentials_json=None):
   """Create and send an email message
   Print the returned  message id
   Returns: Message object, including message id
@@ -118,7 +123,7 @@ def gmail_send_simple_message(email_from, email_to, email_subject, email_body, s
   if not file_token_json:
     file_token_json = convert_email_to_filename(email_from)
 
-  # set the credentials
+   # set the credentials
   creds = google_creds_from_json(scopes, file_token_json, file_credentials_json)
   #creds, _ = google.auth.default()
 
