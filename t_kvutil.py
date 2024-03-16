@@ -15,7 +15,7 @@ kvlogger.dictConfig(config)
 logger=kvlogger.getLogger(__name__)
 
 # set the module version number
-AppVersion = '1.21'
+AppVersion = '1.22'
 
 # global variables
 tst_filename='t_kvutil_tst'
@@ -564,7 +564,17 @@ class TestKVUtilFilenames(unittest.TestCase):
 
     # def test_load_json_file_to_dict()
     # def test_dump_dict_to_json_file( optiondict, filename ):
-    
+
+    # test the conversion of dict to list of dict
+    def test_dict2update_list_p01_dict(self):
+        in_dict = {'a':1, 'b':2}
+        fulllist = [
+            {'Field': 'a', 'CurrentValue': 1, 'NewValue': ''},
+            {'Field': 'b', 'CurrentValue': 2, 'NewValue': ''}
+        ]
+        self.assertEqual(kvutil.dict2update_list(in_dict), fulllist)
+
+
 
 if __name__ == '__main__':
     logger.info('STARTUP(v%s)%s', AppVersion, '-'*40)

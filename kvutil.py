@@ -3,7 +3,7 @@ from __future__ import print_function
 '''
 @author:   Ken Venner
 @contact:  ken@venerllc.com
-@version:  1.66
+@version:  1.67
 
 Library of tools used in general by KV
 '''
@@ -1070,5 +1070,31 @@ def dump_dict_to_json_file(filename, optiondict):
     import json
     with open(filename, 'w') as json_out:
         json.dump(optiondict, json_out, indent=4)
+
+
+# utility to convert a dict to a list of dicts that are key, value and new value
+def dict2update_list(in_dict, sorted_flds=None):
+    # make sure they passed the right type
+    if type(in_dict) != dict:
+        raise TypeError('in_dict must be a dictionary')
+
+    # the user can pass in the fields to be generated in a sorted order
+    if not sorted_flds:
+        sorted_flds = list(in_dict.keys())
+        
+    # make sure they passed the right type
+    if type(sorted_flds) != list:
+        raise TypeError('sort_flds must be a list')
+    
+    outlist = []
+    for k in sorted_flds:
+        # make sure the field is a valid key
+        if k in in_dict:
+            outlist.append({'Field': k, 'CurrentValue': in_dict[k], 'NewValue': ''})
+        else:
+            print('warning: dict2update_list passed in valid key: {k}')
+
+    return outlist
+
 
 # eof
