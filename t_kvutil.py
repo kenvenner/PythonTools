@@ -573,8 +573,52 @@ class TestKVUtilFilenames(unittest.TestCase):
             {'Field': 'b', 'CurrentValue': 2, 'NewValue': ''}
         ]
         self.assertEqual(kvutil.dict2update_list(in_dict), fulllist)
+        
+    def test_dict2update_list_p02_follow_order(self):
+        in_dict = {'b': 2, 'a':1}
+        fulllist = [
+            {'Field': 'b', 'CurrentValue': 2, 'NewValue': ''},
+            {'Field': 'a', 'CurrentValue': 1, 'NewValue': ''}
+        ]
+        self.assertEqual(kvutil.dict2update_list(in_dict), fulllist)
 
+    def test_dict2update_list_p03_follow_set_order(self):
+        in_dict = {'b': 2, 'a':1}
+        fulllist = [
+            {'Field': 'a', 'CurrentValue': 1, 'NewValue': ''},
+            {'Field': 'b', 'CurrentValue': 2, 'NewValue': ''}
+        ]
+        self.assertEqual(kvutil.dict2update_list(in_dict, sorted_flds=['a', 'b']), fulllist)
 
+    def test_dict2update_list_p04_set_columns(self):
+        in_dict = {'a':1, 'b':2}
+        fulllist = [
+            {'NewField': 'a', 'NewCurrentValue': 1, 'NewNewValue': ''},
+            {'NewField': 'b', 'NewCurrentValue': 2, 'NewNewValue': ''}
+        ]
+        col_names = {'Field': 'NewField', 'CurrentValue': 'NewCurrentValue', 'NewValue': 'NewNewValue'}
+        self.assertEqual(kvutil.dict2update_list(in_dict, col_names=col_names), fulllist)
+       
+    def test_dict2update_list_p05_set_column(self):
+        in_dict = {'a':1, 'b':2}
+        fulllist = [
+            {'NewField': 'a', 'CurrentValue': 1, 'NewValue': ''},
+            {'NewField': 'b', 'CurrentValue': 2, 'NewValue': ''}
+        ]
+        col_names = {'Field': 'NewField'}
+        self.assertEqual(kvutil.dict2update_list(in_dict, col_names=col_names), fulllist)
+       
+
+    def test_dict2update_list_p06_set_column_invalid(self):
+        in_dict = {'a':1, 'b':2}
+        fulllist = [
+            {'Field': 'a', 'CurrentValue': 1, 'NewValue': ''},
+            {'Field': 'b', 'CurrentValue': 2, 'NewValue': ''}
+        ]
+        col_names = {'FieldBad': 'NewField'}
+        self.assertEqual(kvutil.dict2update_list(in_dict, col_names=col_names), fulllist)
+       
+        
 
 if __name__ == '__main__':
     logger.info('STARTUP(v%s)%s', AppVersion, '-'*40)

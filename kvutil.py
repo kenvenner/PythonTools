@@ -1073,7 +1073,13 @@ def dump_dict_to_json_file(filename, optiondict):
 
 
 # utility to convert a dict to a list of dicts that are key, value and new value
-def dict2update_list(in_dict, sorted_flds=None):
+def dict2update_list(in_dict, sorted_flds=None, col_names=None):
+    # colnames is a dictionary with entries tied to the desired output columname
+    #  {'Field': header_col1, 'CurrentValue': header_col2, 'NewValue': header_col3}
+
+    default_column_names = ['Field', 'CurrentValue', 'NewValue']
+    output_col_names = []
+
     # make sure they passed the right type
     if type(in_dict) != dict:
         raise TypeError('in_dict must be a dictionary')
@@ -1081,16 +1087,29 @@ def dict2update_list(in_dict, sorted_flds=None):
     # the user can pass in the fields to be generated in a sorted order
     if not sorted_flds:
         sorted_flds = list(in_dict.keys())
+
         
     # make sure they passed the right type
     if type(sorted_flds) != list:
         raise TypeError('sort_flds must be a list')
+
     
+    # if they want to set the column headers
+    if col_names and type(col_names) == dict:
+        for hdr in default_column_names:
+            if hdr in col_names:
+                output_col_names.append(col_names[hdr])
+            else:
+                output_col_names.append(hdr)
+    else:
+        output_col_names = default_column_names
+            
+    # now flip the dictionary to the desired output
     outlist = []
     for k in sorted_flds:
         # make sure the field is a valid key
         if k in in_dict:
-            outlist.append({'Field': k, 'CurrentValue': in_dict[k], 'NewValue': ''})
+            outlist.append({output_col_names[0]: k, output_col_names[1]: in_dict[k], output_col_names[2]: ''})
         else:
             print('warning: dict2update_list passed in valid key: {k}')
 
