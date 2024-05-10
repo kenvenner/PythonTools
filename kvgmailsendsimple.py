@@ -28,7 +28,7 @@ pip install --upgrade google-api-python-client google-auth-httplib2 google-auth-
 
 @author:  Ken Venner
 @contact: ken@vennerllc.com
-@version: 1.01
+@version:  1.02
 
 
 Created:  2024-02-18;kv
@@ -45,7 +45,7 @@ SCOPES = [
 
 
 # version number
-AppVersion = '1.01'
+AppVersion = '1.02'
 
 
 
@@ -66,8 +66,17 @@ def convert_email_to_filename( email_addr, file_ext='json' ):
 def google_creds_from_json(scopes=None, file_token_json=None, file_credentials_json=None):
   """ get and return creds from json.
       scopes - the scopes you are asking to be given permissions to - must be populated
-      file_token_json - the tokens.json file created after we get permissions for this user
+      file_token_json - the tokens.json or email driven filename (eg. 210608thSt_gmail.json)
+                        file created after we get permissions for this user
       file_credentials_json - the OATH file we are buildng tokens from
+
+      the guide to getting this setup and executing:
+      https://developers.google.com/gmail/api/quickstart/python
+
+      add the email address to the list of users that can use the application
+      create the token and save locally as "credential.json"
+      run this program and it will generate the email based json file
+      and force the local browser to authenticate
 
   """
   # if we don't have scopes - we error out
