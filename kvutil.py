@@ -3,7 +3,7 @@ from __future__ import print_function
 '''
 @author:   Ken Venner
 @contact:  ken@venerllc.com
-@version:  1.67
+@version:  1.68
 
 Library of tools used in general by KV
 '''
@@ -30,8 +30,8 @@ import logging
 logger = logging.getLogger(__name__)
 
 # set the module version number
-AppVersion = '1.67'
-__version__ = '1.67'
+AppVersion = '1.68'
+__version__ = '1.68'
 HELP_KEYS = ('help', 'helpall',)
 HELP_VALUE_TABLE = ('tbl', 'table', 'helptbl', 'fmt',)
 
@@ -1115,5 +1115,72 @@ def dict2update_list(in_dict, sorted_flds=None, col_names=None):
 
     return outlist
 
+
+def create_multi_key_lookup(src_data, fldlist):
+    '''
+    Create a multi key dictionary that gets to the record based on the
+    keys in the record
+    '''
+    src_lookup = {}
+    # step through each record
+    for rec in src_data:
+        # get the first key
+        if rec[fldlist[0]] not in src_lookup:
+            if len(fldlist) > 1:
+                # multi key
+                src_lookup[rec[fldlist[0]]] = {}
+            else:
+                # single key - set the value
+                src_lookup[rec[fldlist[0]]] = rec
+        # now create the changing key
+        ptr = src_lookup[rec[fldlist[0]]]
+        # now work through other keys
+        for fld in fldlist[1:]:
+            # check to see this level is working
+            if rec[fld] not in ptr:
+                ptr[rec[fld]] = {}
+            # if we are on the last fld then set to rec
+            if fld == fldlist[-1]:
+                ptr[rec[fld]] = rec
+            else:
+                # update the ptr
+                ptr = ptr[rec[fld]]
+    #
+    return src_lookup
+
+
+def copy_matched_data(dst_data, src_lookup, key_fields, copy_fields):
+    '''
+    copy into dst_data from src_lookup, copy_fields when there is a match
+    on key_fields
+    '''
+    # capture the count of matched records
+    matched_recs = 0
+    # step through the dst_data
+    for rec in dst_data:
+        # cpature if we have a match
+        matched = True
+        # capture the pointer
+        ptr = src_lookup
+        # step through the key_fields and see if we find a matching record
+        for fld in key_fields:
+            # there is a match
+            if rec[fld] in ptr:
+                ptr = ptr[rec[fld]]
+            else:
+                matched = False
+                # stop looking for match on this record
+                break
+        # check to see if we did match get next record
+        if not matched:
+            continue
+        # increment the matched out
+        matched_recs += 1
+        # we did match so copy over the fields
+        # ptr should point at the record of interest from src_lookup
+        for cfld in copy_fields:
+            rec[cfld] = ptr[cfld]
+    # return the number of records that matched
+    return matched_recs
 
 # eof

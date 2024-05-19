@@ -15,7 +15,7 @@ kvlogger.dictConfig(config)
 logger=kvlogger.getLogger(__name__)
 
 # set the module version number
-AppVersion = '1.22'
+AppVersion = '1.23'
 
 # global variables
 tst_filename='t_kvutil_tst'
@@ -618,8 +618,102 @@ class TestKVUtilFilenames(unittest.TestCase):
         col_names = {'FieldBad': 'NewField'}
         self.assertEqual(kvutil.dict2update_list(in_dict, col_names=col_names), fulllist)
        
+
+    # create_multi_key_lookup(src_data, fldlist)
+    def test_create_multi_key_lookup_p01_2keys(self):
+        src_data = [
+            {'col1': 'val1',  'col2': 'val2',  'col3': 'val3',  'col4': 'val4'},
+            {'col1': 'val11', 'col2': 'val12', 'col3': 'val13', 'col4': 'val14'}
+        ]
+        fldlist = ['col1', 'col2']
+        result =  {
+            'val1': {'val2': {'col1': 'val1',
+                              'col2': 'val2',
+                              'col3': 'val3',
+                              'col4': 'val4'}},
+            'val11': {'val12': {'col1': 'val11',
+                                'col2': 'val12',
+                                'col3': 'val13',
+                                'col4': 'val14'}}
+        }
+        self.assertEqual(kvutil.create_multi_key_lookup(src_data, fldlist), result)
+    def test_create_multi_key_lookup_p02_1key(self):
+        src_data = [
+            {'col1': 'val1',  'col2': 'val2',  'col3': 'val3',  'col4': 'val4'},
+            {'col1': 'val11', 'col2': 'val12', 'col3': 'val13', 'col4': 'val14'}
+        ]
+        fldlist = ['col1']
+        result =  {
+            'val1': {'col1': 'val1',
+                     'col2': 'val2',
+                     'col3': 'val3',
+                     'col4': 'val4'},
+            'val11': {'col1': 'val11',
+                      'col2': 'val12',
+                      'col3': 'val13',
+                      'col4': 'val14'}
+        }
+        self.assertEqual(kvutil.create_multi_key_lookup(src_data, fldlist), result)
+    def test_create_multi_key_lookup_p03_3keys(self):
+        src_data = [
+            {'col1': 'val1',  'col2': 'val2',  'col3': 'val3',  'col4': 'val4'},
+            {'col1': 'val11', 'col2': 'val12', 'col3': 'val13', 'col4': 'val14'}
+        ]
+        fldlist = ['col1', 'col2', 'col3']
+        result = {
+            'val1': {'val2': {'val3': {'col1': 'val1',
+                                       'col2': 'val2',
+                                       'col3': 'val3',
+                                       'col4': 'val4'}}},
+            'val11': {'val12': {'val13': {'col1': 'val11',
+                                          'col2': 'val12',
+                                          'col3': 'val13',
+                                          'col4': 'val14'}}}
+        }
+        self.assertEqual(kvutil.create_multi_key_lookup(src_data, fldlist), result)
+    def test_create_multi_key_lookup_p04_3keys_same(self):
+        src_data = [
+            {'col1': 'val1',  'col2': 'val2',  'col3': 'val3',  'col4': 'val4'},
+            {'col1': 'val1',  'col2': 'val2',  'col3': 'val3',  'col4': 'val14'}
+        ]
+        fldlist = ['col1', 'col2', 'col3']
+        result = {
+            'val1': {'val2': {'val3': {'col1': 'val1',
+                                       'col2': 'val2',
+                                       'col3': 'val3',
+                                       'col4': 'val14'}}}
+        }
+        self.assertEqual(kvutil.create_multi_key_lookup(src_data, fldlist), result)
         
 
+    # copy_matched_data(dst_data, src_lookup, key_fields, copy_fields)
+    def test_copy_matched_data_p01_2keys(self):
+        dst_data = [
+            {'col1': 'val1',  'col2': 'val2',  'col3': 'val3',  'col4': 'val4'},
+            {'col1': 'val11', 'col2': 'val12', 'col3': 'val13', 'col4': 'val14'}
+        ]
+        key_fields = ['col1', 'col2']
+        copy_fields = ['col4']
+        src_lookup =  {
+            'val1': {'val2': {'col1': 'val1',
+                              'col2': 'val2',
+                              'col3': 'val3',
+                              'col4': 'val44'}},
+            'val11': {'val12': {'col1': 'val11',
+                                'col2': 'val12',
+                                'col3': 'val13',
+                                'col4': 'val44'}}
+        }
+        result = [
+            {'col1': 'val1',  'col2': 'val2',  'col3': 'val3',  'col4': 'val44'},
+            {'col1': 'val11', 'col2': 'val12', 'col3': 'val13', 'col4': 'val44'}
+        ]
+        self.assertEqual(kvutil.copy_matched_data(dst_data, src_lookup, key_fields, copy_fields), 2)
+        self.assertEqual(dst_data, result)
+
+
+
+    
 if __name__ == '__main__':
     logger.info('STARTUP(v%s)%s', AppVersion, '-'*40)
     logger.info('kvutil(v%s)%s', kvutil.AppVersion, '-'*40)
