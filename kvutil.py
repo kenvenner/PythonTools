@@ -3,7 +3,7 @@ from __future__ import print_function
 '''
 @author:   Ken Venner
 @contact:  ken@venerllc.com
-@version:  1.68
+@version:  1.69
 
 Library of tools used in general by KV
 '''
@@ -30,8 +30,8 @@ import logging
 logger = logging.getLogger(__name__)
 
 # set the module version number
-AppVersion = '1.68'
-__version__ = '1.68'
+AppVersion = '1.69'
+__version__ = '1.69'
 HELP_KEYS = ('help', 'helpall',)
 HELP_VALUE_TABLE = ('tbl', 'table', 'helptbl', 'fmt',)
 
@@ -1115,15 +1115,40 @@ def dict2update_list(in_dict, sorted_flds=None, col_names=None):
 
     return outlist
 
+# return true if one of the copy_fields values is populated
+def any_field_is_populated(rec, copy_fields):
+    '''
+    Return a TRUE if any of the 'copy_fields' elements in rec is populated
+    '''
+    for fld in copy_fields:
+        # current conditions - if it returns true or has a length
+        if rec[fld]:
+            # print('rec populated')
+            return True
+        elif not isinstance(rec[fld], str):
+            # print('type not string')
+            return True
+    return False
 
-def create_multi_key_lookup(src_data, fldlist):
+
+# create a multi-key dictionary from a list of dictionaries
+def create_multi_key_lookup(src_data, fldlist, copy_fields=None):
     '''
     Create a multi key dictionary that gets to the record based on the
     keys in the record
+
+    if user sets the copy_fields with the list of fields that can have values
+    then we check the record
+    to determine if any of the fields has a value, and if none have a value we skip
+    that record
     '''
     src_lookup = {}
     # step through each record
     for rec in src_data:
+        # test that this record has values in the copy_fields attributes
+        if copy_fields and not any_field_is_populated(rec, copy_fields):
+            # no values set in copy_fields has a value so we don't convert this record
+            continue
         # get the first key
         if rec[fldlist[0]] not in src_lookup:
             if len(fldlist) > 1:

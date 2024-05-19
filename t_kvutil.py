@@ -15,7 +15,7 @@ kvlogger.dictConfig(config)
 logger=kvlogger.getLogger(__name__)
 
 # set the module version number
-AppVersion = '1.23'
+AppVersion = '1.24'
 
 # global variables
 tst_filename='t_kvutil_tst'
@@ -619,6 +619,43 @@ class TestKVUtilFilenames(unittest.TestCase):
         self.assertEqual(kvutil.dict2update_list(in_dict, col_names=col_names), fulllist)
        
 
+    # True if any element is populated - any_field_is_populated(rec, copy_fields)
+    def test_any_field_is_populated_p01_empty(self):
+        rec = {'col1': 'val1',  'col2': 'val2',  'col3': '',  'col4': ''}
+        copy_fields = ['col3', 'col4']
+        self.assertEqual(kvutil.any_field_is_populated(rec, copy_fields), False)
+
+    def test_any_field_is_populated_p02_empty_string(self):
+        rec = {'col1': 'val1',  'col2': 'val2',  'col3': ' ',  'col4': ''}
+        copy_fields = ['col3', 'col4']
+        self.assertEqual(kvutil.any_field_is_populated(rec, copy_fields), True)
+
+    def test_any_field_is_populated_p03_string(self):
+        rec = {'col1': 'val1',  'col2': 'val2',  'col3': 'k',  'col4': ''}
+        copy_fields = ['col3', 'col4']
+        self.assertEqual(kvutil.any_field_is_populated(rec, copy_fields), True)
+
+    def test_any_field_is_populated_p04_value_int(self):
+        rec = {'col1': 'val1',  'col2': 'val2',  'col3': 1,  'col4': ''}
+        copy_fields = ['col3', 'col4']
+        self.assertEqual(kvutil.any_field_is_populated(rec, copy_fields), True)
+
+    def test_any_field_is_populated_p05_zero_int(self):
+        rec = {'col1': 'val1',  'col2': 'val2',  'col3': 0,  'col4': ''}
+        copy_fields = ['col3', 'col4']
+        self.assertEqual(kvutil.any_field_is_populated(rec, copy_fields), True)
+
+    def test_any_field_is_populated_p06_value_float(self):
+        rec = {'col1': 'val1',  'col2': 'val2',  'col3': 1.0,  'col4': ''}
+        copy_fields = ['col3', 'col4']
+        self.assertEqual(kvutil.any_field_is_populated(rec, copy_fields), True)
+
+    def test_any_field_is_populated_p07_zero_float(self):
+        rec = {'col1': 'val1',  'col2': 'val2',  'col3': 0.0,  'col4': ''}
+        copy_fields = ['col3', 'col4']
+        self.assertEqual(kvutil.any_field_is_populated(rec, copy_fields), True)
+
+
     # create_multi_key_lookup(src_data, fldlist)
     def test_create_multi_key_lookup_p01_2keys(self):
         src_data = [
@@ -684,6 +721,34 @@ class TestKVUtilFilenames(unittest.TestCase):
                                        'col4': 'val14'}}}
         }
         self.assertEqual(kvutil.create_multi_key_lookup(src_data, fldlist), result)
+    def test_create_multi_key_lookup_p04_skip_empty(self):
+        src_data = [
+            {'col1': 'val1',  'col2': 'val2',  'col3': 'val3',  'col4': 'val4'},
+            {'col1': 'val11', 'col2': 'val12', 'col3': '', 'col4': ''}
+        ]
+        fldlist = ['col1', 'col2']
+        copy_fields = ['col3', 'col4']
+        result = {
+            'val1': {'val2': {'col1': 'val1',
+                              'col2': 'val2',
+                              'col3': 'val3',
+                              'col4': 'val4'}}
+        }
+        self.assertEqual(kvutil.create_multi_key_lookup(src_data, fldlist, copy_fields), result)
+    def test_create_multi_key_lookup_p06_skip_empty_one_filled(self):
+        src_data = [
+            {'col1': 'val1',  'col2': 'val2',  'col3': '',  'col4': 'val4'},
+            {'col1': 'val11', 'col2': 'val12', 'col3': '', 'col4': ''}
+        ]
+        fldlist = ['col1', 'col2']
+        copy_fields = ['col3', 'col4']
+        result = {
+            'val1': {'val2': {'col1': 'val1',
+                              'col2': 'val2',
+                              'col3': '',
+                              'col4': 'val4'}}
+        }
+        self.assertEqual(kvutil.create_multi_key_lookup(src_data, fldlist, copy_fields), result)
         
 
     # copy_matched_data(dst_data, src_lookup, key_fields, copy_fields)
