@@ -3,7 +3,7 @@ from __future__ import print_function
 '''
 @author:   Ken Venner
 @contact:  ken@venerllc.com
-@version:  1.69
+@version:  1.70
 
 Library of tools used in general by KV
 '''
@@ -11,6 +11,7 @@ Library of tools used in general by KV
 import glob
 import os
 import datetime
+import pprint
 
 # moved datetime processing to its own module
 import kvdate
@@ -30,8 +31,8 @@ import logging
 logger = logging.getLogger(__name__)
 
 # set the module version number
-AppVersion = '1.69'
-__version__ = '1.69'
+AppVersion = '1.70'
+__version__ = '1.70'
 HELP_KEYS = ('help', 'helpall',)
 HELP_VALUE_TABLE = ('tbl', 'table', 'helptbl', 'fmt',)
 
@@ -1142,6 +1143,29 @@ def create_multi_key_lookup(src_data, fldlist, copy_fields=None):
     to determine if any of the fields has a value, and if none have a value we skip
     that record
     '''
+    if type(fldlist) is not list:
+        print('fldlist must be type - list - but is: ', type(fldlist))
+        raise TypeError()
+    # check that the fldlist keys are in the first record
+    for fld in fldlist:
+        if fld not in src_data[0]:
+            print('ERROR:  Unable to find key field: ', fld)
+            print('in first record:')
+            pprint.pprint(src_data[0])
+            print('This routine will fail')
+    # check that the copy_fields keys are in the first record
+    if copy_fields:
+        if type(copy_fields) is not list:
+            print('copy_fields must be type - list - but is: ', type(copy_fields))
+            raise TypeError()
+        for fld in copy_fields:
+            if fld not in src_data[0]:
+                print('ERROR:  Unable to find copy field: ', fld)
+                print('in first record:')
+                pprint.pprint(src_data[0])
+                print('This routine will fail')
+    #
+    # set up the dictionary to be populated
     src_lookup = {}
     # step through each record
     for rec in src_data:
@@ -1179,6 +1203,29 @@ def copy_matched_data(dst_data, src_lookup, key_fields, copy_fields):
     copy into dst_data from src_lookup, copy_fields when there is a match
     on key_fields
     '''
+    # make sure we passed in a list
+    if type(key_fields) is not list:
+        print('key_fields must be type - list - but is: ', type(key_fields))
+        raise TypeError()
+    # check that the key_fields keys are in the first record
+    for fld in key_fields:
+        if fld not in dst_data[0]:
+            print('ERROR:  Unable to find key_field field: ', fld)
+            print('in first record:')
+            pprint.pprint(dst_data[0])
+            print('This routine will fail')
+    # make sure we passed in a list
+    if type(copy_fields) is not list:
+        print('copy_fields must be type - list - but is: ', type(copy_fields))
+        raise TypeError()
+    # check that the copy_fields keys are in the first record
+    for fld in copy_fields:
+        if fld not in dst_data[0]:
+            print('ERROR:  Unable to find copy_field field: ', fld)
+            print('in first record:')
+            pprint.pprint(dst_data[0])
+            print('This routine will fail')
+    #
     # capture the count of matched records
     matched_recs = 0
     # step through the dst_data

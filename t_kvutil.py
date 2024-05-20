@@ -15,7 +15,7 @@ kvlogger.dictConfig(config)
 logger=kvlogger.getLogger(__name__)
 
 # set the module version number
-AppVersion = '1.24'
+AppVersion = '1.25'
 
 # global variables
 tst_filename='t_kvutil_tst'
@@ -721,7 +721,7 @@ class TestKVUtilFilenames(unittest.TestCase):
                                        'col4': 'val14'}}}
         }
         self.assertEqual(kvutil.create_multi_key_lookup(src_data, fldlist), result)
-    def test_create_multi_key_lookup_p04_skip_empty(self):
+    def test_create_multi_key_lookup_p05_skip_empty(self):
         src_data = [
             {'col1': 'val1',  'col2': 'val2',  'col3': 'val3',  'col4': 'val4'},
             {'col1': 'val11', 'col2': 'val12', 'col3': '', 'col4': ''}
@@ -749,6 +749,87 @@ class TestKVUtilFilenames(unittest.TestCase):
                               'col4': 'val4'}}
         }
         self.assertEqual(kvutil.create_multi_key_lookup(src_data, fldlist, copy_fields), result)
+    def test_create_multi_key_lookup_f01_key_not_in_rec(self):
+        src_data = [
+            {'col1': 'val1',  'col2': 'val2',  'col3': '',  'col4': 'val4'},
+            {'col1': 'val11', 'col2': 'val12', 'col3': '', 'col4': ''}
+        ]
+        fldlist = ['col1', 'cola']
+        copy_fields = ['col3', 'col4']
+        result = {
+            'val1': {'val2': {'col1': 'val1',
+                              'col2': 'val2',
+                              'col3': '',
+                              'col4': 'val4'}}
+        }
+        with self.assertRaises(Exception) as context:
+            self.assertEqual(kvutil.create_multi_key_lookup(src_data, fldlist, copy_fields), result)
+    def test_create_multi_key_lookup_f02_copy_not_in_rec(self):
+        src_data = [
+            {'col1': 'val1',  'col2': 'val2',  'col3': '',  'col4': 'val4'},
+            {'col1': 'val11', 'col2': 'val12', 'col3': '', 'col4': ''}
+        ]
+        fldlist = ['col1', 'col2']
+        copy_fields = ['cola', 'col4']
+        result = {
+            'val1': {'val2': {'col1': 'val1',
+                              'col2': 'val2',
+                              'col3': '',
+                              'col4': 'val4'}}
+        }
+        with self.assertRaises(Exception) as context:
+            self.assertEqual(kvutil.create_multi_key_lookup(src_data, fldlist, copy_fields), result)
+    def test_create_multi_key_lookup_f03_copyfld_not_list(self):
+        src_data = [
+            {'col1': 'val1',  'col2': 'val2',  'col3': '',  'col4': 'val4'},
+            {'col1': 'val11', 'col2': 'val12', 'col3': '', 'col4': ''}
+        ]
+        fldlist = ['col1', 'col2']
+        copy_fields = 'cola'
+        result = {
+            'val1': {'val2': {'col1': 'val1',
+                              'col2': 'val2',
+                              'col3': '',
+                              'col4': 'val4'}}
+        }
+        with self.assertRaises(Exception) as context:
+            self.assertEqual(kvutil.create_multi_key_lookup(src_data, fldlist, copy_fields), result)
+    def test_create_multi_key_lookup_f04_None_key_flds(self):
+        src_data = [
+            {'col1': 'val1',  'col2': 'val2',  'col3': 'val3',  'col4': 'val4'},
+            {'col1': 'val11', 'col2': 'val12', 'col3': 'val13', 'col4': 'val14'}
+        ]
+        fldlist = None
+        result =  {
+            'val1': {'val2': {'col1': 'val1',
+                              'col2': 'val2',
+                              'col3': 'val3',
+                              'col4': 'val4'}},
+            'val11': {'val12': {'col1': 'val11',
+                                'col2': 'val12',
+                                'col3': 'val13',
+                                'col4': 'val14'}}
+        }
+        with self.assertRaises(Exception) as context:
+            self.assertEqual(kvutil.create_multi_key_lookup(src_data, fldlist), result)
+    def test_create_multi_key_lookup_f05_key_not_list(self):
+        src_data = [
+            {'col1': 'val1',  'col2': 'val2',  'col3': 'val3',  'col4': 'val4'},
+            {'col1': 'val11', 'col2': 'val12', 'col3': 'val13', 'col4': 'val14'}
+        ]
+        fldlist = 'col1'
+        result =  {
+            'val1': {'val2': {'col1': 'val1',
+                              'col2': 'val2',
+                              'col3': 'val3',
+                              'col4': 'val4'}},
+            'val11': {'val12': {'col1': 'val11',
+                                'col2': 'val12',
+                                'col3': 'val13',
+                                'col4': 'val14'}}
+        }
+        with self.assertRaises(Exception) as context:
+            self.assertEqual(kvutil.create_multi_key_lookup(src_data, fldlist), result)
         
 
     # copy_matched_data(dst_data, src_lookup, key_fields, copy_fields)
@@ -775,6 +856,102 @@ class TestKVUtilFilenames(unittest.TestCase):
         ]
         self.assertEqual(kvutil.copy_matched_data(dst_data, src_lookup, key_fields, copy_fields), 2)
         self.assertEqual(dst_data, result)
+    def test_copy_matched_data_f01_copy_fld_not_there(self):
+        dst_data = [
+            {'col1': 'val1',  'col2': 'val2',  'col3': 'val3',  'col4': 'val4'},
+            {'col1': 'val11', 'col2': 'val12', 'col3': 'val13', 'col4': 'val14'}
+        ]
+        key_fields = ['col1', 'col2']
+        copy_fields = ['cola']
+        src_lookup =  {
+            'val1': {'val2': {'col1': 'val1',
+                              'col2': 'val2',
+                              'col3': 'val3',
+                              'col4': 'val44'}},
+            'val11': {'val12': {'col1': 'val11',
+                                'col2': 'val12',
+                                'col3': 'val13',
+                                'col4': 'val44'}}
+        }
+        result = [
+            {'col1': 'val1',  'col2': 'val2',  'col3': 'val3',  'col4': 'val44'},
+            {'col1': 'val11', 'col2': 'val12', 'col3': 'val13', 'col4': 'val44'}
+        ]
+        with self.assertRaises(Exception) as context:
+            self.assertEqual(kvutil.copy_matched_data(dst_data, src_lookup, key_fields, copy_fields), 2)
+            self.assertEqual(dst_data, result)
+    def test_copy_matched_data_f02_copy_fld_not_list(self):
+        dst_data = [
+            {'col1': 'val1',  'col2': 'val2',  'col3': 'val3',  'col4': 'val4'},
+            {'col1': 'val11', 'col2': 'val12', 'col3': 'val13', 'col4': 'val14'}
+        ]
+        key_fields = ['col1', 'col2']
+        copy_fields = 'cola'
+        src_lookup =  {
+            'val1': {'val2': {'col1': 'val1',
+                              'col2': 'val2',
+                              'col3': 'val3',
+                              'col4': 'val44'}},
+            'val11': {'val12': {'col1': 'val11',
+                                'col2': 'val12',
+                                'col3': 'val13',
+                                'col4': 'val44'}}
+        }
+        result = [
+            {'col1': 'val1',  'col2': 'val2',  'col3': 'val3',  'col4': 'val44'},
+            {'col1': 'val11', 'col2': 'val12', 'col3': 'val13', 'col4': 'val44'}
+        ]
+        with self.assertRaises(Exception) as context:
+            self.assertEqual(kvutil.copy_matched_data(dst_data, src_lookup, key_fields, copy_fields), 2)
+            self.assertEqual(dst_data, result)
+    def test_copy_matched_data_f03_key_fld_not_there(self):
+        dst_data = [
+            {'col1': 'val1',  'col2': 'val2',  'col3': 'val3',  'col4': 'val4'},
+            {'col1': 'val11', 'col2': 'val12', 'col3': 'val13', 'col4': 'val14'}
+        ]
+        key_fields = ['col1', 'cola']
+        copy_fields = ['col4']
+        src_lookup =  {
+            'val1': {'val2': {'col1': 'val1',
+                              'col2': 'val2',
+                              'col3': 'val3',
+                              'col4': 'val44'}},
+            'val11': {'val12': {'col1': 'val11',
+                                'col2': 'val12',
+                                'col3': 'val13',
+                                'col4': 'val44'}}
+        }
+        result = [
+            {'col1': 'val1',  'col2': 'val2',  'col3': 'val3',  'col4': 'val44'},
+            {'col1': 'val11', 'col2': 'val12', 'col3': 'val13', 'col4': 'val44'}
+        ]
+        with self.assertRaises(Exception) as context:
+            self.assertEqual(kvutil.copy_matched_data(dst_data, src_lookup, key_fields, copy_fields), 2)
+            self.assertEqual(dst_data, result)
+    def test_copy_matched_data_f04_key_fld_not_list(self):
+        dst_data = [
+            {'col1': 'val1',  'col2': 'val2',  'col3': 'val3',  'col4': 'val4'},
+            {'col1': 'val11', 'col2': 'val12', 'col3': 'val13', 'col4': 'val14'}
+        ]
+        key_fields = 'cola'
+        copy_fields = ['col4']
+        src_lookup =  {
+            'val1': {'val2': {'col1': 'val1',
+                              'col2': 'val2',
+                              'col3': 'val3',
+                              'col4': 'val44'}},
+            'val11': {'val12': {'col1': 'val11',
+                                'col2': 'val12',
+                                'col3': 'val13',
+                                'col4': 'val44'}}
+        }
+        result = [
+            {'col1': 'val1',  'col2': 'val2',  'col3': 'val3',  'col4': 'val44'},
+            {'col1': 'val11', 'col2': 'val12', 'col3': 'val13', 'col4': 'val44'}
+        ]
+        with self.assertRaises(Exception) as context:
+            self.assertEqual(kvutil.copy_matched_data(dst_data, src_lookup, key_fields, copy_fields), 2)
+            self.assertEqual(dst_data, result)
 
 
 
