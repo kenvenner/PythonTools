@@ -109,7 +109,7 @@ def google_creds_from_json(scopes=None, file_token_json=None, file_credentials_j
 
   return creds
 
-def gmail_refresh_token_take_no_action(email_from, email_to, email_subject, email_body, scopes=None, file_token_json=None, file_credentials_json=None):
+def gmail_refresh_token_take_no_action(email_from, scopes=None, file_token_json=None, file_credentials_json=None):
   '''
   When we don't send an email we should refresh the token to assure it stays current
   '''
@@ -188,7 +188,7 @@ if __name__ == "__main__":
   file_credentials_json = None
 
   print('Refresh token - no email to send')
-  gmail_refresh_token_take_no_action(email_from, email_to, email_subject, email_body, scopes, file_token_json, file_credentials_json)
+  gmail_refresh_token_take_no_action(email_from, scopes, file_token_json, file_credentials_json)
 
   
   print('Test email to filename conversion:  ', email_from)
