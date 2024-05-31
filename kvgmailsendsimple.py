@@ -28,7 +28,7 @@ pip install --upgrade google-api-python-client google-auth-httplib2 google-auth-
 
 @author:  Ken Venner
 @contact: ken@vennerllc.com
-@version:  1.03
+@version:  1.04
 
 
 Created:  2024-02-18;kv
@@ -45,7 +45,7 @@ SCOPES = [
 
 
 # version number
-AppVersion = '1.03'
+AppVersion = '1.04'
 
 
 
@@ -108,6 +108,19 @@ def google_creds_from_json(scopes=None, file_token_json=None, file_credentials_j
       token.write(creds.to_json())
 
   return creds
+
+def gmail_refresh_token_take_no_action(email_from, email_to, email_subject, email_body, scopes=None, file_token_json=None, file_credentials_json=None):
+  '''
+  When we don't send an email we should refresh the token to assure it stays current
+  '''
+  # determien the token.json file
+  if not file_token_json:
+    file_token_json = convert_email_to_filename(email_from)
+
+   # set the credentials
+  creds = google_creds_from_json(scopes, file_token_json, file_credentials_json)
+  #creds, _ = google.auth.default()
+  
 
 def gmail_send_simple_message(email_from, email_to, email_subject, email_body, scopes=None, file_token_json=None, file_credentials_json=None):
   """Create and send an email message
@@ -173,6 +186,10 @@ if __name__ == "__main__":
   # file_token_json = '210608th.json'
   file_token_json = None
   file_credentials_json = None
+
+  print('Refresh token - no email to send')
+  gmail_refresh_token_take_no_action(email_from, email_to, email_subject, email_body, scopes, file_token_json, file_credentials_json)
+
   
   print('Test email to filename conversion:  ', email_from)
   print(convert_email_to_filename(email_from))
@@ -182,5 +199,5 @@ if __name__ == "__main__":
     gmail_send_simple_message(email_from, email_to, email_subject, email_body, scopes, file_token_json, file_credentials_json)
   except Exception as err:
     print('Err: ', err)
-    print('this failed - you must delete the input json and reauthenticate the application)
+    print('this failed - you must delete the input json and reauthenticate the application')
 # eof
