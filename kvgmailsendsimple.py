@@ -28,7 +28,7 @@ pip install --upgrade google-api-python-client google-auth-httplib2 google-auth-
 
 @author:  Ken Venner
 @contact: ken@vennerllc.com
-@version:  1.02
+@version:  1.03
 
 
 Created:  2024-02-18;kv
@@ -45,7 +45,7 @@ SCOPES = [
 
 
 # version number
-AppVersion = '1.02'
+AppVersion = '1.03'
 
 
 
