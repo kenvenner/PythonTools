@@ -178,6 +178,9 @@ if __name__ == "__main__":
   print(convert_email_to_filename(email_from))
   print('Test generation of email send through:  ', email_from)
   print('   Sent to...........................:  ', email_to)
-  gmail_send_simple_message(email_from, email_to, email_subject, email_body, scopes, file_token_json, file_credentials_json)
-
+  try:
+    gmail_send_simple_message(email_from, email_to, email_subject, email_body, scopes, file_token_json, file_credentials_json)
+  except Exception as err:
+    print('Err: ', err)
+    print('this failed - you must delete the input json and reauthenticate the application)
 # eof

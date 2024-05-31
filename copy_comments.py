@@ -1,0 +1,202 @@
+"""
+    Copy comments from file 1 and move them into file 2
+    matching on the keys between two files
+    PO + Item
+
+"""
+
+import kvutil
+import kv_excel
+import kvxls
+import pprint
+import sys
+
+
+# ----------------------------------------
+
+# COMMAND LINE PROCESSIGN
+
+optiondictconfig = {
+    'AppVersion' : {
+        'value' : '1.03',
+    },
+    
+    'debug' : {
+        'value' : False,
+        'type' : 'bool',
+    },
+    'src_dir' : {
+        'value' : "C:/Users/116919/Sierra Space Corporation/Sierra Space Information Technology - General/Ken's Material/2024-02-13-PO-Cleanup",
+        'type' : 'dir',
+        'description': 'path to the file with the data to be copied from',
+    },
+    'dst_dir' : {
+        'value' : None,
+        'type' : 'dir',
+        'description': 'path to the file with the data to be copied into',
+    },
+    'out_dir' : {
+        'value' : None,
+        'type' : 'dir',
+        'description': 'path to the location where the output file is placed',
+    },
+    'src_fname' : {
+        'value' : "2024-04-23-PO-IT-Cleanup-v02.xlsx",
+        'description':  'filename of the file with the data to copy from',
+    },
+    'dst_fname' : {
+        'value' : "2024-05-04-PO-IT-Cleanup.xlsx",
+        'description':  'filename of the file with the data to copy into',
+    },
+    'out_fname' : {
+        'value' : "2024-05-04-PO-IT-Cleanup-v02.xlsx",
+        'description':  'filename of the output file',
+    },
+    'copy_fields' : {
+        'value' : [
+            'Comment',
+            'NewPORequestorID',
+            'NewPORequestorName',
+            'NewPORequestorEmail',
+        ],
+        'type' : 'liststr',
+        'description': 'fields in the source file that are copied over into the destination file',
+    },
+    'key_fields' : {
+        'value' : [
+            'Purchasing Document',
+            'Item',
+        ],
+        'type' : 'liststr',
+        'description': 'fields that create the unique business key in the source and destination file',
+    },
+    'col_width' : {
+        'value': None,
+        'type' : dict,
+        'description' : 'dictionary defines the width for each column',
+    },
+    'format_output' : {
+        'value' : True,
+        'type' : 'bool',
+        'description': 'when true we format the created out_fname',
+    },
+    'src_width' : {
+        'value' : True,
+        'type' : 'bool',
+        'description': 'when true and format_output is true - get col_width from the src_fname',
+    }
+}
+
+'''
+Documentation about the structure of col_width dictionary
+Example col_width:
+{
+    'A': 25.0,
+    'AA': 17.453125,
+    'AB': 20.54296875,
+    'AC': 20.1796875,
+    'AD': 14.0,
+    'AE': 11.7265625,
+    'AF': 19.26953125,
+    'AG': 23.90625,
+    'AH': 11.1796875,
+    'AI': 39.26953125,
+    'AJ': 8.81640625,
+    'AK': 6.7265625,
+    'AL': 9.453125,
+    'AM': 12.54296875,
+    'AN': 12.453125,
+    'AO': 12.1796875,
+    'AP': 13.81640625,
+    'AQ': 9.453125,
+    'AR': 19.26953125,
+    'AS': 9.0,
+    'B': 40.0,
+    'C': 19.08984375,
+    'D': 4.81640625,
+    'E': 11.81640625,
+    'G': 11.453125,
+    'H': 19.7265625,
+    'I': 44.7265625,
+    'J': 18.08984375,
+    'K': 13.6328125,
+    'L': 5.0,
+    'M': 17.26953125,
+    'N': 13.453125,
+    'O': 9.6328125,
+    'P': 13.6328125,
+    'Q': 8.54296875,
+    'R': 14.26953125,
+    'S': 12.7265625,
+    'T': 13.36328125,
+    'U': 10.7265625,
+    'V': 30.26953125,
+    'W': 12.36328125,
+    'X': 17.54296875,
+    'Y': 23.453125,
+    'Z': 39.26953125
+}
+'''
+
+
+# command line processing
+optiondict = kvutil.kv_parse_command_line( optiondictconfig ) # , keymapdict=keymapdict )
+
+# pprint.pprint(optiondict)
+
+# default fields that were not set
+# set directories to match teh src_dir if not set
+for fld in ('dst_dir', 'out_dir'):
+    if not optiondict[fld]:
+        optiondict[fld] = optiondict['src_dir']
+
+# make sure each directory ends with '/'
+for fld in ('src_dir', 'dst_dir', 'out_dir'):
+    if optiondict[fld][-1] != '/':
+        optiondict[fld] += '/'
+
+#pprint.pprint(optiondict)
+#sys.exit()
+
+
+#### Load the files
+src_data = kvxls.readxls2list(optiondict['src_dir'] + optiondict['src_fname'])
+dst_data = kvxls.readxls2list(optiondict['dst_dir'] + optiondict['dst_fname'])
+
+# check that we found records
+if not len(src_data):
+    print('Found no records in: ', optiondict['src_dir'] + optiondict['src_fname'])
+    sys.exit(1)
+# check that we got the write sheet
+if optiondict['key_fields'][0] not in src_data[0]:
+    print('You are MOST LIKELY reading in the wrong sheet as we can not find column: ',
+          optiondict['key_fields'][0] )
+    sys.exit(1)
+
+# generate lookup on source
+src_lookup = kvutil.create_multi_key_lookup(src_data, optiondict['key_fields'])
+    
+# now step through the dst data and copy over matching data
+matched_recs = kvutil.copy_matched_data(dst_data, src_lookup, optiondict['key_fields'], optiondict['copy_fields'])
+
+print('source recs.: ', len(src_data))
+print('new recs....: ', len(dst_data))
+print('matched_recs: ', matched_recs)
+
+# output what we came up with
+kvxls.writelist2xls(optiondict['out_dir'] + optiondict['out_fname'], dst_data)
+
+# if they want it formatted
+if optiondict['format_output']:
+    # check if we should load the col_width from the src_fname
+    if optiondict['src_width']:
+        print('Getting col_width from src_fname')
+        optiondict['col_width'] = kv_excel.get_existing_column_width(optiondict['src_dir'] + optiondict['src_fname'])
+    #
+    print('Formatting output file')
+    kv_excel.format_xlsx_with_filter_and_freeze(optiondict['out_dir'] + optiondict['out_fname'], col_width=optiondict['col_width'])
+
+
+print('Created:  ', optiondict['out_dir'] + optiondict['out_fname'])
+
+#eof
