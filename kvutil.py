@@ -3,7 +3,7 @@ from __future__ import print_function
 '''
 @author:   Ken Venner
 @contact:  ken@venerllc.com
-@version:  1.70
+@version:  1.71
 
 Library of tools used in general by KV
 '''
@@ -31,8 +31,8 @@ import logging
 logger = logging.getLogger(__name__)
 
 # set the module version number
-AppVersion = '1.70'
-__version__ = '1.70'
+AppVersion = '1.71'
+__version__ = '1.71'
 HELP_KEYS = ('help', 'helpall',)
 HELP_VALUE_TABLE = ('tbl', 'table', 'helptbl', 'fmt',)
 
@@ -1130,6 +1130,30 @@ def any_field_is_populated(rec, copy_fields):
             # print('type not string')
             return True
     return False
+
+# for a list of records and a dictionary with defaults - set columns if blank
+def set_blank_field_values(src_data, set_blank_fields):
+    '''
+    For each record in src_data
+    For each column defined in set_blank_fields dictionary
+    Check the record column value and if not set, then set it to the value from set_blank__fields
+
+    src_data - list of dictionaries
+    set_blank_fields - dictionary with key and defined value
+    '''
+    records_updated = 0 
+    for rec in src_data:
+        record_updated = False
+        for k,v in set_blank_fields.items():
+            # if key in record and this column has no data
+            if k in rec and not rec[k]:
+                rec[k] = v
+                record_updated = True
+        # increment count if we updated the record
+        if record_updated:
+            records_updated += 1
+    # return the number of records update
+    return records_updated
 
 
 # create a multi-key dictionary from a list of dictionaries

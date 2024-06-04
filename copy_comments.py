@@ -1,7 +1,26 @@
 """
     Copy comments from file 1 and move them into file 2
     matching on the keys between two files
-    PO + Item
+
+    src_dir/src_fname - the file that has the existing data that we need to copy over
+    dst_dir/dst_fname - the NEW file that we read in and apply teh src_data to
+    out_dir/out_fname - the output file generated after we apply src_data to dst_fname.
+
+    copy_fields - list of fields from src_data that are copied into fields in dst_data
+    key_fields - the list of fields in src_data and dst_data that define a unique record in the file
+    set_blank_fields - a dictionary of key/value pairs - the key is the field in src_data that
+                       if not populated with data - we assign the field "value" - if this is None we ignore this flow
+    col_width - a dictionary that is column letter and column width numberic
+    format_output - boolean when true we format the out_fname, with col_width if passed in or calc col_width on our own
+    src_width - when true, and format_output is true, we calculate col_width by reading the values from src_fname
+
+@author:   Ken Venner
+@contact:  ken.venner@sierrspace.com
+@version:  1.05
+
+    Created:   2024-05-20;kv
+    Version:   2024-06-03;kv
+
 
 """
 
@@ -14,7 +33,14 @@ import sys
 
 # ----------------------------------------
 
-# COMMAND LINE PROCESSIGN
+AppVersion = '1.05'
+__version__ = '1.05'
+
+
+# ----------------------------------------
+
+
+# COMMAND LINE PROCESSING
 
 optiondictconfig = {
     'AppVersion' : {
@@ -69,6 +95,11 @@ optiondictconfig = {
         ],
         'type' : 'liststr',
         'description': 'fields that create the unique business key in the source and destination file',
+    },
+    'set_blank_fields' : {
+        'value' : None,
+        'type' : 'dict',
+        'description': 'dictionary of field and value to set if the field is not populated in the src file',
     },
     'col_width' : {
         'value': None,
@@ -173,15 +204,23 @@ if optiondict['key_fields'][0] not in src_data[0]:
           optiondict['key_fields'][0] )
     sys.exit(1)
 
+# set the values on blank entries in source file if configured
+if optiondict['set_blank_fields']:
+    default_recs = kvutil.set_blank_field_values(src_data, optiondict['set_blank_fields'])
+else:
+    default_recs = 0
+    
+    
 # generate lookup on source
 src_lookup = kvutil.create_multi_key_lookup(src_data, optiondict['key_fields'])
     
 # now step through the dst data and copy over matching data
 matched_recs = kvutil.copy_matched_data(dst_data, src_lookup, optiondict['key_fields'], optiondict['copy_fields'])
 
-print('source recs.: ', len(src_data))
-print('new recs....: ', len(dst_data))
-print('matched_recs: ', matched_recs)
+print('source recs.....: ', len(src_data))
+print('src set default.: ', default_recs)
+print('new recs........: ', len(dst_data))
+print('matched_recs....: ', matched_recs)
 
 # output what we came up with
 kvxls.writelist2xls(optiondict['out_dir'] + optiondict['out_fname'], dst_data)

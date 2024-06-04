@@ -10,7 +10,7 @@ def open_xlsx_get_ws_wb( xls_filename, ws_sheetname = None ):
     '''
     wb = openpyxl.load_workbook( xls_filename )
     if ws_sheetname:
-        ws = wb.[ws_sheetname]
+        ws = wb[ws_sheetname]
     else:
         ws = wb.active
     return ws, wb
@@ -39,7 +39,7 @@ def apply_col_width_ws_obj( ws, col_width ):
                 # print('applied width to %s: %d', k, col_width[k])
                 ws.column_dimensions[k].width = col_width[k]
             else:
-                print('Skipped: ', k)
+                print('Skipped column: ', k)
     else:
         # print('column range')
         for col in range(ws.min_column, ws.max_column):
@@ -48,7 +48,7 @@ def apply_col_width_ws_obj( ws, col_width ):
                 # print('applied width to %s: %d', k, col_width[k])
                 ws.column_dimensions[k].width = col_width[k]
             else:
-                print('Skipped: ', k)
+                print('Skipped column: ', k)
             
 def apply_filter_all_columns( ws ):
     '''
