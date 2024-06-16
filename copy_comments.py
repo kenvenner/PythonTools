@@ -218,24 +218,29 @@ src_lookup = kvutil.create_multi_key_lookup(src_data, optiondict['key_fields'])
 matched_recs = kvutil.copy_matched_data(dst_data, src_lookup, optiondict['key_fields'], optiondict['copy_fields'])
 
 print('source recs.....: ', len(src_data))
-print('src set default.: ', default_recs)
+print('source recs.....: ', len(src_data))
+print('src set2default.: ', default_recs)
 print('new recs........: ', len(dst_data))
 print('matched_recs....: ', matched_recs)
+
 
 # output what we came up with
 kvxls.writelist2xls(optiondict['out_dir'] + optiondict['out_fname'], dst_data)
 
 # if they want it formatted
 if optiondict['format_output']:
+    print('\nFormatting output file')
     # check if we should load the col_width from the src_fname
     if optiondict['src_width']:
         print('Getting col_width from src_fname')
         optiondict['col_width'] = kv_excel.get_existing_column_width(optiondict['src_dir'] + optiondict['src_fname'])
     #
-    print('Formatting output file')
+    print('Performing oiutput formatting')
     kv_excel.format_xlsx_with_filter_and_freeze(optiondict['out_dir'] + optiondict['out_fname'], col_width=optiondict['col_width'])
 
-
-print('Created:  ', optiondict['out_dir'] + optiondict['out_fname'])
+print('')
+print('source file.....: ', optiondict['src_dir'] + optiondict['src_fname'])
+print('new data file...: ', optiondict['dst_dir'] + optiondict['dst_fname'])
+print('generated file..: ', optiondict['out_dir'] + optiondict['out_fname'])
 
 #eof
