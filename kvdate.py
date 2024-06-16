@@ -3,9 +3,12 @@ from __future__ import print_function
 '''
 @author:   Ken Venner
 @contact:  ken@venerllc.com
-@version:  1.01
+@version:  1.02
 
-Library of tools used in general by KV
+Library of tools for date time processing used in general by KV
+
+Update:  2024-06-06;kv - added try/except on datetime_from_str
+
 '''
 
 import os
@@ -21,8 +24,8 @@ import logging
 logger = logging.getLogger(__name__)
 
 # set the module version number
-AppVersion = '1.01'
-__version__ = '1.01'
+AppVersion = '1.02'
+__version__ = '1.02'
 
 
 def current_timezone_string():
@@ -96,8 +99,15 @@ def datetime_from_str(value, skipblank=False):
 
     for (redate, datefmt) in datefmts:
         if redate.match(value):
-            return datetime.datetime.strptime(value, datefmt)
-
+            try:
+                return datetime.datetime.strptime(value, datefmt)
+            except Exception as e:
+                print('-'*40)
+                print('datetime_from_str - conversion error:')
+                print(f'    value..:  {value}')
+                print(f'    datefmt:  {datefmt}')
+                raise e
+            
     raise Exception(u'Unable to convert to date time:{}'.format(orig_value))
 
 
