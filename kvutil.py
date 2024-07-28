@@ -3,7 +3,7 @@ from __future__ import print_function
 '''
 @author:   Ken Venner
 @contact:  ken@venerllc.com
-@version:  1.71
+@version:  1.72
 
 Library of tools used in general by KV
 '''
@@ -31,8 +31,8 @@ import logging
 logger = logging.getLogger(__name__)
 
 # set the module version number
-AppVersion = '1.71'
-__version__ = '1.71'
+AppVersion = '1.72'
+__version__ = '1.72'
 HELP_KEYS = ('help', 'helpall',)
 HELP_VALUE_TABLE = ('tbl', 'table', 'helptbl', 'fmt',)
 
@@ -1135,7 +1135,7 @@ def any_field_is_populated(rec, copy_fields):
 def set_blank_field_values(src_data, set_blank_fields):
     '''
     For each record in src_data
-    For each column defined in set_blank_fields dictionary
+    For each column defined in set_blank_fields dictionary (if it is spaces it will not overwrite/update)
     Check the record column value and if not set, then set it to the value from set_blank__fields
 
     src_data - list of dictionaries
@@ -1148,6 +1148,31 @@ def set_blank_field_values(src_data, set_blank_fields):
             # if key in record and this column has no data
             if k in rec and not rec[k]:
                 rec[k] = v
+                record_updated = True
+        # increment count if we updated the record
+        if record_updated:
+            records_updated += 1
+    # return the number of records update
+    return records_updated
+
+
+# for a list of records and a dictionary with defaults - set columns if blank
+def convert_hyperlink_field_values(src_data, hyperlink_fields):
+    '''
+    For each record in src_data
+    For each column defined in hyperlink_fields list
+    Check the record column value and if not set, then set it to the value from set_blank__fields
+
+    src_data - list of dictionaries
+    hyperlink_fields - list of columns to check and update
+    '''
+    records_updated = 0 
+    for rec in src_data:
+        record_updated = False
+        for fld in hyperlink_fields:
+            # if key in record and this column has no data
+            if fld in rec and rec[fld] and rec[fld].startswith('=HYPERLINK'):
+                rec[fld] = rec[fld][11:-1]
                 record_updated = True
         # increment count if we updated the record
         if record_updated:

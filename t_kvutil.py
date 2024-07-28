@@ -656,6 +656,48 @@ class TestKVUtilFilenames(unittest.TestCase):
         self.assertEqual(kvutil.any_field_is_populated(rec, copy_fields), True)
 
 
+    # populate field with value when blank
+    def test_set_blank_field_values_p01_empty(self):
+        rec = [{'col1': 'val1',  'col2': 'val2',  'col3': '',  'col4': ''}]
+        result = [{'col1': 'val1',  'col2': 'val2',  'col3': 'set_col3',  'col4': 'set_col4'}]
+        set_blank_fields = {'col3': 'set_col3', 'col4': 'set_col4'}
+        kvutil.set_blank_field_values(rec, set_blank_fields)
+        self.assertEqual(rec, result)
+    def test_set_blank_field_values_p02_filled(self):
+        rec = [{'col1': 'val1',  'col2': 'val2',  'col3': 'col3',  'col4': 'col4'}]
+        result = [{'col1': 'val1',  'col2': 'val2',  'col3': 'col3',  'col4': 'col4'}]
+        set_blank_fields = {'col3': 'set_col3', 'col4': 'set_col4'}
+        kvutil.set_blank_field_values(rec, set_blank_fields)
+        self.assertEqual(rec, result)
+    def test_set_blank_field_values_p03_filled_space(self):
+        rec = [{'col1': 'val1',  'col2': 'val2',  'col3': '  ',  'col4': '  '}]
+        result = [{'col1': 'val1',  'col2': 'val2',  'col3': '  ',  'col4': '  '}]
+        set_blank_fields = {'col3': 'set_col3', 'col4': 'set_col4'}
+        kvutil.set_blank_field_values(rec, set_blank_fields)
+        self.assertEqual(rec, result)
+
+
+    # populate field with value when blank
+    def test_convert_hyperlink_field_values_p01_empty(self):
+        rec = [{'col1': 'val1',  'col2': 'val2',  'col3': '',  'col4': ''}]
+        result = [{'col1': 'val1',  'col2': 'val2',  'col3': '',  'col4': ''}]
+        hyperlink_fields = ['col3', 'col4']
+        kvutil.convert_hyperlink_field_values(rec, hyperlink_fields)
+        self.assertEqual(rec, result)
+    def test_convert_hyperlink_field_values_p02_filled(self):
+        rec = [{'col1': 'val1',  'col2': 'val2',  'col3': '=HYPERLINK(the_link_3)',  'col4': '=HYPERLINK(the_link_4)'}]
+        result = [{'col1': 'val1',  'col2': 'val2',  'col3': 'the_link_3',  'col4': 'the_link_4'}]
+        hyperlink_fields = ['col3', 'col4']
+        kvutil.convert_hyperlink_field_values(rec, hyperlink_fields)
+        self.assertEqual(rec, result)
+    def test_convert_hyperlink_field_values_p03_bad_col(self):
+        rec = [{'col1': 'val1',  'col2': 'val2',  'col3': '=HYPERLINK(the_link_3)',  'col4': '=HYPERLINK(the_link_4)'}]
+        result = [{'col1': 'val1',  'col2': 'val2',  'col3': 'the_link_3',  'col4': '=HYPERLINK(the_link_4)'}]
+        hyperlink_fields = ['col3', 'col5']
+        kvutil.convert_hyperlink_field_values(rec, hyperlink_fields)
+        self.assertEqual(rec, result)
+
+
     # create_multi_key_lookup(src_data, fldlist)
     def test_create_multi_key_lookup_p01_2keys(self):
         src_data = [

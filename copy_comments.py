@@ -16,10 +16,11 @@
 
 @author:   Ken Venner
 @contact:  ken.venner@sierrspace.com
-@version:  1.05
+@version:  1.06
 
     Created:   2024-05-20;kv
     Version:   2024-06-03;kv
+               2024-07-24;kv - added hyperlink_fields
 
 
 """
@@ -96,6 +97,12 @@ optiondictconfig = {
         'type' : 'liststr',
         'description': 'fields that create the unique business key in the source and destination file',
     },
+    'hyperlink_fields' : {
+        'value' : [
+        ],
+        'type' : 'liststr',
+        'description': 'fields that are hyperlink fields and must be converted',
+    },
     'set_blank_fields' : {
         'value' : None,
         'type' : 'dict',
@@ -115,6 +122,16 @@ optiondictconfig = {
         'value' : True,
         'type' : 'bool',
         'description': 'when true and format_output is true - get col_width from the src_fname',
+    },
+    'force_copy_flds' : {
+        'value' : False,
+        'type' : 'bool',
+        'description': 'when enabled this force the copy fields into the dst file',
+    },
+    'dump_recs' : {
+        'value' : False,
+        'type' : 'bool',
+        'description': 'when enabled this will cause the data read in to be outputted',
     }
 }
 
@@ -204,6 +221,42 @@ if optiondict['key_fields'][0] not in src_data[0]:
           optiondict['key_fields'][0] )
     sys.exit(1)
 
+
+# output when requested
+if optiondict['dump_recs']:
+    print('-'*80)
+    print('Original Source:')
+    pprint.pprint(src_data)
+    print('-'*80)
+    print('New Source:')
+    pprint.pprint(dst_data)
+    print('-'*80)
+    print('\n')
+
+# force copy fields into the dst_data records
+if optiondict['force_copy_flds']:
+    for rec in dst_data:
+        for fld in optiondict['copy_fields']:
+            if fld not in rec:
+                rec[fld] = ''
+
+# convert hyperlink fields if defined
+if optiondict['hyperlink_fields']:
+    kvutil.convert_hyperlink_field_values(src_data, optiondict['hyperlink_fields'])
+    kvutil.convert_hyperlink_field_values(dst_data, optiondict['hyperlink_fields'])
+
+    # output when requested
+    if optiondict['dump_recs']:
+        print('-'*80)
+        print('Hyperlink Original Source:')
+        pprint.pprint(src_data)
+        print('-'*80)
+        print('Hyperlink New Source:')
+        pprint.pprint(dst_data)
+        print('-'*80)
+        print('\n')
+
+    
 # set the values on blank entries in source file if configured
 if optiondict['set_blank_fields']:
     default_recs = kvutil.set_blank_field_values(src_data, optiondict['set_blank_fields'])
@@ -217,7 +270,12 @@ src_lookup = kvutil.create_multi_key_lookup(src_data, optiondict['key_fields'])
 # now step through the dst data and copy over matching data
 matched_recs = kvutil.copy_matched_data(dst_data, src_lookup, optiondict['key_fields'], optiondict['copy_fields'])
 
-print('source recs.....: ', len(src_data))
+if optiondict['dump_recs']:
+    print('-'*80)
+    print('DST Output Records:')
+    pprint.pprint(dst_data)
+    print('-'*80)
+
 print('source recs.....: ', len(src_data))
 print('src set2default.: ', default_recs)
 print('new recs........: ', len(dst_data))
