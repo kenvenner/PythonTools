@@ -2,6 +2,7 @@
 rem build out the python version environment
 rem
 rem drop box is different so create unique environment
+rem this is set to "lt" to mean laptop - blank is for desktop
 SET VUNIQUE=lt
 rem
 rem set directory
@@ -11,11 +12,11 @@ rem default is 3.11
 if "%1%" == "" (
    SET VERSION=11
 ) ELSE (
-   echo here
+   echo Setting version to : %1%
    SET VERSION=%1%
 )
 rem
-rem pick the versoin of python
+rem pick the version of python
 if "%VERSION%" == "7" (
 SET PGM=%USERPROFILE%\AppData\Local\Programs\Python\Python37\python.exe
 SET VENVDIR=venv07

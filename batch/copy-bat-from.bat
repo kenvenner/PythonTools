@@ -6,4 +6,4 @@ SET OPTION=
 if "%1" == "diff" (
     SET OPTION=--diff
 )
-python "%USERPROFILE%\OneDrive - e-Share\code\eshare-scripts\copy-file.py" . --src %USERPROFILE%\Dropbox\LinuxShare\python\tools\batch --ext bat --mtime %OPTION%
+python "%USERPROFILE%\Dropbox\LinuxShare\python\tools\copy-file.py" . --src %USERPROFILE%\Dropbox\LinuxShare\python\tools\batch --ext bat --mtime %OPTION%
