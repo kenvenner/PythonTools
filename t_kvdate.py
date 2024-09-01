@@ -15,7 +15,7 @@ kvlogger.dictConfig(config)
 logger=kvlogger.getLogger(__name__)
 
 # set the module version number
-AppVersion = '1.01'
+AppVersion = '1.02'
 
 # global variables
 tst_filename='t_kvdate_tst'
@@ -203,7 +203,7 @@ class TestKvdateFilenames(unittest.TestCase):
             'US/Michigan',
             'US/Mountain',
             'US/Pacific',
-            'US/Pacific-New',
+#            'US/Pacific-New', # this disappeared on 2024-09-01
             'US/Samoa',
         ]
         self.assertEqual(kvdate.show_timezones('US'), us_tz)

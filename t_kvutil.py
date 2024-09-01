@@ -465,15 +465,15 @@ class TestKVUtilFilenames(unittest.TestCase):
         
     # filename proper
     def test_filename_proper_p01_simple_filename(self):
-        self.assertEqual(kvutil.filename_proper( 'ken.txt' ), os.path.normpath('./ken.txt') )
+        self.assertEqual(kvutil.filename_proper( 'requirements.txt' ), os.path.normpath('./requirements.txt') )
     def test_filename_proper_p02_abspath_filename(self):
-        self.assertEqual(kvutil.filename_proper( os.environ.get('USERPROFILE')+'/Dropbox/LinuxShare/PerlPlay/templates/ken.txt' ), os.path.normpath( os.environ.get('USERPROFILE')+'/Dropbox/LinuxShare/PerlPlay/templates/ken.txt') )
+        self.assertEqual(kvutil.filename_proper( os.environ.get('USERPROFILE')+'/Dropbox/LinuxShare/python/tools/requirements.txt' ), os.path.normpath( os.environ.get('USERPROFILE')+'/Dropbox/LinuxShare/python/tools/requirements.txt') )
     def test_filename_proper_p03_relpath_filename(self):
-        self.assertEqual(kvutil.filename_proper( '../../PerlPlay/templates/ken.txt' ), os.path.normpath('../../PerlPlay/templates/ken.txt') )
+        self.assertEqual(kvutil.filename_proper( '../../python/tools/requirements.txt' ), os.path.normpath('../../python/tools/requirements.txt') )
     def test_filename_proper_p04_filename_dir(self):
-        self.assertEqual(kvutil.filename_proper( 'ken.txt', file_dir='./'), os.path.normpath('./ken.txt'))
+        self.assertEqual(kvutil.filename_proper( 'requirements.txt', file_dir='./'), os.path.normpath('./requirements.txt'))
     def test_filename_proper_p05_filename_dir_write_check(self):
-        self.assertEqual(kvutil.filename_proper( 'ken.txt', file_dir='./', write_check=True), os.path.normpath('./ken.txt'))
+        self.assertEqual(kvutil.filename_proper( 'requirements.txt', file_dir='./', write_check=True), os.path.normpath('./requirements.txt'))
     def test_filename_proper_p06_filename_dir_create_dir(self):
         self.assertEqual(kvutil.filename_proper( 'ken.txt', file_dir='./createdir', create_dir=True), os.path.normpath('./createdir/ken.txt'))
         os.rmdir('./createdir')  #remove folder that was created
