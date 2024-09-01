@@ -63,6 +63,7 @@ goto exit
 if not exist %VENVDIR% (
 %PGM% -m venv %VENVDIR%
 call %VENVDIR%\scripts\activate
+timeout /t 60
 python -m pip install --upgrade pip
 pip install wheel
 )
