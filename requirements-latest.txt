@@ -1,0 +1,15 @@
+attrdict3
+html2text
+importlib-metadata
+ipaddress
+jdcal
+mail-parser
+openpyxl
+piexif
+pytest
+python-dateutil
+pytz
+pywin32
+xlrd
+XlsxWriter
+xlwt
