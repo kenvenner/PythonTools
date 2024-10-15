@@ -6,6 +6,8 @@
     dst_dir/dst_fname - the NEW file that we read in and apply teh src_data to
     out_dir/out_fname - the output file generated after we apply src_data to dst_fname.
 
+    out_fname_append - enables the generation of the out_fname based in teh dst_fname and append a string.
+
     copy_fields - list of fields from src_data that are copied into fields in dst_data
     key_fields - the list of fields in src_data and dst_data that define a unique record in the file
     set_blank_fields - a dictionary of key/value pairs - the key is the field in src_data that
@@ -16,11 +18,12 @@
 
 @author:   Ken Venner
 @contact:  ken.venner@sierrspace.com
-@version:  1.06
+@version:  1.07
 
     Created:   2024-05-20;kv
-    Version:   2024-06-03;kv
+    Version:   2024-09-19;kv - more checks and additional features (like json_cfg_filename)
                2024-07-24;kv - added hyperlink_fields
+               2024-06-03;kv
 
 
 """
@@ -30,12 +33,13 @@ import kv_excel
 import kvxls
 import pprint
 import sys
+import os
 
 
 # ----------------------------------------
 
-AppVersion = '1.05'
-__version__ = '1.05'
+AppVersion = '1.07'
+__version__ = '1.07'
 
 
 # ----------------------------------------
@@ -45,7 +49,7 @@ __version__ = '1.05'
 
 optiondictconfig = {
     'AppVersion' : {
-        'value' : '1.03',
+        'value': '1.07',
     },
     
     'debug' : {
@@ -78,6 +82,30 @@ optiondictconfig = {
     'out_fname' : {
         'value' : "2024-05-04-PO-IT-Cleanup-v02.xlsx",
         'description':  'filename of the output file',
+    },
+    'src_ws' : {
+        'value' : None,
+        'description':  'worksheet in the file with the data to copy from',
+    },
+    'dst_ws' : {
+        'value' : None,
+        'description':  'worksheet in the file with the data to copy into',
+    },
+    'out_ws' : {
+        'value' : None,
+        'description':  'worksheet in the output file',
+    },
+    'out_fname_append' : {
+        'value' : "",
+        'description':  'string to append to the dst_fname to create teh out_fname - do not set this and out_fname',
+    },
+    'rmv_fname_append' : {
+        'value' : "",
+        'description':  'string to append to the dst_fname to create teh rmv_fname',
+    },
+    'json_cfg_filename' : {
+        'value' : False,
+        'description': 'when populated with a filename - we create a default cfg json file',
     },
     'copy_fields' : {
         'value' : [
@@ -190,7 +218,13 @@ Example col_width:
 # command line processing
 optiondict = kvutil.kv_parse_command_line( optiondictconfig ) # , keymapdict=keymapdict )
 
-# pprint.pprint(optiondict)
+# dump a json file to be used as a configuration file
+if optiondict['json_cfg_filename']:
+    pprint.pprint(optiondict)
+    print('-'*40)
+    kvutil.dump_dict_to_json_file(optiondict['json_cfg_filename'], optiondict)
+    print('Created json_cfg file:  ' + optiondict['json_cfg_filename'])
+    sys.exit()
 
 # default fields that were not set
 # set directories to match teh src_dir if not set
@@ -203,24 +237,51 @@ for fld in ('src_dir', 'dst_dir', 'out_dir'):
     if optiondict[fld][-1] != '/':
         optiondict[fld] += '/'
 
+# determine if we need to generate the output fname
+if optiondict['out_fname'] and optiondict['out_fname_append']:
+    print('ERROR:  you can not populated both attributes [out_fname] and [out_fname_append]')
+    sys.exit(1)
+elif optiondict['out_fname_append']:
+    # calculate the out_fname
+    fname, fext = os.path.splitext(optiondict['dst_fname'])
+    # build the new filename
+    optiondict['out_fname'] = fname + optiondict['out_fname_append'] + fext
+
+# generate the remove filename
+if optiondict['rmv_fname_append']:
+    # calculate the out_fname
+    fname, fext = os.path.splitext(optiondict['dst_fname'])
+    # build the new filename
+    optiondict['rmv_fname'] = fname + optiondict['rmv_fname_append'] + fext
+
+
+
 #pprint.pprint(optiondict)
 #sys.exit()
 
 
 #### Load the files
-src_data = kvxls.readxls2list(optiondict['src_dir'] + optiondict['src_fname'])
-dst_data = kvxls.readxls2list(optiondict['dst_dir'] + optiondict['dst_fname'])
+src_data = kvxls.readxls2list(optiondict['src_dir'] + optiondict['src_fname'], optiondict['src_ws'])
+dst_data = kvxls.readxls2list(optiondict['dst_dir'] + optiondict['dst_fname'], optiondict['dst_ws'])
 
 # check that we found records
 if not len(src_data):
     print('Found no records in: ', optiondict['src_dir'] + optiondict['src_fname'])
     sys.exit(1)
-# check that we got the write sheet
+# check that we got the right sheet - one of the keys is in this record
 if optiondict['key_fields'][0] not in src_data[0]:
     print('You are MOST LIKELY reading in the wrong sheet as we can not find column: ',
           optiondict['key_fields'][0] )
     sys.exit(1)
-
+# check that the source records have the copy fields
+if optiondict['copy_fields']:
+    missing = False
+    for fld in optiondict['copy_fields']:
+        if fld not in src_data[0]:
+            print('Source record missing a copy column: ', fld)
+            missing = True
+    if missing:
+        sys.exit(1)
 
 # output when requested
 if optiondict['dump_recs']:
@@ -234,6 +295,8 @@ if optiondict['dump_recs']:
     print('\n')
 
 # force copy fields into the dst_data records
+# make sure there is a place in the dictionary of the destination
+# record to accept the copy fields values
 if optiondict['force_copy_flds']:
     for rec in dst_data:
         for fld in optiondict['copy_fields']:
@@ -270,6 +333,11 @@ src_lookup = kvutil.create_multi_key_lookup(src_data, optiondict['key_fields'])
 # now step through the dst data and copy over matching data
 matched_recs = kvutil.copy_matched_data(dst_data, src_lookup, optiondict['key_fields'], optiondict['copy_fields'])
 
+# if we want to save out the removed records then do that analysis
+if optiondict['rmv_fname']:
+    dst_lookup = kvutil.create_multi_key_lookup(dst_data, optiondict['key_fields'])
+    rmv_data = kvutil.extract_unmatched_data(src_data, dst_lookup, optiondict['key_fields'])
+
 if optiondict['dump_recs']:
     print('-'*80)
     print('DST Output Records:')
@@ -280,10 +348,16 @@ print('source recs.....: ', len(src_data))
 print('src set2default.: ', default_recs)
 print('new recs........: ', len(dst_data))
 print('matched_recs....: ', matched_recs)
-
+if optiondict['rmv_fname']:
+     print('removed recs....: ', len(rmv_data))
 
 # output what we came up with
 kvxls.writelist2xls(optiondict['out_dir'] + optiondict['out_fname'], dst_data)
+
+# output what we came up with
+if optiondict['rmv_fname']:
+    kvxls.writelist2xls(optiondict['out_dir'] + optiondict['rmv_fname'], rmv_data)
+
 
 # if they want it formatted
 if optiondict['format_output']:
@@ -298,7 +372,13 @@ if optiondict['format_output']:
 
 print('')
 print('source file.....: ', optiondict['src_dir'] + optiondict['src_fname'])
+if optiondict['src_ws']:
+    print('source ws.......: ', optiondict['src_ws'])
 print('new data file...: ', optiondict['dst_dir'] + optiondict['dst_fname'])
+if optiondict['dst_ws']:
+    print('new data ws.....: ', optiondict['dst_ws'])
 print('generated file..: ', optiondict['out_dir'] + optiondict['out_fname'])
-
+if optiondict['rmv_fname']:
+    print('generated file..: ', optiondict['out_dir'] + optiondict['rmv_fname'])
+    
 #eof

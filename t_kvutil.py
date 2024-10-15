@@ -15,7 +15,7 @@ kvlogger.dictConfig(config)
 logger=kvlogger.getLogger(__name__)
 
 # set the module version number
-AppVersion = '1.25'
+AppVersion = '1.26'
 
 # global variables
 tst_filename='t_kvutil_tst'
@@ -996,7 +996,72 @@ class TestKVUtilFilenames(unittest.TestCase):
             self.assertEqual(dst_data, result)
 
 
-
+    # extract_unmatched_data(src_data, dst_lookup, key_fields)
+    def test_extract_unmatched_data_p01_2keys(self):
+        src_data = [
+            {'col1': 'val1',  'col2': 'val2',  'col3': 'val3',  'col4': 'val4'},
+            {'col1': 'val11', 'col2': 'val12', 'col3': 'val13', 'col4': 'val14'}
+        ]
+        key_fields = ['col1', 'col2']
+        dst_lookup =  {
+            'vala': {'val2': {'col1': 'val1',
+                              'col2': 'val2',
+                              'col3': 'val3',
+                              'col4': 'val44'}},
+            'valb': {'val12': {'col1': 'val11',
+                                'col2': 'val12',
+                                'col3': 'val13',
+                                'col4': 'val44'}}
+        }
+        result = [
+            {'col1': 'val1',  'col2': 'val2',  'col3': 'val3',  'col4': 'val4'},
+            {'col1': 'val11', 'col2': 'val12', 'col3': 'val13', 'col4': 'val14'}
+        ]
+        res = kvutil.extract_unmatched_data(src_data, dst_lookup, key_fields)
+        self.assertEqual(src_data, result)
+    def test_extract_umatched_data_p02_2keys_1match(self):
+        src_data = [
+            {'col1': 'val1',  'col2': 'val2',  'col3': 'val3',  'col4': 'val4'},
+            {'col1': 'val11', 'col2': 'val12', 'col3': 'val13', 'col4': 'val14'}
+        ]
+        key_fields = ['col1', 'col2']
+        copy_fields = ['col4']
+        dst_lookup =  {
+            'val1': {'val2': {'col1': 'val1',
+                              'col2': 'val2',
+                              'col3': 'val3',
+                              'col4': 'val44'}},
+            'valz': {'val12': {'col1': 'val11',
+                                'col2': 'val12',
+                                'col3': 'val13',
+                                'col4': 'val44'}}
+        }
+        result = [
+            {'col1': 'val11', 'col2': 'val12', 'col3': 'val13', 'col4': 'val14'}
+        ]
+        res = kvutil.extract_unmatched_data(src_data, dst_lookup, key_fields)
+        self.assertEqual(res, result)
+    def test_extract_unmatched_data_f01_2keys(self):
+        src_data = [
+            {'col1': 'val1',  'col2': 'val2',  'col3': 'val3',  'col4': 'val4'},
+            {'col1': 'val11', 'col2': 'val12', 'col3': 'val13', 'col4': 'val14'}
+        ]
+        key_fields = ['col1', 'col2']
+        dst_lookup =  {
+            'val1': {'val2': {'col1': 'val1',
+                              'col2': 'val2',
+                              'col3': 'val3',
+                              'col4': 'val44'}},
+            'val11': {'val12': {'col1': 'val11',
+                                'col2': 'val12',
+                                'col3': 'val13',
+                                'col4': 'val44'}}
+        }
+        result = [
+        ]
+        res = kvutil.extract_unmatched_data(src_data, dst_lookup, key_fields)
+        self.assertEqual(res, result)
+        
     
 if __name__ == '__main__':
     logger.info('STARTUP(v%s)%s', AppVersion, '-'*40)

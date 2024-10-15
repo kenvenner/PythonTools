@@ -3,7 +3,7 @@ from __future__ import print_function
 '''
 @author:   Ken Venner
 @contact:  ken@venerllc.com
-@version:  1.72
+@version:  1.73
 
 Library of tools used in general by KV
 '''
@@ -31,8 +31,8 @@ import logging
 logger = logging.getLogger(__name__)
 
 # set the module version number
-AppVersion = '1.72'
-__version__ = '1.72'
+AppVersion = '1.73'
+__version__ = '1.73'
 HELP_KEYS = ('help', 'helpall',)
 HELP_VALUE_TABLE = ('tbl', 'table', 'helptbl', 'fmt',)
 
@@ -1303,5 +1303,46 @@ def copy_matched_data(dst_data, src_lookup, key_fields, copy_fields):
             rec[cfld] = ptr[cfld]
     # return the number of records that matched
     return matched_recs
+
+
+def extract_unmatched_data(src_data, dst_lookup, key_fields):
+    '''
+    return the list of records in src_data that are no longer in dst_lookup
+    '''
+    # make sure we passed in a list
+    if type(key_fields) is not list:
+        print('key_fields must be type - list - but is: ', type(key_fields))
+        raise TypeError()
+    # check that the key_fields keys are in the first record
+    for fld in key_fields:
+        if fld not in src_data[0]:
+            print('ERROR:  Unable to find key_field field: ', fld)
+            print('in first record:')
+            pprint.pprint(src_data[0])
+            print('This routine will fail')
+    #
+    # capture the count of matched records
+    unmatched_recs = []
+    # step through the src_data
+    for rec in src_data:
+        # cpature if we have a match
+        matched = True
+        # capture the pointer
+        ptr = dst_lookup
+        # step through the key_fields and see if we find a matching record
+        for fld in key_fields:
+            # there is a match
+            if rec[fld] in ptr:
+                ptr = ptr[rec[fld]]
+            else:
+                matched = False
+                # stop looking for match on this record
+                break
+        # check to see if we did match get next record
+        if not matched:
+            # there was not a match - that is what we are looking for
+            unmatched_recs.append(rec)
+    # return the number of records that matched
+    return unmatched_recs
 
 # eof
