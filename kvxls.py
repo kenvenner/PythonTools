@@ -1,7 +1,7 @@
 '''
 @author:   Ken Venner
 @contact:  ken@venerllc.com
-@version:  1.23
+@version:  1.24
 
 Library of tools used to process XLS/XLSX files
 '''
@@ -22,7 +22,7 @@ import logging
 logger = logging.getLogger(__name__)
 
 # global variables
-AppVersion = '1.23'
+AppVersion = '1.24'
 
 # ----- OPTIONS ---------------------------------------
 # debug
@@ -802,6 +802,21 @@ def chgsheet_findheader(excel_dict, req_cols, xlatdict=None, optiondict=None,
 
     return excel_dict
 
+
+# ---------- REMOVE ROWS FROM EXCEL DICT  ----------------------
+def remove_non_header_rows(excel_dict):
+    '''
+    Remove all rows below the header row for the current sheet
+    '''
+    excel_dict['s'].delete_rows(excel_dict['row_header']+1+1, excel_dict['sheetmaxrow']-(excel_dict['row_header']+1+1))
+
+def clear_non_header_rows(excel_dict, clear_value=None):
+    '''
+    Set the cell value to None for all non-header rows
+    '''
+    for row in range(excel_dict['row_header']+1, excel_dict['sheetmaxrow']):
+        for col in range(excel_dict['sheetmincol'], excel_dict['sheetmaxcol']):
+            excel_dict['s'].cell(row+1,col+1).value = clear_value
 
 # ---------- EXTRACT DATA FROM EXCEL  ----------------------
 #

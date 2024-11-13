@@ -3,7 +3,7 @@ from __future__ import print_function
 '''
 @author:   Ken Venner
 @contact:  ken@venerllc.com
-@version:  1.73
+@version:  1.74
 
 Library of tools used in general by KV
 '''
@@ -31,8 +31,8 @@ import logging
 logger = logging.getLogger(__name__)
 
 # set the module version number
-AppVersion = '1.73'
-__version__ = '1.73'
+AppVersion = '1.74'
+__version__ = '1.74'
 HELP_KEYS = ('help', 'helpall',)
 HELP_VALUE_TABLE = ('tbl', 'table', 'helptbl', 'fmt',)
 
@@ -745,16 +745,22 @@ def filename_unique(filename=None, filename_href=None, debug=False):
         'file_path': './',
     }
 
+    # set defaults from filename first
+    if filename:
+        default_options['file_path'], default_options['base_filename'], default_options['file_ext'] = filename_split(
+            filename)
+
     # bring in the values that were passed in
     for key in default_options:
         if key in filename_href:
             default_options[key] = filename_href[key]
 
+    # debugging
+    if debug:
+        pprint.pprint(default_options)
+
     # if filename is provided split it up
-    if filename:
-        default_options['file_path'], default_options['base_filename'], default_options['file_ext'] = filename_split(
-            filename)
-    else:
+    if not filename:
         # parse up the full_filename if passed in
         if default_options['full_filename']:
             default_options['file_path'], default_options['base_filename'], default_options[
@@ -847,6 +853,9 @@ def filename_unique(filename=None, filename_href=None, debug=False):
 
     # debugging
     # print('file_unique:filename:final:', filename)
+    # debugging
+    if debug:
+        print(filename, default_options['file_path'])
 
     # return the final filename
     return filename_proper(filename, file_dir=default_options['file_path'])

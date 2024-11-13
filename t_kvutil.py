@@ -15,7 +15,7 @@ kvlogger.dictConfig(config)
 logger=kvlogger.getLogger(__name__)
 
 # set the module version number
-AppVersion = '1.26'
+AppVersion = '1.27'
 
 # global variables
 tst_filename='t_kvutil_tst'
@@ -496,6 +496,8 @@ class TestKVUtilFilenames(unittest.TestCase):
         self.assertEqual(kvutil.filename_unique( { 'base_filename' : 't_kvcsvtest', 'file_ext' : '.csv', 'overwrite' : True, 'forceuniq' : True } ), 't_kvcsvtestv01.csv')
     def test_filename_unique_p04_filename_exists(self):
         self.assertEqual(kvutil.filename_unique('{}.{:03d}'.format(tst_filename, 0)), os.path.normpath('{}v01.{:03d}'.format(tst_filename, 0)))
+    def test_filename_unique_p05_filename_output_dir(self):
+        self.assertEqual(kvutil.filename_unique('uniquefname.txt', filename_href={'file_path': 'xlsx'}), os.path.normpath('xlsx/uniquefname.txt'))
 
         
     # cloudpath
