@@ -14,11 +14,12 @@
                        if not populated with data - we assign the field "value" - if this is None we ignore this flow
     col_width - a dictionary that is column letter and column width numberic
     format_output - boolean when true we format the out_fname, with col_width if passed in or calc col_width on our own
+    format_cell - boolean when true we copy the formatting of cells based on match key from src to out_fname
     src_width - when true, and format_output is true, we calculate col_width by reading the values from src_fname
 
 @author:   Ken Venner
 @contact:  ken.venner@sierrspace.com
-@version:  1.07
+@version:  1.08
 
     Created:   2024-05-20;kv
     Version:   2024-09-19;kv - more checks and additional features (like json_cfg_filename)
@@ -38,8 +39,8 @@ import os
 
 # ----------------------------------------
 
-AppVersion = '1.07'
-__version__ = '1.07'
+AppVersion = '1.08'
+__version__ = '1.08'
 
 
 # ----------------------------------------
@@ -49,7 +50,7 @@ __version__ = '1.07'
 
 optiondictconfig = {
     'AppVersion' : {
-        'value': '1.07',
+        'value': '1.08',
     },
     
     'debug' : {
@@ -145,6 +146,11 @@ optiondictconfig = {
         'value' : True,
         'type' : 'bool',
         'description': 'when true we format the created out_fname',
+    },
+    'format_cell' : {
+        'value' : True,
+        'type' : 'bool',
+        'description': 'when true we copy over formatting to out_fname',
     },
     'src_width' : {
         'value' : True,
@@ -355,7 +361,7 @@ if optiondict['rmv_fname']:
 kvxls.writelist2xls(optiondict['out_dir'] + optiondict['out_fname'], dst_data)
 
 # output what we came up with
-if optiondict['rmv_fname']:
+if optiondict['rmv_fname'] and rmv_data:
     kvxls.writelist2xls(optiondict['out_dir'] + optiondict['rmv_fname'], rmv_data)
 
 
@@ -367,9 +373,66 @@ if optiondict['format_output']:
         print('Getting col_width from src_fname')
         optiondict['col_width'] = kv_excel.get_existing_column_width(optiondict['src_dir'] + optiondict['src_fname'])
     #
-    print('Performing oiutput formatting')
+    print('Performing output formatting')
     kv_excel.format_xlsx_with_filter_and_freeze(optiondict['out_dir'] + optiondict['out_fname'], col_width=optiondict['col_width'])
 
+# if they want to copy over formatting
+if optiondict['format_cell']:
+    print('\nCopying Cell Formatting')
+
+    # debug
+    # print('src file:', optiondict['src_dir'] + optiondict['src_fname'])
+    
+    # reading in the source
+    excel_dict_src = kvxls.readxls_findheader(
+        optiondict['src_dir'] + optiondict['src_fname'],
+        [],
+        optiondict={'col_header': True, 'keep_vba': False, 'sheetname': optiondict['dst_ws']},
+        data_only=False
+    )
+    # reading in the destination
+    excel_dict_out = kvxls.readxls_findheader(
+        optiondict['out_dir'] + optiondict['out_fname'],
+        [],
+        optiondict={'col_header': True, 'keep_vba': False, 'sheetname': optiondict['out_ws']},
+        data_only=False
+    )
+    # build the cross reference table
+    src_lookup = kvxls.create_multi_key_lookup_excel(excel_dict_src, optiondict['key_fields'])
+
+    # debug
+    # pprint.pprint(src_lookup)
+
+    # step through teh output and find the equivalent input and then copy over the formatting
+    for row in range(excel_dict_out['row_header']+1, excel_dict_out['sheetmaxrow']):
+        matched = True
+        ptr = src_lookup
+        for fld in optiondict['key_fields']:
+            fldvalue = kvxls.getExcelCellValue(excel_dict_out, row, fld)
+            # debug
+            # print('row', row, 'fldvalue', fldvalue)
+            if fldvalue in ptr:
+                ptr = ptr[fldvalue]
+            else:
+                # debug
+                # print('did not match')
+                
+                matched = False
+                break
+        # if we did not find a match we are done
+        if not matched:
+            continue
+        # we now have the src row
+        src_row = ptr
+
+        # debug
+        # print('outrow: ', row, 'src_row:', src_row)
+        
+        # now copy formattiong
+        kvxls.copyExcelCellFmtOnRow(excel_dict_src, src_row, excel_dict_out, row)
+    # done copying over - save this file
+    kvxls.writexls(excel_dict_out, optiondict['out_dir'] + optiondict['out_fname'])
+    
 print('')
 print('source file.....: ', optiondict['src_dir'] + optiondict['src_fname'])
 if optiondict['src_ws']:
@@ -378,7 +441,7 @@ print('new data file...: ', optiondict['dst_dir'] + optiondict['dst_fname'])
 if optiondict['dst_ws']:
     print('new data ws.....: ', optiondict['dst_ws'])
 print('generated file..: ', optiondict['out_dir'] + optiondict['out_fname'])
-if optiondict['rmv_fname']:
+if optiondict['rmv_fname'] and rmv_data:
     print('generated file..: ', optiondict['out_dir'] + optiondict['rmv_fname'])
     
 #eof

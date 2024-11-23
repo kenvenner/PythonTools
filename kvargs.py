@@ -1,7 +1,7 @@
 """
 @author:   Ken Venner
 @contact:  ken@venerllc.com
-@version:  1.15
+@version:  1.16
 
 Library of tools used in command line processing with configuration files
 
@@ -24,8 +24,8 @@ pp = pprint.PrettyPrinter(indent=4)
 
 logger = logging.getLogger(__name__)
 
-AppVersion = '1.15'
-__version__ = '1.15'
+AppVersion = '1.16'
+__version__ = '1.16'
 
 
 def load_json_file_to_dict(filename):
@@ -302,9 +302,10 @@ def parser_merge_settings(parser, args, conf_files=None, args_default=None, args
     args_cmdline_set = {k: v for k, v in args_cmdline.items() if v is not None}
 
     # DEBUGGING
-    print('args:', args)
-    print('args_cmdline:', args_cmdline)
-    print('args_cmdline_set:', args_cmdline_set)
+    if False:
+        print('args:', args)
+        print('args_cmdline:', args_cmdline)
+        print('args_cmdline_set:', args_cmdline_set)
     
     # -- GET DEFAULT ARGS / SET VARGS --
     
@@ -399,9 +400,10 @@ def parser_merge_settings(parser, args, conf_files=None, args_default=None, args
             args_update[k] = v
 
     # update vargs
-    print('args-conf-for-conf-const:', args_conf)
-    print('vargs-conf-const:', vargs)
-    print('args_update:', args_update)
+    if False:
+        print('args-conf-for-conf-const:', args_conf)
+        print('vargs-conf-const:', vargs)
+        print('args_update:', args_update)
 
     # been through all - if we have any that need to be called call them
     # so that they process like they were done on the commadn line
@@ -413,12 +415,14 @@ def parser_merge_settings(parser, args, conf_files=None, args_default=None, args
         # get the list of command line commands
         parser_list = [v['cmd'] for v in args_update.values()]
         # DEBUGGING
-        print('parser_list:', parser_list)
-        print('sys.argv:', sys.argv)
+        if False:
+            print('parser_list:', parser_list)
+            print('sys.argv:', sys.argv)
         # pull in the original command line arguments add them to this
         # as their may be required values we need to parse
         # exclude the program that was called in position 0
-        print('sys.argv[1:]:', sys.argv[1:])
+        if False:
+            print('sys.argv[1:]:', sys.argv[1:])
         parser_list.extend(sys.argv[1:])
         # print('parser_list:', parser_list)
         # parse them to get their values

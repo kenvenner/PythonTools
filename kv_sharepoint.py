@@ -1,16 +1,20 @@
 '''
 @author:   Ken Venner
 @contact:  ken.venner@hermeus.com
-@version:  1.01
+@version:  1.03
 
 This library provides tools used when interacting with sharepoint sites and local synch links to sharepoint sites
 
 '''
 
 import os
+import time
+
+import kvxls
+import kvutil
 
 # global variables
-AppVersion = '1.01'
+AppVersion = '1.03'
 
 
 # LOCAL FUNCTIONS/HELPERS
@@ -76,4 +80,105 @@ def sp_synched_dir_path(sp_path, onedrive_path=None, local_path=None, debug=Fals
         return local_path
 
 
+def save_and_log_dbms_extract(excel_file_path, result, starttime, now, log_file_path, log_filename=None):
+    '''
+    Create the screen output and log file update for the dbms extract
+
+    excel_file_path - full path and filename to output xlsx
+    result - dataframe created from execution of SQL
+    start_time - time.time() timer start
+    now - datetime.datetime.now() at start of execution
+    log_file_path - the path to where the log of run times is stored
+    log_filename - name of hte log filename that houses the results
+    
+    '''
+
+    if not log_file_path:
+        print('must provide a file_path to the log file')
+        sys.exit(1)
+    # make sure we have the end directory string on this input string
+    if log_file_path[-1] != '/':
+        log_file_path += '/'
+
+    # default the filename
+    if not log_filename:
+        log_filename = 'dbms_dump_log.csv'
+
+    # create the full filename
+    log_full_filename = log_file_path + log_filename
+
+    # check to see if log exists
+    log_exists = os.path.exists( log_full_filename )
+    
+    
+    # Write the DataFrame to an Excel file
+    result.to_excel(excel_file_path, index=False, header=True)
+
+    print("Record Count:  ", len(result.index))
+    print("Data exported to Excel file successfully: " + excel_file_path)
+
+    # capture adn display run time
+    endtime = time.time()
+    print('PROGRAM EXECUTION TIME: ', (endtime-starttime)/60, 'min')
+
+    # open the log file and output record
+    with open(log_file_path+log_filename, 'a') as fp:
+        # create header if the file did not exist
+        if not log_exists:
+            fp.write(','.join(['excel_file_path', 'run_time', 'record_cnt', 'exec_time_min'])+'\n')
+        # output results
+        fp.write(f'{excel_file_path},{now.isoformat()},{len(result.index)},{(endtime-starttime)/60}\n')
+
+
+def save_and_log_exception_rpt(excel_file_path, result, starttime, now, log_file_path, log_filename=None):
+    '''
+    Create the screen output and log file update for the dbms extract
+
+    excel_file_path - full path and filename to output xlsx
+    result - dataframe created from execution of SQL
+    start_time - time.time() timer start
+    now - datetime.datetime.now() at start of execution
+    log_file_path - the path to where the log of run times is stored
+    log_filename - name of hte log filename that houses the results
+    
+    '''
+
+    if not log_file_path:
+        print('must provide a file_path to the log file')
+        sys.exit(1)
+    # make sure we have the end directory string on this input string
+    if log_file_path[-1] != '/':
+        log_file_path += '/'
+
+    # default the filename
+    if not log_filename:
+        log_filename = 'exception_rpt_log.csv'
+
+    # create the full filename
+    log_full_filename = log_file_path + log_filename
+
+    # check to see if log exists
+    log_exists = os.path.exists( log_full_filename )
+    
+    
+    # Write the DataFrame to an Excel file
+    if result:
+        kvxls.writelist2xls(excel_file_path, result)
+        print('Record count: ', len(result))
+        print("Created file:  ", excel_file_path)
+    else:
+        kvutil.remove_filename(excel_file_path)
+        print('No exceptions found')
+        
+    # capture adn display run time
+    endtime = time.time()
+
+    # open the log file and output record
+    with open(log_file_path+log_filename, 'a') as fp:
+        # create header if the file did not exist
+        if not log_exists:
+            fp.write(','.join(['excel_file_path', 'run_time', 'record_cnt', 'exec_time_min'])+'\n')
+        # output results
+        fp.write(f'{excel_file_path},{now.isoformat()},{len(result)},{(endtime-starttime)/60}\n')
+        
 #eof

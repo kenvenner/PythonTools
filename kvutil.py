@@ -3,7 +3,7 @@ from __future__ import print_function
 '''
 @author:   Ken Venner
 @contact:  ken@venerllc.com
-@version:  1.74
+@version:  1.75
 
 Library of tools used in general by KV
 '''
@@ -31,8 +31,8 @@ import logging
 logger = logging.getLogger(__name__)
 
 # set the module version number
-AppVersion = '1.74'
-__version__ = '1.74'
+AppVersion = '1.75'
+__version__ = '1.75'
 HELP_KEYS = ('help', 'helpall',)
 HELP_VALUE_TABLE = ('tbl', 'table', 'helptbl', 'fmt',)
 
@@ -745,22 +745,16 @@ def filename_unique(filename=None, filename_href=None, debug=False):
         'file_path': './',
     }
 
-    # set defaults from filename first
-    if filename:
-        default_options['file_path'], default_options['base_filename'], default_options['file_ext'] = filename_split(
-            filename)
-
     # bring in the values that were passed in
     for key in default_options:
         if key in filename_href:
             default_options[key] = filename_href[key]
 
-    # debugging
-    if debug:
-        pprint.pprint(default_options)
-
     # if filename is provided split it up
-    if not filename:
+    if filename:
+        default_options['file_path'], default_options['base_filename'], default_options['file_ext'] = filename_split(
+            filename)
+    else:
         # parse up the full_filename if passed in
         if default_options['full_filename']:
             default_options['file_path'], default_options['base_filename'], default_options[
@@ -853,9 +847,6 @@ def filename_unique(filename=None, filename_href=None, debug=False):
 
     # debugging
     # print('file_unique:filename:final:', filename)
-    # debugging
-    if debug:
-        print(filename, default_options['file_path'])
 
     # return the final filename
     return filename_proper(filename, file_dir=default_options['file_path'])
@@ -1221,6 +1212,72 @@ def create_multi_key_lookup(src_data, fldlist, copy_fields=None):
                 print('ERROR:  Unable to find copy field: ', fld)
                 print('in first record:')
                 pprint.pprint(src_data[0])
+                print('This routine will fail')
+    #
+    # set up the dictionary to be populated
+    src_lookup = {}
+    # step through each record
+    for rec in src_data:
+        # test that this record has values in the copy_fields attributes
+        if copy_fields and not any_field_is_populated(rec, copy_fields):
+            # no values set in copy_fields has a value so we don't convert this record
+            continue
+        # get the first key
+        if rec[fldlist[0]] not in src_lookup:
+            if len(fldlist) > 1:
+                # multi key
+                src_lookup[rec[fldlist[0]]] = {}
+            else:
+                # single key - set the value
+                src_lookup[rec[fldlist[0]]] = rec
+        # now create the changing key
+        ptr = src_lookup[rec[fldlist[0]]]
+        # now work through other keys
+        for fld in fldlist[1:]:
+            # check to see this level is working
+            if rec[fld] not in ptr:
+                ptr[rec[fld]] = {}
+            # if we are on the last fld then set to rec
+            if fld == fldlist[-1]:
+                ptr[rec[fld]] = rec
+            else:
+                # update the ptr
+                ptr = ptr[rec[fld]]
+    #
+    return src_lookup
+
+
+# create a multi-key dictionary from a list of dictionaries
+def create_multi_key_lookup_excel(excel_dict, fldlist, copy_fields=None):
+    '''
+    Create a multi key dictionary that gets to the record based on the
+    keys in the record
+
+    if user sets the copy_fields with the list of fields that can have values
+    then we check the record
+    to determine if any of the fields has a value, and if none have a value we skip
+    that record
+    '''
+    if type(fldlist) is not list:
+        print('fldlist must be type - list - but is: ', type(fldlist))
+        raise TypeError()
+    # check that the fldlist keys are in the first record
+    for fld in fldlist:
+        if fld not in excel_dict['header']:
+            print('ERROR:  Unable to find key field: ', fld)
+            print('in the header:')
+            pprint.pprint(excel_dict['header'])
+            print('This routine will fail')
+    # check that the copy_fields keys are in the first record
+    if copy_fields:
+        if type(copy_fields) is not list:
+            print('copy_fields must be type - list - but is: ', type(copy_fields))
+            raise TypeError()
+        for fld in copy_fields:
+            if fld not in excel_dict['header']:
+                print('ERROR:  Unable to find copy field: ', fld)
+                print('in the header:')
+                pprint.pprint(excel_dict['header'])
                 print('This routine will fail')
     #
     # set up the dictionary to be populated
