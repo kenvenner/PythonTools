@@ -1,8 +1,8 @@
-__version__ = '1.05'
+__version__ = '1.06'
 
 import argparse
 import sys
-from attrdict import AttrDict
+#from attrdict import AttrDict
 from pathlib import Path, PurePath
 import subprocess
 
@@ -117,8 +117,9 @@ if __name__ == '__main__':
         sys.exit(1)
 
     args = parser.parse_args()
-    args = AttrDict(vars(args))
+    args = vars(args)
 
+    # directory check on two directories
     for dir in ['dest', 'src']:
         dir2chk = args[dir]
         
@@ -126,6 +127,7 @@ if __name__ == '__main__':
             print(f'{dir} is not an existing directory: {dir2chk}')
             sys.exit(1)
 
+    # call the routine
+    create_copy_list(args['src'], args['dest'], args['mtime'], args['diff'], args['no_diff_chk'], args['ext'])
 
-    create_copy_list(args.src, args.dest, args.mtime, args.diff, args.no_diff_chk, args.ext)
-
+# eof

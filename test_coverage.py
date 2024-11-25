@@ -1,8 +1,8 @@
-__version__ = '1.04'
+__version__ = '1.06'
 
 import argparse
 import sys
-from attrdict import AttrDict
+#from attrdict import AttrDict
 from pathlib import Path, PurePath
 
 import re
@@ -40,6 +40,12 @@ def grep_function_class_def(filename):
 
     return output.decode('ascii').split('\n')
 
+def remove_comment_lines(lines):
+    """"
+    remove the lines that are comment lines
+    """
+    re_comment = re.compile(r'^\s*#')
+    return [x for x in lines if not re_comment.match(x)]
 
 def parse_test_function_names(function_name_list):
     """
@@ -54,16 +60,26 @@ def parse_test_function_names(function_name_list):
 
     :return  function_stats: (dict) - function name and count of tests for it
     """
+    re_comment = re.compile(r'^\s*#')
     re_tests = [
-        re.compile(r'def\s+test\_raises\_exception\_on\_(.*)\_[fp]\d+_'),
-        re.compile(r'def\s+test\_(.*)\_[fp]\d+_'),
+        re.compile(r'\s*def\s+test\_raises\_exception\_on\_(.*)\_[fp]\d+_'),
+        re.compile(r'\s*def\s+test\_(.*)\_[fp]\d+_'),
     ]
     func_test = dict()
-    for line in function_name_list:
+    for idx, line in enumerate(function_name_list):
+        # check for comment line and skip
+        c = re_comment.match(line)
+        if c:
+            # print('skipped: ' + line)
+            continue
+
+        # print(line)
+        
         for reTest in re_tests:
             m = reTest.match(line)
             if m:
                 func_name = m.group(1)
+                # print(func_name, line)
                 if func_name in func_test:
                     func_test[func_name] += 1
                 else:
@@ -85,12 +101,22 @@ def parse_function_names(function_name_list):
 
     :return  function_stats: (dict) - function name and count of tests for it
     """
+    re_comment = re.compile(r'^\s*#')
     re_class= re.compile(r'^class\s+(.*)\(')
     re_func = re.compile(r'^\s*def\s+(.*)\(')
     prior_func = ''
     last_class = ''
     func_test = dict()
     for idx, line in enumerate(function_name_list):
+        # check for comment line and skip
+        c = re_comment.match(line)
+        if c:
+            # print('skipped: ' + line)
+            continue
+
+        # debugg
+        #print(idx, line)
+        
         c = re_class.match(line)
         if c:
             last_class = c.group(1)
@@ -119,13 +145,17 @@ def parse_function_names(function_name_list):
                     'prior': prior_func
                 }
             prior_func = func_name
+
+    # debug
+    # pprint.pprint(func_test)
+    
     return func_test
 
 
 # ---------------------------------------------------------------------------
 if __name__ == '__main__':
 
-    parser = argparse.ArgumentParser(description='Windows copy command for same files in two dirs ')
+    parser = argparse.ArgumentParser(description='Function Test Coverage for Python and Python-Test files')
     parser.add_argument('file',
                         help="filename we evaluate")
     parser.add_argument("--test", '-t',
@@ -139,43 +169,51 @@ if __name__ == '__main__':
         sys.exit(1)
 
     args = parser.parse_args()
-    vargs = AttrDict(vars(args))
+    #vargs = AttrDict(vars(args))
+    vargs = vars(args)
 
-    if vargs.test is None:
-        vargs.test = 'test_' + vargs.file
+    if vargs['test'] is None:
+        vargs['test'] = 'test_' + vargs['file']
 
-    if not Path(vargs.file).is_file():
-        print(f'{vargs.file} is not a file')
+    if not Path(vargs['file']).is_file():
+        print(f"{vargs['file']} is not a file")
         sys.exit(1)
-    if not Path(vargs.test).is_file():
-        print(f'{vargs.test} is not a file')
+    if not Path(vargs['test']).is_file():
+        print(f"{vargs['test']} is not a file")
         sys.exit(1)
 
-    file_lines = grep_function_class_def(vargs.file)
+    file_lines = grep_function_class_def(vargs['file'])
+    file_lines = remove_comment_lines(file_lines)
     file_func = parse_function_names(file_lines)
-    test_lines = grep_function_def(vargs.test)
+    test_lines = grep_function_def(vargs['test'])
+    test_lines = remove_comment_lines(test_lines)
     test_func = parse_test_function_names(test_lines)
 
-    if vargs.debug:
+    if vargs['debug']:
         print('file_lines:')
-        print(file_lines)
+        pprint.pprint(file_lines)
         print('file_func:')
-        print(file_func)
+        pprint.pprint(file_func)
 
         print()
 
         print('test_lines:')
-        print(test_lines)
+        pprint.pprint(test_lines)
         print('test_func:')
-        print(test_func)
+        pprint.pprint(test_func)
 
+    print_hdr = True
     def_lines=dict()
     not_tested_list=list()
     not_tested = 0
     for k in sorted(file_func.keys()):
-        if k not in test_func:
+        if k not in test_func and \
+           'test_' + k not in test_func:
             not_tested += 1
-            print(f'{vargs.file}:{k} - not tested in {vargs.test}')
+            if not print_hdr:
+                print(f"{vargs['file']} / {vargs['test']}")
+                print_hdr = False
+            print(f"{vargs['file']}:{k} - not tested in {vargs['test']}")
             def_lines[file_func[k]['idx']] = {
                 'line': file_func[k]['line'],
                 'prior': file_func[k]['prior'],
@@ -183,15 +221,15 @@ if __name__ == '__main__':
             }
             
     if not_tested:
-        print(f'{vargs.file}:{not_tested} of {len(file_func)} functions not tested')
+        print(f"{vargs['file']}:{not_tested} of {len(file_func)} functions not tested")
 
     test_no_func = 0
     for k in sorted(test_func.keys()):
         if k not in file_func:
-            print(f'{vargs.test}:{k} - tests non-existing function in {vargs.file}')
+            print(f"{vargs['test']}:{k} - tests non-existing function in {vargs['file']}")
             test_no_func += 1
     if test_no_func:
-        print(f'{vargs.file}:{test_no_func} of {len(test_func)} functions test non-existing functions')
+        print(f"{vargs['file']}:{test_no_func} of {len(test_func)} functions test non-existing functions")
 
     if def_lines:
         last_prior = ''
@@ -202,5 +240,7 @@ if __name__ == '__main__':
                 print('# prior function:', dlv['prior'])
 
             print('# the function name:', dlv['line'])
-            print('#', 'def test_' + dlv['func']+'_p01_pass():')
+            print('#', 'def test_' + dlv['func']+'_p01_pass(self):')
             last_prior = dlv['func']
+
+# eof

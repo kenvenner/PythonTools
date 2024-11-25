@@ -1,13 +1,13 @@
 """
 @author:   Ken Venner
 @contact:  ken@venerllc.com
-@version:  1.16
+@version:  1.17
 
 Library of tools used in command line processing with configuration files
 
 """
 
-from attrdict import AttrDict
+# from attrdict import AttrDict
 # import argparse
 import json
 import os
@@ -24,8 +24,8 @@ pp = pprint.PrettyPrinter(indent=4)
 
 logger = logging.getLogger(__name__)
 
-AppVersion = '1.16'
-__version__ = '1.16'
+AppVersion = '1.17'
+__version__ = '1.17'
 
 
 def load_json_file_to_dict(filename):
@@ -84,8 +84,9 @@ def conf_settings(conf_files=None):
         conf_files = [conf_files]
 
     # create the object that will carry the conf_settings
-    args_conf = AttrDict()
-
+    #    args_conf = AttrDict()
+    args_conf = dict()
+    
     # load the configuration files if the exist
     conf_added = list()
     conf_loaded = list()
@@ -164,9 +165,10 @@ def merge_settings(args, conf_files=None, args_default=None):
 
     # convert the command line options into a dictionary
     if not isinstance(args, dict):
-        args = AttrDict(vars(args))
-    elif not isinstance(args, AttrDict):
-        args = AttrDict(args)
+        # args = AttrDict(vars(args))
+        args = vars(args)
+#    elif not isinstance(args, AttrDict):
+#        args = AttrDict(args)
 
     # and make a deep copy of this into vargs
     vargs = copy.deepcopy(args)
@@ -212,7 +214,8 @@ def parser_defaults(parser, set_to_none=None):
                const = bool defining if this is a const 
                first = bool the first default found for dest
     """
-    args_parser_default = AttrDict()
+    # args_parser_default = AttrDict()
+    args_parser_default = dict()
     dest_found = list()
     for cmd in parser.__dict__['_option_string_actions']:
         parser_obj = parser.__dict__['_option_string_actions'][cmd]
@@ -292,9 +295,10 @@ def parser_merge_settings(parser, args, conf_files=None, args_default=None, args
 
     # convert the command line options into a dictionary
     if not isinstance(args, dict):
-        args_cmdline = AttrDict(vars(args))
-    elif not isinstance(args, AttrDict):
-        args_cmdline = AttrDict(args)
+        # args_cmdline = AttrDict(vars(args))
+        args_cmdline = vars(args)
+#    elif not isinstance(args, AttrDict):
+#        args_cmdline = AttrDict(args)
     else:
         args_cmdline = args
 
@@ -319,7 +323,8 @@ def parser_merge_settings(parser, args, conf_files=None, args_default=None, args
     # step through args_conf
     # args_conf - where key not matched to vargs key
     # args_cmdline
-    vargs = AttrDict(copy.deepcopy(args_default))
+    # vargs = AttrDict(copy.deepcopy(args_default))
+    vargs = copy.deepcopy(args_default)
 
     # print('vargs-start:', vargs)
 
@@ -390,7 +395,8 @@ def parser_merge_settings(parser, args, conf_files=None, args_default=None, args
     # print('vargs-conf-not-const:', vargs)
 
     # args_conf - for keys where const, execute these command option if value = True and not in args_cmdline_set
-    args_update = AttrDict()
+    #args_update = AttrDict()
+    args_update = dict()
     for k, v in args_parser_default.items():
         # print('k:v', k, v)
         if v['const'] and \
