@@ -3,7 +3,7 @@ from __future__ import print_function
 '''
 @author:   Ken Venner
 @contact:  ken@venerllc.com
-@version:  1.77
+@version:  1.78
 
 Library of tools used in general by KV
 '''
@@ -31,8 +31,8 @@ import logging
 logger = logging.getLogger(__name__)
 
 # set the module version number
-AppVersion = '1.77'
-__version__ = '1.77'
+AppVersion = '1.78'
+__version__ = '1.78'
 HELP_KEYS = ('help', 'helpall',)
 HELP_VALUE_TABLE = ('tbl', 'table', 'helptbl', 'fmt',)
 

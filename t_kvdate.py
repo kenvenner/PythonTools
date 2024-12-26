@@ -15,7 +15,7 @@ kvlogger.dictConfig(config)
 logger=kvlogger.getLogger(__name__)
 
 # set the module version number
-AppVersion = '1.02'
+AppVersion = '1.03'
 
 # global variables
 tst_filename='t_kvdate_tst'
