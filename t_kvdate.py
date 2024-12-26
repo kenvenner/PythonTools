@@ -71,7 +71,10 @@ class TestKvdateFilenames(unittest.TestCase):
         file_teardown( tst_filename, tst_ext_range )
 
 
-    # def test_current_timezone_string
+    # the function name: def current_timezone_string():
+    def test_current_timezone_string_p01_pass(self):
+        pass
+        
     def test_datetime2utcdatetime_p01_datetime_2_utc(self):
         n_dt = datetime.datetime(2016,1,1,11,30)
         utc_dt = datetime.datetime(2016, 1, 1, 19, 30, tzinfo=dateutil.tz.UTC)

@@ -36,8 +36,13 @@ def grep_function_class_def(filename):
 
     grep_cmd = ['grep', '-P', '^class |def ', filename]
 
-    output = subprocess.check_output(grep_cmd)
-
+    try:
+        output = subprocess.check_output(grep_cmd)
+    except subprocess.CalledProcessError as e:
+        print('Most likely there are not classes or def statements in this file')
+        raise RuntimeError("command '{}' return with error (code {}): {}".format(e.cmd, e.returncode, e.output))
+    
+    
     return output.decode('ascii').split('\n')
 
 def remove_comment_lines(lines):

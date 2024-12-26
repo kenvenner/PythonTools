@@ -71,16 +71,17 @@ class TestKVCsv(unittest.TestCase):
         kvutil.remove_filename(filename,kvutil.functionName(), debug=False)
 
 
-    def max_column_list_p01_simple_1_1(self):
+    def test_max_column_list_p01_simple_1_1(self):
         self.assertEqual( kvcsv.max_column_list( [{'Field1' : 'value1'}] ), ['Field1'] )
-    def max_column_list_p01_simple_1_2(self):
+    def test_max_column_list_p01_simple_1_2(self):
         self.assertEqual( kvcsv.max_column_list( [{'Field1' : 'value1', 'Field2' : 'value2'}] ), ['Field1','Field2'] )
-    def max_column_list_p01_simple_2_1(self):
+    def test_max_column_list_p01_simple_2_1(self):
         self.assertEqual( kvcsv.max_column_list( [{'Field1' : 'value1'}, {'Field2' : 'value2'}] ), ['Field1','Field2'] )
-    def max_column_list_p01_simple_2_mix(self):
+    def test_max_column_list_p01_simple_2_mix(self):
         self.assertEqual( kvcsv.max_column_list( [{'Field1' : 'value1', 'Field2' : 'value2'}, {'Field2' : 'value2', 'Field3' : 'value3'}] ), ['Field1','Field2','Field3'] )
         
 
+        
         
     def test_writelist2csv_p01_simple(self):
         kvcsv.writelist2csv( filename, records )
@@ -215,20 +216,20 @@ class TestKVCsv(unittest.TestCase):
         self.assertEqual( len(result), len(records) )
 
 
-    def test_readcsv2dict_p01_with_header_simple(self):
+    def test_readcsv2dict_with_header_p01_simple(self):
         kvcsv.writelist2csv( filename, records )
         result, header, dupcount = kvcsv.readcsv2dict_with_header( filename, req_cols )
         self.assertEqual(result[ kvmatch.build_multifield_key( records[0], req_cols )], records[0])
         self.assertEqual(header, list(records[0].keys()))
         self.assertEqual(dupcount,0)
-    def test_readcsv2dict_p02_with_header_headerlc(self):
+    def test_readcsv2dict_with_header_p02_headerlc(self):
         kvcsv.writelist2csv( filename, records )
         result, header, dupcount = kvcsv.readcsv2dict_with_header( filename, req_cols, headerlc=True )
         record1lc = { x.lower():y for x,y in records[0].items() }
         self.assertEqual(result[ kvmatch.build_multifield_key( records[0], req_cols )], record1lc)
         self.assertEqual(header, list(record1lc.keys()))
         self.assertEqual(dupcount,0)
-    def test_readcsv2dict_p03_with_header_dup_warning(self):
+    def test_readcsv2dict_with_header_p03_dup_warning(self):
         duprecords = copy.deepcopy(records)
         duprecords.append( records[0] )
         kvcsv.writelist2csv( filename, duprecords )
@@ -236,13 +237,13 @@ class TestKVCsv(unittest.TestCase):
         self.assertEqual(result[ kvmatch.build_multifield_key( records[0], req_cols )], records[0])
         self.assertEqual(header, list(records[0].keys()))
         self.assertEqual(dupcount,1)
-    def test_readcsv2dict_f01_with_header_dupkeyfail_nowarning(self):
+    def test_readcsv2dict_with_header_f01_dupkeyfail_nowarning(self):
         duprecords = copy.deepcopy(records)
         duprecords.append( records[0] )
         kvcsv.writelist2csv( filename, duprecords )
         with self.assertRaises(Exception) as context:
             result, header, dupcount = kvcsv.readcsv2dict_with_header( filename, req_cols, dupkeyfail=True )
-    def test_readcsv2dict_f02_with_header_dupkeyfail_warning(self):
+    def test_readcsv2dict_with_header_f02_dupkeyfail_warning(self):
         duprecords = copy.deepcopy(records)
         duprecords.append( records[0] )
         kvcsv.writelist2csv( filename, duprecords )
@@ -278,14 +279,14 @@ class TestKVCsv(unittest.TestCase):
             result = kvcsv.readcsv2dict( filename, req_cols, dupkeyfail=True, noshowwarning=True )
 
 
-    def test_readcsv2dict_p01_with_noheader_simple(self):
+    def test_readcsv2dict_with_noheader_p01_simple(self):
         kvcsv.writelist2csv( filename, records, header=False )
         header = list(records[0].keys())
         result, header, dupcount = kvcsv.readcsv2dict_with_noheader( filename, req_cols, header )
         self.assertEqual(result[ kvmatch.build_multifield_key( records[0], req_cols )], records[0])
         self.assertEqual(header, list(records[0].keys()))
         self.assertEqual(dupcount,0)
-    def test_readcsv2dict_p03_with_noheader_dup_warning(self):
+    def test_readcsv2dict_with_noheader_p02_dup_warning(self):
         duprecords = copy.deepcopy(records)
         duprecords.append( records[0] )
         kvcsv.writelist2csv( filename, duprecords, header=False )
@@ -294,19 +295,19 @@ class TestKVCsv(unittest.TestCase):
         self.assertEqual(result[ kvmatch.build_multifield_key( records[0], req_cols )], records[0])
         self.assertEqual(header, list(records[0].keys()))
         self.assertEqual(dupcount,1)
-    def test_readcsv2dict_f01_with_noheader_dupkeyfail_nowarning(self):
+    def test_readcsv2dict_with_noheader_f01_dupkeyfail_nowarning(self):
         duprecords = copy.deepcopy(records)
         duprecords.append( records[0] )
         kvcsv.writelist2csv( filename, duprecords )
         header = list(records[0].keys())
         with self.assertRaises(Exception) as context:
             result, header, dupcount = kvcsv.readcsv2dict_with_noheader( filename, req_cols, header, dupkeyfail=True )
-    def test_readcsv2dict_f02_with_noheader_no_reqcols(self):
+    def test_readcsv2dict_with_noheader_f02_no_reqcols(self):
         kvcsv.writelist2csv( filename, records, header=False )
         header = list(records[0].keys())
         with self.assertRaises(Exception) as context:
             result, header, dupcount = kvcsv.readcsv2dict_with_noheader( filename, [], header )
-    def test_readcsv2dict_f03_with_noheader_no_header(self):
+    def test_readcsv2dict_with_noheader_f03_no_header(self):
         kvcsv.writelist2csv( filename, records, header=False )
         header = list(records[0].keys())
         with self.assertRaises(Exception) as context:

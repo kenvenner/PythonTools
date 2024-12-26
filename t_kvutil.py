@@ -15,7 +15,7 @@ kvlogger.dictConfig(config)
 logger=kvlogger.getLogger(__name__)
 
 # set the module version number
-AppVersion = '1.27'
+AppVersion = '1.28'
 
 # global variables
 tst_filename='t_kvutil_tst'
@@ -314,6 +314,30 @@ class TestKVUtilFilenames(unittest.TestCase):
     def test_set_when_not_set_p01_key2_not_exist(self):
         self.assertEqual(kvutil.set_when_not_set( { 'key1' : { 'key3' : 'value3'} }, 'key1', 'key2', 'value2' ), True )
 
+    # the function name: def kv_parse_command_line_display(optiondictconfig, defaultoptions=None, optiondict=None, tblfmt=False, debug=False):
+    def test_kv_parse_command_line_display_p01_pass(self):
+        optiondictconfig={}
+        kvutil.kv_parse_command_line_display(optiondictconfig)
+        self.assertEqual(optiondictconfig, {})
+
+    # the function name: def remove_filename(filename, calledfrom='', debug=False, maxretry=20):
+    def test_remove_filename_p01_pass(self):
+        # create a filename to be removed
+        fname = 'tst_remove_filename.txt'
+        with open(fname, 'a') as fp:
+            fp.write('thing')
+        self.assertTrue(os.path.exists(fname))
+        kvutil.remove_filename(fname)
+        self.assertFalse(os.path.exists(fname))
+        
+        
+    ########################################
+    # the function name: def remove_dir(dirname, calledfrom='', debug=False, maxretry=20):
+    # def test_remove_dir_p01_pass(self):
+    ########################################
+    # the function name: def dir_remove(dirname, calledfrom='', debug=False, maxretry=20):
+    # def test_dir_remove_p01_pass(self):
+        
     # logfile filename
     def test_filename_log_day_of_month_p01_simple(self):
         self.assertEqual(kvutil.filename_log_day_of_month( tst_filename+'.log' ), tst_log_fmt_file.format(tst_filename, tst_day))
@@ -400,7 +424,12 @@ class TestKVUtilFilenames(unittest.TestCase):
     def test_filename_split_p07_filename_blank(self):
         self.assertEqual(kvutil.filename_split(''), (os.path.normpath(''),'',''))
 
-    #filename splitall
+    ########################################
+    # prior function: filename_split
+    # the function name: def filename_splitall(path):
+    def test_filename_splitall_p01_pass(self):
+        result = ('\\dir1\\dir2\\dir3\\dir4', 'fname', '.ext')
+        self.assertEqual(kvutil.filename_split('/dir1/dir2/dir3/dir4/fname.ext'), result)
 
     
     # filename list
@@ -486,6 +515,16 @@ class TestKVUtilFilenames(unittest.TestCase):
             kvutil.filename_proper( 'C:/Users/ken/Dropbox/LinuxShare/PerlPlay/templates/missingdir/ken.txt' )
         #self.assertTrue('This is broken' in context.exception)
 
+    # the function name: def filename_remove(filename, calledfrom='', debug=False, maxretry=20):
+    def test_filename_remove_p01_pass(self):
+        # create a filename to be removed
+        fname = 'tst_remove_filename.txt'
+        with open(fname, 'a') as fp:
+            fp.write('thing')
+        self.assertTrue(os.path.exists(fname))
+        kvutil.filename_remove(fname)
+        self.assertFalse(os.path.exists(fname))
+
     # filename unique
     def test_filename_unique_p01_filename(self):
         self.assertEqual(kvutil.filename_unique('uniquefname.txt'), os.path.normpath('./uniquefname.txt'))
@@ -560,12 +599,60 @@ class TestKVUtilFilenames(unittest.TestCase):
 
 
 
-    # def test_functionName_p01_simple(self):
-    # def test_loggingAppStart_p01_something(self):
-    # def test_scriptinfo_p01_something(self):
+    # the function name: def functionName(callBackNumber=1):
+    def test_functionName_p01_pass(self):
+        pass
+    
+    ########################################
+    # the function name: def loggingAppStart(logger, optiondict, pgm=None):
+    def test_loggingAppStart_p01_pass(self):
+        pass
+    
+    ########################################
+    # the function name: def scriptinfo():
+    def test_scriptinfo_p01_pass(self):
+        # print('SCRIPT INFO')
+        # print(kvutil.scriptinfo())
+        result = {
+            'name': 't_kvutil.py',
+            'source': 't_kvutil.py',
+            'dir': 'C:\\Users\\KenVenner\\Dropbox\\LinuxShare\\python\\tools'
+        }
+        self.assertEqual(kvutil.scriptinfo(), result)
+        
 
-    # def test_load_json_file_to_dict()
-    # def test_dump_dict_to_json_file( optiondict, filename ):
+    # the function name: def load_json_file_to_dict(filename):
+    def test_load_json_file_to_dict_p01_pass(self):
+        optiondict = {
+            'key1': '1',
+            'val1': '1',
+            'val2': '2',
+            'val3': '3'
+        }
+        filename = 'tst_kv_json.json'
+        kvutil.dump_dict_to_json_file(filename, optiondict)
+        self.assertTrue(os.path.exists(filename))
+        # now read it back in
+        read_dict = kvutil.load_json_file_to_dict(filename)
+        self.assertEqual(optiondict, read_dict)
+        # now remove the file
+        kvutil.remove_filename(filename)
+        
+    ########################################
+    # the function name: def dump_dict_to_json_file(filename, optiondict):
+    def test_dump_dict_to_json_file_p01_pass(self):
+        optiondict = {
+            'key1': '1',
+            'val1': '1',
+            'val2': '2',
+            'val3': '3'
+        }
+        filename = 'tst_kv_json.json'
+        kvutil.dump_dict_to_json_file(filename, optiondict)
+        self.assertTrue(os.path.exists(filename))
+        # now remove the file
+        kvutil.remove_filename(filename)
+    
 
     # test the conversion of dict to list of dict
     def test_dict2update_list_p01_dict(self):
@@ -575,7 +662,6 @@ class TestKVUtilFilenames(unittest.TestCase):
             {'Field': 'b', 'CurrentValue': 2, 'NewValue': ''}
         ]
         self.assertEqual(kvutil.dict2update_list(in_dict), fulllist)
-        
     def test_dict2update_list_p02_follow_order(self):
         in_dict = {'b': 2, 'a':1}
         fulllist = [
@@ -583,7 +669,6 @@ class TestKVUtilFilenames(unittest.TestCase):
             {'Field': 'a', 'CurrentValue': 1, 'NewValue': ''}
         ]
         self.assertEqual(kvutil.dict2update_list(in_dict), fulllist)
-
     def test_dict2update_list_p03_follow_set_order(self):
         in_dict = {'b': 2, 'a':1}
         fulllist = [
@@ -591,7 +676,6 @@ class TestKVUtilFilenames(unittest.TestCase):
             {'Field': 'b', 'CurrentValue': 2, 'NewValue': ''}
         ]
         self.assertEqual(kvutil.dict2update_list(in_dict, sorted_flds=['a', 'b']), fulllist)
-
     def test_dict2update_list_p04_set_columns(self):
         in_dict = {'a':1, 'b':2}
         fulllist = [
@@ -600,7 +684,6 @@ class TestKVUtilFilenames(unittest.TestCase):
         ]
         col_names = {'Field': 'NewField', 'CurrentValue': 'NewCurrentValue', 'NewValue': 'NewNewValue'}
         self.assertEqual(kvutil.dict2update_list(in_dict, col_names=col_names), fulllist)
-       
     def test_dict2update_list_p05_set_column(self):
         in_dict = {'a':1, 'b':2}
         fulllist = [
@@ -609,8 +692,6 @@ class TestKVUtilFilenames(unittest.TestCase):
         ]
         col_names = {'Field': 'NewField'}
         self.assertEqual(kvutil.dict2update_list(in_dict, col_names=col_names), fulllist)
-       
-
     def test_dict2update_list_p06_set_column_invalid(self):
         in_dict = {'a':1, 'b':2}
         fulllist = [
@@ -875,7 +956,13 @@ class TestKVUtilFilenames(unittest.TestCase):
         with self.assertRaises(Exception) as context:
             self.assertEqual(kvutil.create_multi_key_lookup(src_data, fldlist), result)
         
+            
+    ########################################
+    # prior function: create_multi_key_lookup
+    # the function name: def create_multi_key_lookup_excel(excel_dict, fldlist, copy_fields=None):
+    # def test_create_multi_key_lookup_excel_p01_pass(self):
 
+    
     # copy_matched_data(dst_data, src_lookup, key_fields, copy_fields)
     def test_copy_matched_data_p01_2keys(self):
         dst_data = [
@@ -997,6 +1084,112 @@ class TestKVUtilFilenames(unittest.TestCase):
             self.assertEqual(kvutil.copy_matched_data(dst_data, src_lookup, key_fields, copy_fields), 2)
             self.assertEqual(dst_data, result)
 
+    # the function name: def diff_matched_data(dst_data, src_lookup, key_fields, diff_fields=None, exc_fields=None):
+    def test_diff_matched_data_p01_pass(self):
+        # they all match - no differences
+        dst_data = [
+            {'key': '1', 'val1': '1', 'val2': '2', 'val3': '3'},
+            {'key': '2', 'val1': '2', 'val2': '3', 'val3': '4'}
+        ]
+        src_lookup = {
+            '1': {'key': '1', 'val1': '1', 'val2': '2', 'val3': '3'},
+            '2': {'key': '2', 'val1': '2', 'val2': '3', 'val3': '4'}
+        }
+        key_fields=['key']
+        results = kvutil.diff_matched_data(dst_data, src_lookup, key_fields)
+        self.assertEqual(results, [])
+        
+    def test_diff_matched_data_p02_val3_diff(self):
+        # they all match - no differences
+        dst_data = [
+            {'key': '1', 'val1': '1', 'val2': '2', 'val3': '3'},
+            {'key': '2', 'val1': '2', 'val2': '3', 'val3': '4'}
+        ]
+        src_lookup = {
+            '1': {'key': '1', 'val1': '1', 'val2': '2', 'val3': '4'},
+            '2': {'key': '2', 'val1': '2', 'val2': '3', 'val3': '5'}
+        }
+        key_fields=['key']
+        results = kvutil.diff_matched_data(dst_data, src_lookup, key_fields)
+        expected_results = [
+            {'key': '1', 'fld': 'val3', 'src_value': '4', 'dst_value': '3'},
+            {'key': '2', 'fld': 'val3', 'src_value': '5', 'dst_value': '4'}
+        ]
+        self.assertEqual(results, expected_results)
+        
+    def test_diff_matched_data_p03_val2_val3_diff(self):
+        # they all match - no differences
+        dst_data = [
+            {'key': '1', 'val1': '1', 'val2': '2', 'val3': '3'},
+            {'key': '2', 'val1': '2', 'val2': '3', 'val3': '4'}
+        ]
+        src_lookup = {
+            '1': {'key': '1', 'val1': '1', 'val2': '4', 'val3': '4'},
+            '2': {'key': '2', 'val1': '2', 'val2': '5', 'val3': '5'}
+        }
+        key_fields=['key']
+        results = kvutil.diff_matched_data(dst_data, src_lookup, key_fields)
+        expected_results = [
+            {'key': '1', 'fld': 'val2', 'dst_value': '2', 'src_value': '4'},
+            {'key': '1', 'fld': 'val3', 'dst_value': '3', 'src_value': '4'},
+            {'key': '2', 'fld': 'val2', 'dst_value': '3', 'src_value': '5'},
+            {'key': '2', 'fld': 'val3', 'dst_value': '4', 'src_value': '5'}
+        ]
+        print(results)
+        self.assertEqual(results, expected_results)
+
+    def test_diff_matched_data_p04_val2_val3_only_val3_diff(self):
+        # they all match - no differences
+        dst_data = [
+            {'key': '1', 'val1': '1', 'val2': '2', 'val3': '3'},
+            {'key': '2', 'val1': '2', 'val2': '3', 'val3': '4'}
+        ]
+        src_lookup = {
+            '1': {'key': '1', 'val1': '1', 'val2': '4', 'val3': '4'},
+            '2': {'key': '2', 'val1': '2', 'val2': '5', 'val3': '5'}
+        }
+        key_fields=['key']
+        results = kvutil.diff_matched_data(dst_data, src_lookup, key_fields, diff_fields=['val3'])
+        expected_results = [
+            {'key': '1', 'fld': 'val3', 'dst_value': '3', 'src_value': '4'},
+            {'key': '2', 'fld': 'val3', 'dst_value': '4', 'src_value': '5'}
+        ]
+        self.assertEqual(results, expected_results)
+        
+    def test_diff_matched_data_p05_val2_val3_excl_val2_diff(self):
+        # they all match - no differences
+        dst_data = [
+            {'key': '1', 'val1': '1', 'val2': '2', 'val3': '3'},
+            {'key': '2', 'val1': '2', 'val2': '3', 'val3': '4'}
+        ]
+        src_lookup = {
+            '1': {'key': '1', 'val1': '1', 'val2': '4', 'val3': '4'},
+            '2': {'key': '2', 'val1': '2', 'val2': '5', 'val3': '5'}
+        }
+        key_fields=['key']
+        results = kvutil.diff_matched_data(dst_data, src_lookup, key_fields, exc_fields=['val2'])
+        expected_results = [
+            {'key': '1', 'fld': 'val3', 'dst_value': '3', 'src_value': '4'},
+            {'key': '2', 'fld': 'val3', 'dst_value': '4', 'src_value': '5'}
+        ]
+        self.assertEqual(results, expected_results)
+        
+    def test_diff_matched_data_p06_val2_val3_excl_val2_val3_diff(self):
+        # they all match - no differences
+        dst_data = [
+            {'key': '1', 'val1': '1', 'val2': '2', 'val3': '3'},
+            {'key': '2', 'val1': '2', 'val2': '3', 'val3': '4'}
+        ]
+        src_lookup = {
+            '1': {'key': '1', 'val1': '1', 'val2': '4', 'val3': '4'},
+            '2': {'key': '2', 'val1': '2', 'val2': '5', 'val3': '5'}
+        }
+        key_fields=['key']
+        results = kvutil.diff_matched_data(dst_data, src_lookup, key_fields, exc_fields=['val2','val3'])
+        expected_results = [
+        ]
+        self.assertEqual(results, expected_results)
+        
 
     # extract_unmatched_data(src_data, dst_lookup, key_fields)
     def test_extract_unmatched_data_p01_2keys(self):

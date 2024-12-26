@@ -62,8 +62,12 @@ excel_filename_glob = 'NS-ERP (Jira) *0.xlsx'
 excel_dir = optiondict['excel_dir']
 excel_filename_glob = optiondict['excel_filename_glob']
 
+
 # find the filename with the largest/longest filename
 excel_full_filename = kvutil.filename_maxmin(excel_dir + excel_filename_glob, reverse=True)
+if not excel_full_filename:
+    print('No files found: ', excel_dir+excel_filename_glob)
+    sys.exit(1)
 excel_filename = os.path.basename(excel_full_filename)
 excel_dir = os.path.dirname(excel_full_filename)
 

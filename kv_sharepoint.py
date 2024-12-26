@@ -1,7 +1,7 @@
 '''
 @author:   Ken Venner
 @contact:  ken.venner@hermeus.com
-@version:  1.03
+@version:  1.06
 
 This library provides tools used when interacting with sharepoint sites and local synch links to sharepoint sites
 
@@ -12,9 +12,11 @@ import time
 
 import kvxls
 import kvutil
+import kvcsv
+
 
 # global variables
-AppVersion = '1.03'
+AppVersion = '1.06'
 
 
 # LOCAL FUNCTIONS/HELPERS
@@ -180,5 +182,38 @@ def save_and_log_exception_rpt(excel_file_path, result, starttime, now, log_file
             fp.write(','.join(['excel_file_path', 'run_time', 'record_cnt', 'exec_time_min'])+'\n')
         # output results
         fp.write(f'{excel_file_path},{now.isoformat()},{len(result)},{(endtime-starttime)/60}\n')
+
         
+def save_lot_serial_csv_exception_rpt(excel_file_path, result, lotfield='islotitem'):
+    '''
+    Create the CSV output files for lot and serial to simplify the load into netsuite
+
+    excel_file_path - full path and filename to output xlsx
+    result - dataframe created from execution of SQL
+    '''
+
+    # remove the .xlsx and then put on the _Lot.csv
+    lot_fname = excel_file_path[:-5]+"_Lot.csv"
+    serial_fname = excel_file_path[:-5]+"_Serial.csv"
+
+    # now build the two arrays
+    lot_recs = [x for x in result if x[lotfield] == 'T']
+    serial_recs = [x for x in result if x[lotfield] == 'F']
+
+    # now output the two results
+    if lot_recs:
+        kvcsv.writelist2csv(lot_fname, lot_recs)
+        print('Record count: ', len(lot_recs))
+        print("Created file:  ", lot_fname)
+    else:
+        kvutil.remove_filename(lot_fname)
+    if serial_recs:
+        kvcsv.writelist2csv(serial_fname, serial_recs)
+        print('Record count: ', len(serial_recs))
+        print("Created file:  ", serial_fname)
+    else:
+        kvutil.remove_filename(serial_fname)
+        
+
+
 #eof
