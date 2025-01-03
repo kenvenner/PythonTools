@@ -70,6 +70,13 @@ class TestKVUtilFilenames(unittest.TestCase):
     def tearDownClass(cls):
         file_teardown( tst_filename, tst_ext_range )
 
+    # the function name: def strtobool(val):
+    def test_strtobool_p01_true(self):
+        for v in ['y', 'yes', 't', 'true', 'on', '1']:
+            self.assertTrue(kvutil.strtobool(v))
+    def test_strtobool_p02_false(self):
+        for v in ['n', 'no', 'f', 'false', 'off', '0']:
+            self.assertFalse(kvutil.strtobool(v))
 
     # command line parsing
     def test_kv_parse_command_line_p01_config_none(self):
