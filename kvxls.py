@@ -1,7 +1,7 @@
 '''
 @author:   Ken Venner
 @contact:  ken@venerllc.com
-@version:  1.26
+@version:  1.27
 
 Library of tools used to process XLS/XLSX files
 '''
@@ -23,7 +23,7 @@ import logging
 logger = logging.getLogger(__name__)
 
 # global variables
-AppVersion = '1.26'
+AppVersion = '1.27'
 
 # ----- OPTIONS ---------------------------------------
 # debug
@@ -974,6 +974,11 @@ def chgsheet_findheader(excel_dict, req_cols, xlatdict=None, optiondict=None,
 # read in the CSV and create a dictionary to the records
 # based on one or more key fields
 # assumes the first line of the CSV file is the header/defintion of the CSV
+#
+# break_blank_row - when you encounter a blank row - stop reading rows
+# skip_blank_row - skip rows that are blank but process all rows
+#
+#
 # features to add
 #
 #   noheader - flag means we pass in the array that is the header
@@ -1124,6 +1129,13 @@ def excelDict2list_findheader(excel_dict, req_cols, xlatdict=None, optiondict=No
             if not non_empty:
                 if debug: print('break blank row:', row+1, ':', rowdata)
                 break
+
+        # skip on blank row
+        if 'skip_blank_row' in optiondict and optiondict['skip_blank_row']:
+            non_empty = [x for x in rowdata if x]
+            if not non_empty:
+                if debug: print('skip blank row:', row+1, ':', rowdata)
+                continue
 
 
         # determine what we are returning

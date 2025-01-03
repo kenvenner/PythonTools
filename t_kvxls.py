@@ -169,6 +169,47 @@ class TestKVxls(unittest.TestCase):
         self.assertEqual(result[6], list(records[0].keys()))
         self.assertEqual(result[7], list(records[0].values()))
         kvutil.remove_filename( filenamexls3, kvutil.functionName() )
+    def test_readxlslist_findheader_p13_xls_simple_reqcols_break_blank_row(self):
+        logger.debug('STARTUP')
+        # get the first 6 records
+        aref = records[:6]
+        # create a non record
+        rec = {x:None for x in records[0].keys()}
+        # make 2 blank records
+        aref.append(rec)
+        aref.append(rec)
+        # add two no blank records
+        aref.extend(records[6:8])
+        # save this out
+        kvxls.writelist2xls( filenamexls3, aref, debug=False )
+        # now read in the file with break on blank lines
+        result = kvxls.readxls2list_findheader( filenamexls3, req_cols, optiondict={'break_blank_row' : True}, debug=False )
+        self.assertEqual(len(result), 6)
+        # now read in the file with OUT break on blank lines
+        result = kvxls.readxls2list_findheader( filenamexls3, req_cols, debug=False )
+        self.assertEqual(len(result), 10)
+        kvutil.remove_filename( filenamexls3, kvutil.functionName() )
+
+    def test_readxlslist_findheader_p14_xls_simple_reqcols_skip_blank_row(self):
+        logger.debug('STARTUP')
+        # get the first 6 records
+        aref = records[:6]
+        # create a non record
+        rec = {x:None for x in records[0].keys()}
+        # make 2 blank records
+        aref.append(rec)
+        aref.append(rec)
+        # add two no blank records
+        aref.extend(records[6:8])
+        # save this out
+        kvxls.writelist2xls( filenamexls3, aref, debug=False )
+        # now read in the file with break on blank lines
+        result = kvxls.readxls2list_findheader( filenamexls3, req_cols, optiondict={'skip_blank_row' : True}, debug=False )
+        self.assertEqual(len(result), 8)
+        # now read in the file with OUT break on blank lines
+        result = kvxls.readxls2list_findheader( filenamexls3, req_cols, debug=False )
+        self.assertEqual(len(result), 10)
+        kvutil.remove_filename( filenamexls3, kvutil.functionName() )
 
 
         
