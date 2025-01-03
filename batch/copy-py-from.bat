@@ -7,4 +7,7 @@ SET OPTION=
 if "%1" == "diff" (
     SET OPTION=--diff
 )
-python "%USERPROFILE%\OneDrive - e-Share\code\eshare-scripts\copy-file.py" . --src %USERPROFILE%\Dropbox\LinuxShare\python\tools --mtime %OPTION%
+if "%1" == "winmerge" (
+    SET OPTION=--winmerge
+)
+python "%USERPROFILE%\Dropbox\LinuxShare\python\tools\copy-file.py" . --src %USERPROFILE%\Dropbox\LinuxShare\python\tools --mtime %OPTION%

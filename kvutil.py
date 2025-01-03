@@ -3,7 +3,7 @@ from __future__ import print_function
 '''
 @author:   Ken Venner
 @contact:  ken@venerllc.com
-@version:  1.78
+@version:  1.79
 
 Library of tools used in general by KV
 '''
@@ -23,7 +23,9 @@ import kvdate
 import sys
 import errno
 import json
-from distutils.util import strtobool
+# removed call 2024-01-02;kv - implemented this inside this function
+# from distutils.util import strtobool
+
 
 # setup the logger
 import logging
@@ -31,11 +33,30 @@ import logging
 logger = logging.getLogger(__name__)
 
 # set the module version number
-AppVersion = '1.78'
-__version__ = '1.78'
+AppVersion = '1.79'
+__version__ = '1.79'
 HELP_KEYS = ('help', 'helpall',)
 HELP_VALUE_TABLE = ('tbl', 'table', 'helptbl', 'fmt',)
 
+# 2024-01-02;kv implemented function locally as routine was deprecated
+def strtobool(val):
+    """Convert a string representation of truth to true (1) or false (0).
+
+    True values are 'y', 'yes', 't', 'true', 'on', and '1'; false values
+    are 'n', 'no', 'f', 'false', 'off', and '0'.  Raises ValueError if
+    'val' is anything else.
+
+    reimplemented here becuase distutills.util.strbool was deprecated in 3.12
+
+    https://note.nkmk.me/en/python-bool-true-false-usage/
+    """
+    val = val.lower()
+    if val in ('y', 'yes', 't', 'true', 'on', '1'):
+        return 1
+    elif val in ('n', 'no', 'f', 'false', 'off', '0'):
+        return 0
+    else:
+        raise ValueError("invalid truth value {!r}".format(val))
 
 # import ast
 #   and call bool(ast.literal_eval(value)) 

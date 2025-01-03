@@ -1,4 +1,4 @@
-__version__ = '1.06'
+__version__ = '1.07'
 
 import argparse
 import sys
@@ -6,11 +6,16 @@ import sys
 from pathlib import Path, PurePath
 import subprocess
 
-def create_copy_list(srcdir, destdir, mtime_diff=False, diff=False, no_diff_chk=False, ext=None):
+def create_copy_list(srcdir, destdir, mtime_diff=False, diff=False, no_diff_chk=False, ext=None, winmerge=False, wmcmd=None):
     if ext is None:
         ext = 'py'
 
-    cmd = 'diff' if diff else 'copy'
+    if diff:
+        cmd = 'diff'
+    elif winmerge:
+        cmd = wmcmd
+    else:
+        cmd = 'copy'
     
     srcdir = Path(srcdir)
     destdir = Path(destdir)
@@ -108,9 +113,15 @@ if __name__ == '__main__':
                         help="Copy when time stamps are different")
     parser.add_argument('--diff', action="store_true", default=False,
                         help="run diff rather than copy when timestamps are different")
+    parser.add_argument('--winmerge', action="store_true", default=False,
+                        help="run winmerge diff rather than copy when timestamps are different")    
     parser.add_argument('--no_diff_chk', action="store_true", default=False,
                         help="Disable when timestamps are different run diff to see if they are the same")
+    parser.add_argument("--wmcmd", '-w', default='"C:\Program Files\WinMerge\WinMergeU.exe"',
+                        help="the format string used to generate the command to execute winmerge diff")
     parser.add_argument('-v', '--version', action='version', version='%(prog)s ' + __version__)
+
+
 
     if len(sys.argv) == 1:
         parser.print_help(sys.stderr)
@@ -128,6 +139,6 @@ if __name__ == '__main__':
             sys.exit(1)
 
     # call the routine
-    create_copy_list(args['src'], args['dest'], args['mtime'], args['diff'], args['no_diff_chk'], args['ext'])
+    create_copy_list(args['src'], args['dest'], args['mtime'], args['diff'], args['no_diff_chk'], args['ext'], args['winmerge'], args['wmcmd'])
 
 # eof

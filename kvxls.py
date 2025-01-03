@@ -1,7 +1,7 @@
 '''
 @author:   Ken Venner
 @contact:  ken@venerllc.com
-@version:  1.25
+@version:  1.26
 
 Library of tools used to process XLS/XLSX files
 '''
@@ -23,7 +23,7 @@ import logging
 logger = logging.getLogger(__name__)
 
 # global variables
-AppVersion = '1.25'
+AppVersion = '1.26'
 
 # ----- OPTIONS ---------------------------------------
 # debug
@@ -1117,6 +1117,14 @@ def excelDict2list_findheader(excel_dict, req_cols, xlatdict=None, optiondict=No
     for row in range(row_header + 1, sheetmaxrow):
         # read in a row of data
         rowdata = _extract_excel_row_into_list(xlsxfiletype, s, row, sheetmincol, sheetmaxcol, debug)
+
+        # break on blank row
+        if 'break_blank_row' in optiondict and optiondict['break_blank_row']:
+            non_empty = [x for x in rowdata if x]
+            if not non_empty:
+                if debug: print('break blank row:', row+1, ':', rowdata)
+                break
+
 
         # determine what we are returning
         if aref_result:
