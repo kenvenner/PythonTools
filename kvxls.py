@@ -1,7 +1,7 @@
 '''
 @author:   Ken Venner
 @contact:  ken@venerllc.com
-@version:  1.27
+@version:  1.28
 
 Library of tools used to process XLS/XLSX files
 '''
@@ -23,7 +23,7 @@ import logging
 logger = logging.getLogger(__name__)
 
 # global variables
-AppVersion = '1.27'
+AppVersion = '1.28'
 
 # ----- OPTIONS ---------------------------------------
 # debug
@@ -1300,7 +1300,9 @@ def writelist2xls(xlsfile, data, col_aref=None, optiondict=None, debug=False):
     """
     if optiondict is None:
         optiondict = {}
-
+    elif type(optiondict) != dict:
+        raise TypeError('optiondict must be dictionary and is ' + str(type(optiondict)))
+    
     # local variables
     sheet_name = 'Sheet1'
     no_header = False
@@ -1324,6 +1326,9 @@ def writelist2xls(xlsfile, data, col_aref=None, optiondict=None, debug=False):
         if not isinstance(data, list):
             data = list()
     else:
+        # if we set aref_result and the record we pass in is dict, overwrite the flag
+        if aref_result and isinstance(data[0], dict):
+            aref_result = False
         # set this value if the record we get is a list not a dictionary
         if isinstance(data[0], list):
             aref_result = True
@@ -1346,6 +1351,10 @@ def writelist2xls(xlsfile, data, col_aref=None, optiondict=None, debug=False):
             # we can pull the keys from this record to create the col_aref
             col_aref = list(data[0].keys())
 
+    # validate we have the right type of variable
+    if col_aref and type(col_aref) != list:
+        raise TypeError('col_aref must be list and is ' + str(type(col_aref)))
+    
     # debuging
     if debug: print('col_aref:', col_aref)
     logger.debug('col_aref:%s', col_aref)
@@ -1387,8 +1396,8 @@ def writelist2xls(xlsfile, data, col_aref=None, optiondict=None, debug=False):
             else:
                 d = ws.write(xlsrow, xlscol, col_aref[xlscol])
 
-    # increment the row
-    xlsrow += 1
+        # increment the row
+        xlsrow += 1
 
     # now step through the data itself
     for record in data:
@@ -1419,6 +1428,7 @@ def writelist2xls(xlsfile, data, col_aref=None, optiondict=None, debug=False):
                 else:
                     d = ws.write(xlsrow, xlscol, record[xlscol])
 
+            
         # done with this row - increment counter
         xlsrow += 1
 
