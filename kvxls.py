@@ -9,6 +9,7 @@ Library of tools used to process XLS/XLSX files
 import openpyxl  # xlsx (read/write)
 import xlrd  # xls (read)
 import xlwt  # xls (write)
+from xlutils.copy import copy as xl_copy # xls(read copy over tool to enalve write)/ pip install xlutils
 import os  # determine if a file exists
 import pprint
 
@@ -452,6 +453,7 @@ def readxls_findheader(xlsfile, req_cols, xlatdict=None, optiondict=None, col_ar
     aref_result = False  # if true - we don't return dicts, we return a list
     save_row = False  # if true - then we append/save the XLSRow with the record
     keep_vba = True  # if true - then load the xlsx with vba scripts on and save as xlsm
+    allow_empty = False # if true - we allow a header to be read in with no data
     
     start_row = 0  # if passed in - we start the search at this row (starts at 1 or greater)
 
@@ -459,6 +461,9 @@ def readxls_findheader(xlsfile, req_cols, xlatdict=None, optiondict=None, col_ar
 
     # create the list of misconfigured solutions
     badoptiondict = {
+        'allowempty': 'allow_empty',
+        'headerempty': 'allow_empty',
+        'header_empty': 'allow_empty',
         'startrow': 'start_row',
         'startrows': 'start_row',
         'start_rows': 'start_row',
@@ -483,10 +488,14 @@ def readxls_findheader(xlsfile, req_cols, xlatdict=None, optiondict=None, col_ar
     # check what got passed in
     msg=kvmatch.badoptiondict_check('kvxls.readxls_findheader', optiondict, badoptiondict, noshowwarning=True, fix_missing=True)
 
+    if debug:
+        print('after badoption_check:', badoptiondict)
+
     # pull in passed values from optiondict
     if 'col_header' in optiondict: col_header = optiondict['col_header']
     if 'aref_result' in optiondict: aref_result = optiondict['aref_result']
     if 'no_header' in optiondict: no_header = optiondict['no_header']
+    if 'allow_empty' in optiondict: allow_empty = optiondict['allow_empty']
     if 'start_row' in optiondict: start_row = optiondict[
                                                   'start_row'] - 1  # because we are not ZERO based in the users mind
     if 'save_row' in optiondict: save_row = optiondict['save_row']
@@ -503,6 +512,7 @@ def readxls_findheader(xlsfile, req_cols, xlatdict=None, optiondict=None, col_ar
         print('no_header:', no_header)
         print('start_row:', start_row)
         print('save_row:', save_row)
+        print('allow_empty:', allow_empty)
         print('optiondict:', optiondict)
     logger.debug('req_cols:%s', req_cols)
     logger.debug('col_aref%s', col_aref)
@@ -511,6 +521,7 @@ def readxls_findheader(xlsfile, req_cols, xlatdict=None, optiondict=None, col_ar
     logger.debug('no_header:%s', no_header)
     logger.debug('start_row:%s', start_row)
     logger.debug('save_row:%s', save_row)
+    logger.debug('allow_empty:%s', allow_empty)
     logger.debug('optiondict:%s', optiondict)
 
     # special condidtiaon for no header
@@ -631,6 +642,11 @@ def readxls_findheader(xlsfile, req_cols, xlatdict=None, optiondict=None, col_ar
                 # debugging
                 if debug: print('header_1strow:', header)
                 logger.debug('header_1strow:%s', header)
+                # validate we got a values
+                header_value = [x for x in header if x]
+                # if we got nothing - error out
+                if not allow_empty and not header_value:
+                    raise Exception('no header values found in row: ' + str(row))
                 # break out of this loop we are done
                 break
 
@@ -1384,7 +1400,14 @@ def writelist2xls(xlsfile, data, col_aref=None, optiondict=None, debug=False):
         optiondict = {}
     elif type(optiondict) != dict:
         raise TypeError('optiondict must be dictionary and is ' + str(type(optiondict)))
-    
+
+    # debugging
+    if debug:
+        print('writelist2xls')
+        print('xlsfile:', xlsfile)
+        print('col_aref:', col_aref)
+        print('optiondict:', optiondict)
+        
     # local variables
     sheet_name = 'Sheet1'
     no_header = False
@@ -1445,6 +1468,9 @@ def writelist2xls(xlsfile, data, col_aref=None, optiondict=None, debug=False):
     if xlsxfiletype:
         # XLSX file
         if replace_sheet and sheet_name and os.path.exists(xlsfile):
+            if debug:
+                print('read in the file with openpyxl')
+
             # we are performing a replace/insert of a sheet in an existing workbook
             wb = openpyxl.load_workbook(xlsfile)
             sheets = wb.sheetnames
@@ -1455,6 +1481,9 @@ def writelist2xls(xlsfile, data, col_aref=None, optiondict=None, debug=False):
             else:
                 ws = wb.create_sheet(sheet_name, replace_index)
         else:
+            if debug:
+                print('creating new workbook')
+                
             wb = openpyxl.Workbook()
             ws = wb.active
 
@@ -1463,8 +1492,72 @@ def writelist2xls(xlsfile, data, col_aref=None, optiondict=None, debug=False):
             ws.title = sheet_name
 
     else:
-        # XLS file
-        wb = xlwt.Workbook()  # None # xlrd.open_workbook(xlsfile)
+        # XLS file - create the output work book we want to create
+        if replace_sheet and sheet_name and os.path.exists(xlsfile):
+            if debug:
+                print('read in the file with xlrd')
+
+            # we are performing a replace/insert of a sheet in an existing workbook
+            # read in the origianl file
+            wbin = xlrd.open_workbook(xlsfile, formatting_info=True)
+            
+            # get list of sheets
+            sheetsin = wbin.sheet_names()
+            # debugging
+            if debug:
+                print('xlsfile:', xlsfile)
+                print('sheetsin:', sheetsin)
+                if sheet_name in sheetsin:
+                    print('need to remove:', sheet_name)
+
+            # copy over
+            wb = xl_copy(wbin)
+            if debug:
+                print('Copy read in data to write out work book')
+
+            # special processing if the new sheetname already exists
+            if sheet_name in sheetsin:
+                # get the list of sheets in this output
+                wb_sheets = wb._Workbook__worksheets
+
+                # remove sheet if it exists already
+                for sheet in wb_sheets:
+                    # capture the sheet we need to remove
+                    if sheet_name == sheet.name:
+                        wb_sheets.remove(sheet)
+                        if debug:
+                            print('xwlt sheet removed:', sheet_name)
+
+                # take this final list
+                wb._Workbook__worksheets = wb_sheets
+                if debug:
+                    print('copied the remaining wb_sheets to replace wb')
+                    for sheet in wb._Workbook__worksheets:
+                        print('sheet.name:', sheet.name)
+
+                # save this strippped file
+                wb.save(xlsfile)
+                if debug:
+                    print('saved out file:', xlsfile)
+
+                # read in and copy
+                wbin = xlrd.open_workbook(xlsfile, formatting_info=True)
+                wb = xl_copy(wbin)
+                wb_sheets = wb._Workbook__worksheets
+
+                if debug:
+                    print('Sheets from saved and reloaded file')
+                    for sheet in wb._Workbook__worksheets:
+                        print('sheet.name:', sheet.name)
+            elif debug:
+                print('Sheet does not exist - so no special processing takes place:', sheet_name)
+
+        else:
+            if debug:
+                print('new work book with xlwt')
+            wb = xlwt.Workbook()  # None # xlrd.open_workbook(xlsfile)
+
+        # now add the sheet
         ws = wb.add_sheet(sheet_name, cell_overwrite_ok=True)
 
     # set the output row
@@ -1517,6 +1610,9 @@ def writelist2xls(xlsfile, data, col_aref=None, optiondict=None, debug=False):
         # done with this row - increment counter
         xlsrow += 1
 
+    if debug:
+        print('saving file, sheet:', xlsfile, sheet_name)
+        
     # now save this object
     return wb.save(xlsfile)
 

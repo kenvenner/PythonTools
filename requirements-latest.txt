@@ -13,3 +13,4 @@ pywin32
 xlrd
 XlsxWriter
 xlwt
+xlutils
