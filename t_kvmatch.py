@@ -21,8 +21,9 @@ xlat_dict_lower = { 'Col1' : 'Ken1', 'Col2' : 'Ken2', 'col3' : 'Ken3' }
 kenlist = ['Ken1', 'Ken2', 'Ken3' ]
 badoptiondict = {
     'no_case'        : 'nocase',
-    'max_row'        : 'maxrows',
-    'max_rows'       : 'maxrows',
+    'max_row'        : 'max_rows',
+    'maxrow'         : 'max_rows',
+    'maxrows'        : 'max_rows',
     'uniquecolumn'   : 'unique_column',
     'uniquecolumns'  : 'unique_column',
     'unique_columns' : 'unique_column',
@@ -147,8 +148,8 @@ class TestKVMatch(unittest.TestCase):
         p = kvmatch.MatchRow( ['Col1'], optiondict={'unique_column' : True, 'no_warnings' : True} )
         self.assertEqual( p.unique_column, True )
     def test_MatchRow___init___p01_init_optiondict_maxrows(self):
-        p = kvmatch.MatchRow( ['Col1'], optiondict={'maxrows' : 2, 'no_warnings' : True} )
-        self.assertEqual( p.maxrows, 2 )
+        p = kvmatch.MatchRow( ['Col1'], optiondict={'max_rows' : 2, 'no_warnings' : True} )
+        self.assertEqual( p.max_rows, 2 )
     def test_MatchRow___init___p01_init_optiondict_dieonbadoption(self):
         p = kvmatch.MatchRow( ['Col1'], optiondict={'dieonbadoption' : True, 'no_warnings' : True} )
         self.assertEqual( p.dieonbadoption, True )
@@ -262,7 +263,7 @@ class TestKVMatch(unittest.TestCase):
                 break
         self.assertTrue( p.matchRowList( data, debug=False ) )
     def test_MatchRow_matchRowList_p07_not_find_row_in_list(self):
-        p = kvmatch.MatchRow( kenlist, xlat_dict, {'nocase' : True, 'maxrows' : 3 } )
+        p = kvmatch.MatchRow( kenlist, xlat_dict, {'nocase' : True, 'max_rows' : 3 } )
         tempdata = [nonrecord] * 4
         tempdata.append(kenlist)
         tempdata.append(record)

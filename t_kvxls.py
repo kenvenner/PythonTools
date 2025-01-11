@@ -174,12 +174,17 @@ class TestKVxls(unittest.TestCase):
         self.assertEqual( len(results), len(records2) )
 
     # sheet_name
-    def test_readxls2list_p01_xlsx_start_row(self):
+    def test_readxls2list_p01_xls_start_row(self):
+        logger.debug('STARTUP')
+        kvxls.writelist2xls( filenamexls3, records, optiondict={'start_row': 3}, debug=False)
+        results2 = kvxls.readxls2list_findheader( filenamexls3, req_cols=req_cols, optiondict={'save_row': True}, debug=False )
+        self.assertEqual( list(results2[0].keys()), ['Company', 'Wine', 'Vintage_Wine', 'Vintage', 'Date', 'Type', 'LastSeen', 'XLSRow'])
+        self.assertTrue( 'XLSRow' in results2[0].keys() )
+        self.assertEqual( len(results2), len(records) )
+    def test_readxls2list_p02_xlsx_start_row(self):
         logger.debug('STARTUP')
         kvxls.writelist2xls( filenamexlsx3, records, optiondict={'start_row': 3}, debug=False)
         results2 = kvxls.readxls2list_findheader( filenamexlsx3, req_cols=req_cols, optiondict={'save_row': True}, debug=False )
-        print('results2')
-        print(results2)
         self.assertEqual( list(results2[0].keys()), ['Company', 'Wine', 'Vintage_Wine', 'Vintage', 'Date', 'Type', 'LastSeen', 'XLSRow'])
         self.assertTrue( 'XLSRow' in results2[0].keys() )
         self.assertEqual( len(results2), len(records) )
@@ -190,8 +195,37 @@ class TestKVxls(unittest.TestCase):
     # def test_readxls2dict_p01_pass(self):
     ########################################
     # the function name: def readxls2dump(xlsfile, rows=10, sep=':', no_warnings=False, returnrecs=False, sheet_name_col=None, debug=False):
-    # def test_readxls2dump_p01_pass(self):
-
+    def test_readxls2dump_p01_pass(self):
+        logger.debug('STARTUP')
+        result = kvxls.readxls2dump( filenamexls, debug=False )
+        expected_result = [
+            'xlsfile:sheet_name:reccnt:colcnt:value:',
+            't_kvxlstest-20250111v01.xls:Sheet1:00:000:Company:',
+            't_kvxlstest-20250111v01.xls:Sheet1:00:001:Wine:',
+            't_kvxlstest-20250111v01.xls:Sheet1:00:002:Vintage_Wine:',
+            't_kvxlstest-20250111v01.xls:Sheet1:00:003:Vintage:',
+            't_kvxlstest-20250111v01.xls:Sheet1:00:004:Date:',
+            't_kvxlstest-20250111v01.xls:Sheet1:00:005:Type:',
+            't_kvxlstest-20250111v01.xls:Sheet1:00:006:LastSeen:',
+            't_kvxlstest-20250111v01.xls:Sheet1:00:007:1:',
+            't_kvxlstest-20250111v01.xls:Sheet1:01:000:NHLiq:',
+            't_kvxlstest-20250111v01.xls:Sheet1:01:001:Caravan Cabernet Sauvignon:',
+            't_kvxlstest-20250111v01.xls:Sheet1:01:002:Caravan Cabernet Sauvignon 2014:',
+            't_kvxlstest-20250111v01.xls:Sheet1:01:003:2014:',
+            't_kvxlstest-20250111v01.xls:Sheet1:01:004:12/11/2017:',
+            't_kvxlstest-20250111v01.xls:Sheet1:01:005:red-cab:',
+            't_kvxlstest-20250111v01.xls:Sheet1:01:006:Never:',
+            't_kvxlstest-20250111v01.xls:Sheet1:01:007:2:',
+            't_kvxlstest-20250111v01.xls:Sheet1:02:000:BevMo:',
+            't_kvxlstest-20250111v01.xls:Sheet1:02:001:Caymus Cabernet Sauvignon Napa (750 ML):',
+            't_kvxlstest-20250111v01.xls:Sheet1:02:002:Caymus Cabernet Sauvignon Napa (750 ML) 2014:',
+            't_kvxlstest-20250111v01.xls:Sheet1:02:003:2014:',
+            't_kvxlstest-20250111v01.xls:Sheet1:02:004:10/31/2015:',
+            't_kvxlstest-20250111v01.xls:Sheet1:02:005:red-cab:',
+            't_kvxlstest-20250111v01.xls:Sheet1:02:006:Never:',
+            't_kvxlstest-20250111v01.xls:Sheet1:02:007:3:'
+        ]
+        self.assertEqual(result[:len(expected_result)], expected_result)
 
     ### READXLS_FINDHEADER
     

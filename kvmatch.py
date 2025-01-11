@@ -97,7 +97,7 @@ class MatchRow(object):
     option keys:
     dieonbadoption - bool - when true - we will die if we receive invalid options
     nocase - bool - if true - we check for key match case insensitive
-    maxrows - integer - max number of rows to check
+    max_rows - integer - max number of rows to check
     unique_column - bool - if true - we must have unqiue columns in the final result
     no_warnings - bool - when true - we do not display warnings but pass them back as an array
     fix_missing - bool - when true - when a bad option is found we will attempt to fix them
@@ -141,7 +141,7 @@ class MatchRow(object):
         # optiondict values passed in
         self.nocase = False  # if true - we check for key match case insensitive
         self.unique_column = False  # if true - we must have unqiue columns in the final result
-        self.maxrows = 10  # max number of rows to check
+        self.max_rows = 10  # max number of rows to check
         self.no_warnings = False  # if true - we supress sending out warning message
         self.dieonbadoption = False  # if true - we raise error on bad options
         self.fix_missing = False # if true - we fix, if None display no msg
@@ -153,8 +153,9 @@ class MatchRow(object):
             'die_badoption': 'dieonbadoption',
             'die_onbadoption': 'dieonbadoption',
             'no_case': 'nocase',
-            'max_row': 'maxrows',
-            'max_rows': 'maxrows',
+            'maxrow': 'max_rows',
+            'maxrows': 'max_rows',
+            'max_row': 'max_rows',
             'uniquecolumn': 'unique_column',
             'uniquecolumns': 'unique_column',
             'unique_columns': 'unique_column',
@@ -167,7 +168,7 @@ class MatchRow(object):
         }
 
         optiondict3 = {}
-        for fld in ['nocase','unique_column','maxrows','no_warnings','dieonbadoption','fix_missing']:
+        for fld in ['nocase','unique_column','max_rows','no_warnings','dieonbadoption','fix_missing']:
             if fld in optiondict2:
                 optiondict3[fld] = optiondict2[fld]
             elif fld in optiondict:
@@ -185,8 +186,8 @@ class MatchRow(object):
             self.nocase = optiondict3['nocase']
         if 'unique_column' in optiondict3:
             self.unique_column = optiondict3['unique_column']
-        if 'maxrows' in optiondict3:
-            self.maxrows = optiondict3['maxrows']
+        if 'max_rows' in optiondict3:
+            self.max_rows = optiondict3['max_rows']
         if 'no_warnings' in optiondict3:
             self.no_warnings = optiondict3['no_warnings']
         if 'dieonbadoption' in optiondict3:
@@ -315,7 +316,7 @@ class MatchRow(object):
             print('req_cols:', self._req_cols)
             print('data:', data)
             print('rowcount:', self.rowcount)
-            print('maxrows:', self.maxrows)
+            print('max_rows:', self.max_rows)
             print('nocase:', self.nocase)
 
         logger.debug('xlatdict:%s', self._xlatdict)
@@ -325,12 +326,12 @@ class MatchRow(object):
         logger.debug('nocase:%s', self.nocase)
 
         # some upfront tests
-        if self.rowcount > self.maxrows:
-            if debug:  print('rowcount > maxrows - set variables and return None')
-            logger.debug('rowcount > maxrows - set variables and return None')
+        if self.rowcount > self.max_rows:
+            if debug:  print('rowcount > max_rows - set variables and return None')
+            logger.debug('rowcount > max_rows - set variables and return None')
             self.search_failed = True
             self.search_exceeded = True
-            self.error_msg = 'Max search row count [%s] exceeded at row [%s]' % (self.maxrows, self.rowcount)
+            self.error_msg = 'Max search row count [%s] exceeded at row [%s]' % (self.max_rows, self.rowcount)
             return None
 
         # initialize what we need to match on
