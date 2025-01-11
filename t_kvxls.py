@@ -2,6 +2,7 @@ import kvxls
 import kvutil
 import unittest
 import datetime
+import pprint
 
 import os
 
@@ -86,21 +87,88 @@ class TestKVxls(unittest.TestCase):
         with self.assertRaises(Exception) as context:
             kvxls.xldate_to_datetime('')
 
+    # the function name: def _extract_excel_row_into_list(xlsxfiletype, s, row, colstart, colmax, debug=False):
+    # def test__extract_excel_row_into_list_p01_pass(self):
+    ########################################
+    # the function name: def getExcelCellValue(excel_dict, row, col_name, debug=False):
+    # def test_getExcelCellValue_p01_pass(self):
+    ########################################
+    # the function name: def setExcelCellValue(excel_dict, row, col_name, value, debug=False):
+    # def test_setExcelCellValue_p01_pass(self):
+    ########################################
+    # the function name: def getExcelCellPatternFill(excel_dict, row, col_name, debug=False):
+    # def test_getExcelCellPatternFill_p01_pass(self):
+    ########################################
+    # the function name: def setExcelCellPatternFill(excel_dict, row, col_name, fill=None, start_color=None, end_color=None, fg_color=None, fill_type="solid", debug=False):
+    # def test_setExcelCellPatternFill_p01_pass(self):
+    ########################################
+    # the function name: def copyExcelCellFmtOnRow(excel_dict_src, src_row, excel_dict_out, row, debug=False):
+    # def test_copyExcelCellFmtOnRow_p01_pass(self):
+    ########################################
+    # the function name: def setExcelColumnValue(excel_dict, col_name, value='', debug=False):
+    # def test_setExcelColumnValue_p01_pass(self):
+    ########################################
+    # the function name: def create_multi_key_lookup_excel(excel_dict, fldlist, copy_fields=None):
+    # def test_create_multi_key_lookup_excel_p01_pass(self):
+    ########################################
+    # the function name: def readxls2list(xlsfile, sheetname=None, save_row=False, debug=False, optiondict=None):
+    # def test_readxls2list_p01_pass(self):
+    ########################################
+    # the function name: def readxls2dict(xlsfile, dictkeys, sheetname=None, save_row=False, dupkeyfail=False, debug=False, optiondict=None):
+    # def test_readxls2dict_p01_pass(self):
+    ########################################
+    # the function name: def readxls2dump(xlsfile, rows=10, sep=':', no_warnings=False, returnrecs=False, sheet_name_col=None, debug=False):
+    # def test_readxls2dump_p01_pass(self):
+    ########################################
+    # the function name: def readxls_findheader(xlsfile, req_cols, xlatdict=None, optiondict=None, col_aref=None, data_only=True, debug=False):
+    def test_readxls_findheader_p01_xls_pass(self):
+        logger.debug('STARTUP')
+        excel_dict = kvxls.readxls_findheader( filenamexls, req_cols, debug=False )
+        self.assertEqual(type(excel_dict), dict)
+        self.assertEqual(excel_dict['keep_vba'], True)
+        self.assertEqual(excel_dict['row_header'], 0)
+        self.assertEqual(excel_dict['xlsfile'], filenamexls)
+        self.assertEqual(excel_dict['start_row'], 0)
+    def test_readxls_findheader_p02_xlsx_pass(self):
+        logger.debug('STARTUP')
+        excel_dict = kvxls.readxls_findheader( filenamexlsx, req_cols, debug=False )
+        self.assertEqual(type(excel_dict), dict)
+        self.assertEqual(excel_dict['keep_vba'], True)
+        self.assertEqual(excel_dict['row_header'], 0)
+        self.assertEqual(excel_dict['xlsfile'], filenamexlsx)
+        self.assertEqual(excel_dict['start_row'], 0)
+
+    ########################################
+    # the function name: def chgsheet_findheader(excel_dict, req_cols, xlatdict=None, optiondict=None,
+    def test_chgsheet_findheader_p01_xls_pass(self):
+        logger.debug('STARTUP')
+        optiondict = {'sheet_name': 'set_sheet_name2', 'replace_sheet': True}
+        # create xlsx to be tested with
+        kvxls.writelist2xls( filenamexlsx3, records)
+        kvxls.writelist2xls( filenamexlsx3, records2, optiondict=optiondict, debug=False )
+        # read in teh first time
+        excel_dict = kvxls.readxls_findheader( filenamexlsx3, req_cols, debug=False )
+        #pprint.pprint(excel_dict)
+        # change sheet to the sheet of interest
+        excel_dict2 = kvxls.chgsheet_findheader(excel_dict, req_cols2, optiondict=optiondict, debug=False)
+        #pprint.pprint(excel_dict2)
+        self.assertEqual(type(excel_dict2), dict)
+        
     # XLS file processing - simple req_cols
-    def test_readxlslist_findheader_p01_xls_simple_reqcols(self):
+    def test_readxls2list_findheader_p01_xls_simple_reqcols(self):
         logger.debug('STARTUP')
         result = kvxls.readxls2list_findheader( filenamexls, req_cols, debug=False )
         self.assertEqual(result[0], records[0])
         self.assertEqual( len(result), len(records) )
-    def test_readxlslist_findheader_p02_xls_simple_reqcols_aref_result(self):
+    def test_readxls2list_findheader_p02_xls_simple_reqcols_aref_result(self):
         logger.debug('STARTUP')
         result = kvxls.readxls2list_findheader( filenamexls, req_cols, optiondict={'aref_result' : True}, debug=False )
         self.assertEqual(result[0], list(records[0].values()))
-    def test_readxlslist_findheader_p03_xls_simple_reqcols_col_header(self):
+    def test_readxls2list_findheader_p03_xls_simple_reqcols_col_header(self):
         logger.debug('STARTUP')
         result = kvxls.readxls2list_findheader( filenamexls, req_cols, optiondict={'col_header' : True}, debug=False )
         self.assertEqual(result[0], records[0])
-    def test_readxlslist_findheader_p04_xls_simple_reqcols_no_header_start_row_return_aref(self):
+    def test_readxls2list_findheader_p04_xls_simple_reqcols_no_header_start_row_return_aref(self):
         logger.debug('STARTUP')
         result = kvxls.readxls2list_findheader( filenamexls, req_cols, optiondict={'no_header' : True, 'start_row' : 2}, debug=False )
         self.assertEqual(result[0], list(records[0].values()))
@@ -108,7 +176,7 @@ class TestKVxls(unittest.TestCase):
         logger.debug('STARTUP')
         result = kvxls.readxls2list_findheader( filenamexls, req_cols, optiondict={'no_header' : True, 'start_row' : 2}, col_aref=list(records[0].keys()), debug=False )
         self.assertEqual(result[0], records[0])
-    def test_readxlslist_findheader_p06_xls_simple_reqcols_no_header_start_row_col_aref_missing_cols(self):
+    def test_readxls2list_findheader_p06_xls_simple_reqcols_no_header_start_row_col_aref_missing_cols(self):
         logger.debug('STARTUP')
         col_aref = list(records[0].keys())[:-2]
         result = kvxls.readxls2list_findheader( filenamexls, req_cols, optiondict={'no_header' : True, 'start_row' : 2}, col_aref=col_aref, debug=False )
@@ -119,12 +187,12 @@ class TestKVxls(unittest.TestCase):
         temprec['blank002'] = temprec['LastSeen']
         del temprec['LastSeen']
         self.assertEqual(result[0], temprec)
-    def test_readxlslist_findheader_p07_xls_simple_reqcols_col_aref_blank_column(self):
+    def test_readxls2list_findheader_p07_xls_simple_reqcols_col_aref_blank_column(self):
         logger.debug('STARTUP')
         col_aref = list(records[0].keys())[:-2]
         result = kvxls.readxls2list_findheader( filenamexls, req_cols, optiondict={ 'save_row': True }, col_aref=col_aref, debug=False )
         self.assertTrue('blank001' in result[0].keys())
-    def test_readxlslist_findheader_p08_xls_simple_reqcols_col_header_col_aref_missing_cols(self):
+    def test_readxls2list_findheader_p08_xls_simple_reqcols_col_header_col_aref_missing_cols(self):
         logger.debug('STARTUP')
         col_aref = list(records[0].keys())[:-2]
         result = kvxls.readxls2list_findheader( filenamexls, req_cols, optiondict={'col_header' : True}, col_aref=col_aref, debug=False )
@@ -135,15 +203,15 @@ class TestKVxls(unittest.TestCase):
         temprec['blank002'] = temprec['LastSeen']
         del temprec['LastSeen']
         self.assertEqual(result[0], temprec)
-    def test_readxlslist_findheader_p09_xls_simple_reqcols_convert_dateflds(self):
+    def test_readxls2list_findheader_p09_xls_simple_reqcols_convert_dateflds(self):
         logger.debug('STARTUP')
         result = kvxls.readxls2list_findheader( filenamexls2, req_cols2, optiondict={ 'dateflds' : ['DateField']}, debug=False )
         self.assertEqual(result[0], records2[0])
-    def test_readxlslist_findheader_p10_xls_simple_reqcols_save_row(self):
+    def test_readxls2list_findheader_p10_xls_simple_reqcols_save_row(self):
         logger.debug('STARTUP')
         result = kvxls.readxls2list_findheader( filenamexls, req_cols, optiondict={ 'save_row': True }, debug=False )
         self.assertEqual(result[0]['XLSRow'], 2)
-    def test_readxlslist_findheader_p11_xls_simple_reqcols_aref_result_starting_blank_lines(self):
+    def test_readxls2list_findheader_p11_xls_simple_reqcols_aref_result_starting_blank_lines(self):
         logger.debug('STARTUP')
         # create a list of values that are used to create the xls - we have 6 blank lines at the top
         aref = [[''],[''],[''],[''],['']]
@@ -155,7 +223,7 @@ class TestKVxls(unittest.TestCase):
         result = kvxls.readxls2list_findheader( filenamexls3, req_cols, optiondict={'aref_result' : True}, debug=False )
         self.assertEqual(result[0], list(records[0].values()))
         kvutil.remove_filename( filenamexls3, kvutil.functionName() )
-    def test_readxlslist_findheader_p12_xls_simple_reqcol_no_header_starting_blank_lines(self):
+    def test_readxls2list_findheader_p12_xls_simple_reqcol_no_header_starting_blank_lines(self):
         logger.debug('STARTUP')
         # create a list of values that are used to create the xls - we have 6 blank lines at the top
         aref = [[''],[''],[''],[''],['']]
@@ -169,7 +237,7 @@ class TestKVxls(unittest.TestCase):
         self.assertEqual(result[5], list(records[0].keys()))
         self.assertEqual(result[6], list(records[0].values()))
         kvutil.remove_filename( filenamexls3, kvutil.functionName() )
-    def test_readxlslist_findheader_p13_xls_simple_reqcols_break_blank_row(self):
+    def test_readxls2list_findheader_p13_xls_simple_reqcols_break_blank_row(self):
         logger.debug('STARTUP')
         # get the first 6 records
         aref = records[:6]
@@ -190,7 +258,7 @@ class TestKVxls(unittest.TestCase):
         self.assertEqual(len(result), 10)
         kvutil.remove_filename( filenamexls3, kvutil.functionName() )
 
-    def test_readxlslist_findheader_p14_xls_simple_reqcols_skip_blank_row(self):
+    def test_readxls2list_findheader_p14_xls_simple_reqcols_skip_blank_row(self):
         logger.debug('STARTUP')
         # get the first 6 records
         aref = records[:6]
@@ -214,28 +282,28 @@ class TestKVxls(unittest.TestCase):
 
         
     # XLS file processing - simple blank req_cols
-    def test_readxlslist_findheader_p01_xls_simple_blankReqCols(self):
+    def test_readxls2list_findheader_p01_xls_simple_blankReqCols(self):
         logger.debug('STARTUP')
         result = kvxls.readxls2list_findheader( filenamexls, [], debug=False )
         self.assertEqual(result[0], records[0])
         self.assertEqual( len(result), len(records) )
-    def test_readxlslist_findheader_p02_xls_simple_blankReqCols_aref_result(self):
+    def test_readxls2list_findheader_p02_xls_simple_blankReqCols_aref_result(self):
         logger.debug('STARTUP')
         result = kvxls.readxls2list_findheader( filenamexls, [], optiondict={'aref_result' : True}, debug=False )
         self.assertEqual(result[0], list(records[0].values()))
-    def test_readxlslist_findheader_p03_xls_simple_blankReqCols_col_header(self):
+    def test_readxls2list_findheader_p03_xls_simple_blankReqCols_col_header(self):
         logger.debug('STARTUP') 
         result = kvxls.readxls2list_findheader( filenamexls, [], optiondict={'col_header' : True}, debug=False )
         self.assertEqual(result[0], records[0])
-    def test_readxlslist_findheader_p04_xls_simple_blankReqCols_no_header_start_row_return_aref(self):
+    def test_readxls2list_findheader_p04_xls_simple_blankReqCols_no_header_start_row_return_aref(self):
         logger.debug('STARTUP') 
         result = kvxls.readxls2list_findheader( filenamexls, [], optiondict={'no_header' : True, 'start_row' : 2}, debug=False )
         self.assertEqual(result[0], list(records[0].values()))
-    def test_readxlslist_findheader_p05_xls_simple_blankReqCols_no_header_start_row_col_aref(self):
+    def test_readxls2list_findheader_p05_xls_simple_blankReqCols_no_header_start_row_col_aref(self):
         logger.debug('STARTUP') 
         result = kvxls.readxls2list_findheader( filenamexls, [], optiondict={'no_header' : True, 'start_row' : 2}, col_aref=list(records[0].keys()), debug=False )
         self.assertEqual(result[0], records[0])
-    def test_readxlslist_findheader_p06_xls_simple_blankReqCols_no_header_start_row_col_aref_missing_cols(self):
+    def test_readxls2list_findheader_p06_xls_simple_blankReqCols_no_header_start_row_col_aref_missing_cols(self):
         logger.debug('STARTUP') 
         col_aref = list(records[0].keys())[:-2]
         result = kvxls.readxls2list_findheader( filenamexls, [], optiondict={'no_header' : True, 'start_row' : 2}, col_aref=col_aref, debug=False )
@@ -246,12 +314,12 @@ class TestKVxls(unittest.TestCase):
         temprec['blank002'] = temprec['LastSeen']
         del temprec['LastSeen']
         self.assertEqual(result[0], temprec)
-    def test_readxlslist_findheader_p07_xls_simple_blankReqCols_col_aref_blank_column(self):
+    def test_readxls2list_findheader_p07_xls_simple_blankReqCols_col_aref_blank_column(self):
         logger.debug('STARTUP') 
         col_aref = list(records[0].keys())[:-2]
         result = kvxls.readxls2list_findheader( filenamexls, [], optiondict={ 'save_row': True }, col_aref=col_aref, debug=False )
         self.assertTrue('blank001' in result[0].keys())
-    def test_readxlslist_findheader_p08_xls_simple_blankReqCols_col_header_col_aref_missing_cols(self):
+    def test_readxls2list_findheader_p08_xls_simple_blankReqCols_col_header_col_aref_missing_cols(self):
         logger.debug('STARTUP') 
         col_aref = list(records[0].keys())[:-2]
         result = kvxls.readxls2list_findheader( filenamexls, [], optiondict={'col_header' : True}, col_aref=col_aref, debug=False )
@@ -262,15 +330,15 @@ class TestKVxls(unittest.TestCase):
         temprec['blank002'] = temprec['LastSeen']
         del temprec['LastSeen']
         self.assertEqual(result[0], temprec)
-    def test_readxlslist_findheader_p09_xls_simple_blankReqCols_convert_dateflds(self):
+    def test_readxls2list_findheader_p09_xls_simple_blankReqCols_convert_dateflds(self):
         logger.debug('STARTUP') 
         result = kvxls.readxls2list_findheader( filenamexls2, [], optiondict={ 'dateflds' : ['DateField']}, debug=False )
         self.assertEqual(result[0], records2[0])
-    def test_readxlslist_findheader_p10_xls_simple_blankReqCols_save_row(self):
+    def test_readxls2list_findheader_p10_xls_simple_blankReqCols_save_row(self):
         logger.debug('STARTUP') 
         result = kvxls.readxls2list_findheader( filenamexls, [], optiondict={ 'save_row': True }, debug=False )
         self.assertEqual(result[0]['XLSRow'], 2)
-    def test_readxlslist_findheader_p11_xls_simple_blankReqCols_aref_result_starting_blank_lines(self):
+    def test_readxls2list_findheader_p11_xls_simple_blankReqCols_aref_result_starting_blank_lines(self):
         logger.debug('STARTUP') 
         # create a list of values that are used to create the xls - we have 6 blank lines at the top
         aref = [[''],[''],[''],[''],['']]
@@ -283,7 +351,7 @@ class TestKVxls(unittest.TestCase):
         self.assertEqual(result[0], ['', '', '', '', '', '', ''])
         self.assertEqual(result[5], list(records[0].values()))
         kvutil.remove_filename( filenamexls3, kvutil.functionName() )
-    def test_readxlslist_findheader_p12_xls_simple_blankReqCols_no_header_starting_blank_lines(self):
+    def test_readxls2list_findheader_p12_xls_simple_blankReqCols_no_header_starting_blank_lines(self):
         logger.debug('STARTUP') 
         # create a list of values that are used to create the xls - we have 6 blank lines at the top
         aref = [[''],[''],[''],[''],['']]
@@ -300,7 +368,7 @@ class TestKVxls(unittest.TestCase):
 
 
         
-    def test_readxlslist_findheader_f01_xls_simple_maxrows_exceeded_in_header_search(self):
+    def test_readxls2list_findheader_f01_xls_simple_maxrows_exceeded_in_header_search(self):
         logger.debug('STARTUP') 
         # create a list of values that are used to create the xls - we have 6 blank lines at the top
         aref = [[''],[''],[''],[''],['']]
@@ -311,7 +379,7 @@ class TestKVxls(unittest.TestCase):
         with self.assertRaises(Exception) as context:
             kvxls.readxls2list_findheader( filenamexls3, req_cols, optiondict={'maxrows' : 2}, debug=False )
         kvutil.remove_filename( filenamexls3, kvutil.functionName() )
-    def test_readxlslist_findheader_f02_xls_simple_unique_columns_test(self):
+    def test_readxls2list_findheader_f02_xls_simple_unique_columns_test(self):
         logger.debug('STARTUP') 
         header = list(records[0].keys())
         dupkey = header[0]
@@ -326,28 +394,28 @@ class TestKVxls(unittest.TestCase):
 
         
     # XLSX file processing
-    def test_readxlslist_findheader_p01_xlsx_simple_reqcols(self):
+    def test_readxls2list_findheader_p01_xlsx_simple_reqcols(self):
         logger.debug('STARTUP') 
         result = kvxls.readxls2list_findheader( filenamexls, req_cols, debug=False )
         self.assertEqual(result[0], records[0])
         self.assertEqual( len(result), len(records) )
-    def test_readxlslist_findheader_p02_xlsx_simple_reqcols_aref_result(self):
+    def test_readxls2list_findheader_p02_xlsx_simple_reqcols_aref_result(self):
         logger.debug('STARTUP') 
         result = kvxls.readxls2list_findheader( filenamexls, req_cols, optiondict={'aref_result' : True}, debug=False )
         self.assertEqual(result[0], list(records[0].values()))
-    def test_readxlslist_findheader_p03_xlsx_simple_reqcols_col_header(self):
+    def test_readxls2list_findheader_p03_xlsx_simple_reqcols_col_header(self):
         logger.debug('STARTUP') 
         result = kvxls.readxls2list_findheader( filenamexls, req_cols, optiondict={'col_header' : True}, debug=False )
         self.assertEqual(result[0], records[0])
-    def test_readxlslist_findheader_p04_xlsx_simple_reqcols_no_header_start_row_return_aref(self):
+    def test_readxls2list_findheader_p04_xlsx_simple_reqcols_no_header_start_row_return_aref(self):
         logger.debug('STARTUP') 
         result = kvxls.readxls2list_findheader( filenamexls, req_cols, optiondict={'no_header' : True, 'start_row' : 2}, debug=False )
         self.assertEqual(result[0], list(records[0].values()))
-    def test_readxlslist_findheader_p05_xlsx_simple_reqcols_no_header_start_row_col_aref(self):
+    def test_readxls2list_findheader_p05_xlsx_simple_reqcols_no_header_start_row_col_aref(self):
         logger.debug('STARTUP')
         result = kvxls.readxls2list_findheader( filenamexls, req_cols, optiondict={'no_header' : True, 'start_row' : 2}, col_aref=list(records[0].keys()), debug=False )
         self.assertEqual(result[0], records[0])
-    def test_readxlslist_findheader_p06_xlsx_simple_reqcols_no_header_start_row_col_aref_missing_cols(self):
+    def test_readxls2list_findheader_p06_xlsx_simple_reqcols_no_header_start_row_col_aref_missing_cols(self):
         logger.debug('STARTUP') 
         col_aref = list(records[0].keys())[:-2]
         result = kvxls.readxls2list_findheader( filenamexls, req_cols, optiondict={'no_header' : True, 'start_row' : 2}, col_aref=col_aref, debug=False )
@@ -358,12 +426,12 @@ class TestKVxls(unittest.TestCase):
         temprec['blank002'] = temprec['LastSeen']
         del temprec['LastSeen']
         self.assertEqual(result[0], temprec)
-    def test_readxlslist_findheader_p07_xlsx_simple_reqcols_col_aref_blank_column(self):
+    def test_readxls2list_findheader_p07_xlsx_simple_reqcols_col_aref_blank_column(self):
         logger.debug('STARTUP') 
         col_aref = list(records[0].keys())[:-2]
         result = kvxls.readxls2list_findheader( filenamexls, req_cols, optiondict={ 'save_row': True }, col_aref=col_aref, debug=False )
         self.assertTrue('blank001' in result[0].keys())
-    def test_readxlslist_findheader_p08_xlsx_simple_reqcols_col_header_col_aref_missing_cols(self):
+    def test_readxls2list_findheader_p08_xlsx_simple_reqcols_col_header_col_aref_missing_cols(self):
         logger.debug('STARTUP') 
         col_aref = list(records[0].keys())[:-2]
         result = kvxls.readxls2list_findheader( filenamexls, req_cols, optiondict={'col_header' : True}, col_aref=col_aref, debug=False )
@@ -374,15 +442,15 @@ class TestKVxls(unittest.TestCase):
         temprec['blank002'] = temprec['LastSeen']
         del temprec['LastSeen']
         self.assertEqual(result[0], temprec)
-    def test_readxlslist_findheader_p09_xlsx_simple_reqcols_convert_dateflds(self):
+    def test_readxls2list_findheader_p09_xlsx_simple_reqcols_convert_dateflds(self):
         logger.debug('STARTUP') 
         result = kvxls.readxls2list_findheader( filenamexls2, req_cols2, optiondict={ 'dateflds' : ['DateField']}, debug=False )
         self.assertEqual(result[0], records2[0])
-    def test_readxlslist_findheader_p10_xlsx_simple_reqcols_save_row(self):
+    def test_readxls2list_findheader_p10_xlsx_simple_reqcols_save_row(self):
         logger.debug('STARTUP')
         result = kvxls.readxls2list_findheader( filenamexls, req_cols, optiondict={ 'save_row': True }, debug=False )
         self.assertEqual(result[0]['XLSRow'], 2)
-    def test_readxlslist_findheader_p11_xlsx_simple_reqcols_aref_result_starting_blank_lines(self):
+    def test_readxls2list_findheader_p11_xlsx_simple_reqcols_aref_result_starting_blank_lines(self):
         logger.debug('STARTUP') 
         # create a list of values that are used to create the xls - we have 6 blank lines at the top
         aref = [[''],[''],[''],[''],['']]
@@ -394,7 +462,7 @@ class TestKVxls(unittest.TestCase):
         result = kvxls.readxls2list_findheader( filenamexls3, req_cols,  optiondict={'aref_result' : True}, debug=False )
         self.assertEqual(result[0], list(records[0].values()))
         kvutil.remove_filename( filenamexls3, kvutil.functionName() )
-    def test_readxlslist_findheader_p12_xlsx_simple_reqcol_no_header_starting_blank_lines(self):
+    def test_readxls2list_findheader_p12_xlsx_simple_reqcol_no_header_starting_blank_lines(self):
         logger.debug('STARTUP') 
         # create a list of values that are used to create the xls - we have 6 blank lines at the top
         aref = [[''],[''],[''],[''],['']]
@@ -413,28 +481,28 @@ class TestKVxls(unittest.TestCase):
 
         
     # XLS file processing - simple blank req_cols
-    def test_readxlslist_findheader_p01_xlsx_simple_blankReqCols(self):
+    def test_readxls2list_findheader_p01_xlsx_simple_blankReqCols(self):
         logger.debug('STARTUP') 
         result = kvxls.readxls2list_findheader( filenamexlsx, [], debug=False )
         self.assertEqual(result[0], records[0])
         self.assertEqual( len(result), len(records) )
-    def test_readxlslist_findheader_p02_xlsx_simple_blankReqCols_aref_result(self):
+    def test_readxls2list_findheader_p02_xlsx_simple_blankReqCols_aref_result(self):
         logger.debug('STARTUP') 
         result = kvxls.readxls2list_findheader( filenamexlsx, [], optiondict={'aref_result' : True}, debug=False )
         self.assertEqual(result[0], list(records[0].values()))
-    def test_readxlslist_findheader_p03_xlsx_simple_blankReqCols_col_header(self):
+    def test_readxls2list_findheader_p03_xlsx_simple_blankReqCols_col_header(self):
         logger.debug('STARTUP') 
         result = kvxls.readxls2list_findheader( filenamexlsx, [], optiondict={'col_header' : True}, debug=False )
         self.assertEqual(result[0], records[0])
-    def test_readxlslist_findheader_p04_xlsx_simple_blankReqCols_no_header_start_row_return_aref(self):
+    def test_readxls2list_findheader_p04_xlsx_simple_blankReqCols_no_header_start_row_return_aref(self):
         logger.debug('STARTUP') 
         result = kvxls.readxls2list_findheader( filenamexlsx, [], optiondict={'no_header' : True, 'start_row' : 2}, debug=False )
         self.assertEqual(result[0], list(records[0].values()))
-    def test_readxlslist_findheader_p05_xlsx_simple_blankReqCols_no_header_start_row_col_aref(self):
+    def test_readxls2list_findheader_p05_xlsx_simple_blankReqCols_no_header_start_row_col_aref(self):
         logger.debug('STARTUP') 
         result = kvxls.readxls2list_findheader( filenamexlsx, [], optiondict={'no_header' : True, 'start_row' : 2}, col_aref=list(records[0].keys()), debug=False )
         self.assertEqual(result[0], records[0])
-    def test_readxlslist_findheader_p06_xlsx_simple_blankReqCols_no_header_start_row_col_aref_missing_cols(self):
+    def test_readxls2list_findheader_p06_xlsx_simple_blankReqCols_no_header_start_row_col_aref_missing_cols(self):
         logger.debug('STARTUP') 
         col_aref = list(records[0].keys())[:-2]
         result = kvxls.readxls2list_findheader( filenamexlsx, [], optiondict={'no_header' : True, 'start_row' : 2}, col_aref=col_aref, debug=False )
@@ -445,12 +513,12 @@ class TestKVxls(unittest.TestCase):
         temprec['blank002'] = temprec['LastSeen']
         del temprec['LastSeen']
         self.assertEqual(result[0], temprec)
-    def test_readxlslist_findheader_p07_xlsx_simple_blankReqCols_col_aref_blank_column(self):
+    def test_readxls2list_findheader_p07_xlsx_simple_blankReqCols_col_aref_blank_column(self):
         logger.debug('STARTUP') 
         col_aref = list(records[0].keys())[:-2]
         result = kvxls.readxls2list_findheader( filenamexlsx, [], optiondict={ 'save_row': True }, col_aref=col_aref, debug=False )
         self.assertTrue('blank001' in result[0].keys())
-    def test_readxlslist_findheader_p08_xlsx_simple_blankReqCols_col_header_col_aref_missing_cols(self):
+    def test_readxls2list_findheader_p08_xlsx_simple_blankReqCols_col_header_col_aref_missing_cols(self):
         logger.debug('STARTUP') 
         col_aref = list(records[0].keys())[:-2]
         result = kvxls.readxls2list_findheader( filenamexlsx, [], optiondict={'col_header' : True}, col_aref=col_aref, debug=False )
@@ -461,15 +529,15 @@ class TestKVxls(unittest.TestCase):
         temprec['blank002'] = temprec['LastSeen']
         del temprec['LastSeen']
         self.assertEqual(result[0], temprec)
-    def test_readxlslist_findheader_p09_xlsx_simple_blankReqCols_convert_dateflds(self):
+    def test_readxls2list_findheader_p09_xlsx_simple_blankReqCols_convert_dateflds(self):
         logger.debug('STARTUP') 
         result = kvxls.readxls2list_findheader( filenamexlsx2, [], optiondict={ 'dateflds' : ['DateField']}, debug=False )
         self.assertEqual(result[0], records2[0])
-    def test_readxlslist_findheader_p10_xlsx_simple_blankReqCols_save_row(self):
+    def test_readxls2list_findheader_p10_xlsx_simple_blankReqCols_save_row(self):
         logger.debug('STARTUP') 
         result = kvxls.readxls2list_findheader( filenamexlsx, [], optiondict={ 'save_row': True }, debug=False )
         self.assertEqual(result[0]['XLSRow'], 2)
-    def test_readxlslist_findheader_p11_xlsx_simple_blankReqCols_aref_result_starting_blank_lines(self):
+    def test_readxls2list_findheader_p11_xlsx_simple_blankReqCols_aref_result_starting_blank_lines(self):
         logger.debug('STARTUP') 
         # create a list of values that are used to create the xls - we have 6 blank lines at the top
         aref = [[''],[''],[''],[''],['']]
@@ -482,7 +550,7 @@ class TestKVxls(unittest.TestCase):
         self.assertEqual(result[0], [None, None, None, None, None, None, None])
         self.assertEqual(result[5], list(records[0].values()))
         kvutil.remove_filename( filenamexlsx3, kvutil.functionName() )
-    def test_readxlslist_findheader_p12_xlsx_simple_blankReqCols_no_header_starting_blank_lines(self):
+    def test_readxls2list_findheader_p12_xlsx_simple_blankReqCols_no_header_starting_blank_lines(self):
         logger.debug('STARTUP') 
         # create a list of values that are used to create the xls - we have 6 blank lines at the top
         aref = [[''],[''],[''],[''],['']]
@@ -499,7 +567,7 @@ class TestKVxls(unittest.TestCase):
 
 
         
-    def test_readxlslist_findheader_f01_xlsx_maxrows_exceeded_in_header_search(self):
+    def test_readxls2list_findheader_f01_xlsx_maxrows_exceeded_in_header_search(self):
         logger.debug('STARTUP') 
         # create a list of values that are used to create the xls - we have 6 blank lines at the top
         aref = [[''],[''],[''],[''],['']]
@@ -510,7 +578,7 @@ class TestKVxls(unittest.TestCase):
         with self.assertRaises(Exception) as context:
             kvxls.readxls2list_findheader( filenamexlsx3, req_cols, optiondict={'maxrows' : 2}, debug=False )
         kvutil.remove_filename( filenamexlsx3, kvutil.functionName() )
-    def test_readxlslist_findheader_f02_xlsx_unique_columns_test(self):
+    def test_readxls2list_findheader_f02_xlsx_unique_columns_test(self):
         logger.debug('STARTUP') 
         header = list(records[0].keys())
         dupkey = header[0]
@@ -523,22 +591,11 @@ class TestKVxls(unittest.TestCase):
             kvxls.readxls2list_findheader( filenamexlsx3, req_cols, optiondict={'unique_column' : True}, debug=False )
         kvutil.remove_filename( filenamexlsx3, kvutil.functionName() )
 
-    ########################################
-    # the function name: def readxls_findheader(xlsfile, req_cols, xlatdict=None, optiondict=None, col_aref=None, data_only=True, debug=False):
-    # def test_readxls_findheader_p01_pass(self):
-    ########################################
-    # the function name: def chgsheet_findheader(excel_dict, req_cols, xlatdict=None, optiondict=None,
-    # def test_chgsheet_findheader_p01_pass(self):
-    ########################################
-    # the function name: def readxls2list_findheader(xlsfile, req_cols, xlatdict=None, optiondict=None, col_aref=None, debug=False):
-    # def test_readxls2list_findheader_p01_pass(self):
-    ########################################
     # the function name: def excelDict2list_findheader(excel_dict, req_cols, xlatdict=None, optiondict=None, col_aref=None, debug=False):
     # def test_excelDict2list_findheader_p01_pass(self):
     ########################################
     # the function name: def readxls2dict_findheader(xlsfile, dictkeys, req_cols=None, xlatdict=None, optiondict=None,
     # def test_readxls2dict_findheader_p01_pass(self):
-
     ########################################
     # the function name: def writedict2xls(xlsfile, data, col_aref=None, optiondict={}, debug=False):
     # def test_writedict2xls_p01_pass(self):
@@ -626,7 +683,22 @@ class TestKVxls(unittest.TestCase):
         results = kvxls.readxls2list_findheader( filenamexlsx3, [], optiondict=optiondict, col_aref=col_aref, debug=False )
         self.assertEqual( records, results )
         kvutil.remove_filename( filenamexlsx3 )
+    def test_writelist2xls_p09_xlsx_start_row(self):
+        # list of dicts
+        logger.debug('STARTUP')
+        optiondict = {'start_row': 3}
+        filename = kvxls.writelist2xls( filenamexlsx3, records, optiondict=optiondict, debug=False )
+        # self.assertEqual(filename, filenamexlsx3)
+        optiondict={'no_header': True}
+        col_aref = None
+        results = kvxls.readxls2list_findheader( filenamexlsx3, [], optiondict=optiondict, col_aref=col_aref, debug=False )
+        self.assertEqual(results[0], [None, None, None, None, None, None, None])
+        self.assertEqual(results[2], list(records[0].keys()))
+        self.assertEqual(results[3], list(records[0].values()))
+        kvutil.remove_filename( filenamexlsx3 )
 
+    # the function name: def writexls(excel_dict, xlsfile, xlsm=False, debug=False):
+    # def test_writexls_p01_pass(self):
         
 if __name__ == '__main__':
     unittest.main()

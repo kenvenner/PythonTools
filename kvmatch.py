@@ -1,7 +1,7 @@
 """
 @author:   Ken Venner
 @contact:  ken@venerllc.com
-@version:  1.08
+@version:  1.09
 
 Library of tools used in finding matches - used by kvcsv and kvxls
 """
@@ -12,7 +12,7 @@ import logging
 logger = logging.getLogger(__name__)
 
 # global variables
-AppVersion = '1.08'
+AppVersion = '1.09'
 
 
 # this class is used to take a row and data and determine if it matches a minimal requirement
@@ -33,17 +33,28 @@ def build_multifield_key(rowdict, dictkeys, joinchar='|', debug=False):
 
 
 # the warning message string for optiondict concerns
-def badoption_msg(func, val, val2):
-    return '%s:possible mistyped optiondict key [%s] could be [%s]' % (func, val, val2)
+def badoption_msg(func, val, val2, fixed=None):
+    if fixed is None:
+        return '%s:possible mistyped optiondict key [%s] could be [%s]' % (func, val, val2)
+    elif fixed:
+        return '%s:possible mistyped optiondict key [%s] could be [%s] - this was fixed' % (func, val, val2)
+    else:
+        return '%s:possible mistyped optiondict key [%s] could be [%s] - this was NOT fixed' % (func, val, val2)
 
 
 # the utility used to look at an optiondict and look for possibly bad keys passed in
-def badoptiondict_check(func, optiondict, badoptiondict, noshowwarning=False, dieonbadoption=False):
+def badoptiondict_check(func, optiondict, badoptiondict, noshowwarning=False, dieonbadoption=False, fix_missing=False):
     # check optiondict for unexpected/mistyped values and provide warnings
     warnings = []
     for val in badoptiondict:
         if val in optiondict:
-            warnings.append(badoption_msg(func, val, badoptiondict[val]))
+            fixed=None
+            if fix_missing:
+                fixed=False
+                if badoptiondict[val] not in optiondict:
+                    optiondict[badoptiondict[val]] = optiondict[val]
+                    fixed=True
+            warnings.append(badoption_msg(func, val, badoptiondict[val], fixed=fixed))
             if not noshowwarning: print(warnings[-1])
 
     # check to see if we should raise an error if we find problems
@@ -57,7 +68,7 @@ def badoptiondict_check(func, optiondict, badoptiondict, noshowwarning=False, di
 # this is the object that is persistent and is used to find a matching record to the defined constraints of the __init__
 class MatchRow(object):
     # set up the parser with input information
-    def __init__(self, req_cols, xlatdict={}, optiondict={}):
+    def __init__(self, req_cols, xlatdict={}, optiondict={}, optiondict2={}):
         # validate input types
         if req_cols and not isinstance(req_cols, list):
             raise Exception(u'req_cols must be a list: {}'.format(req_cols))
@@ -94,6 +105,8 @@ class MatchRow(object):
         self.maxrows = 10  # max number of rows to check
         self.no_warnings = False  # if true - we supress sending out warning message
         self.dieonbadoption = False  # if true - we raise error on bad options
+        self.fix_missing = False # if true - we fix, if None display no msg
+
 
         # create the list of misconfigured solutions
         badoptiondict = {
@@ -106,23 +119,42 @@ class MatchRow(object):
             'nowarning': 'no_warnings',
             'nowarnings': 'no_warnings',
             'no_warning': 'no_warnings',
+            'noshowwarning': 'no_warnings',
+            'noshowwarnings': 'no_warnings',
+            'fixmissing': 'fix_missing',
         }
 
+        optiondict3 = {}
+        for fld in ['nocase','unique_column','maxrows','no_warnings','diebadoption','fix_missing']:
+            if fld in optiondict2:
+                optiondict3[fld] = optiondict2[fld]
+            elif fld in optiondict:
+                optiondict3[fld] = optiondict[fld]
+        # values from badoptiondict
+        for fld, v in badoptiondict.items():
+            if v not in optiondict3 and fld in optiondict2:
+                optiondict3[v] = optiondict2[fld]
+            elif v not in optiondict3 and fld in optiondict:
+                optiondict3[v] = optiondict[fld]
+
+        
         # update flag/setting if options is set
-        if 'nocase' in optiondict:
-            self.nocase = optiondict['nocase']
-        if 'unique_column' in optiondict:
-            self.unique_column = optiondict['unique_column']
-        if 'maxrows' in optiondict:
-            self.maxrows = optiondict['maxrows']
-        if 'no_warnings' in optiondict:
-            self.no_warnings = optiondict['no_warnings']
-        if 'dieonbadoption' in optiondict:
-            self.dieonbadoption = optiondict['dieonbadoption']
+        if 'nocase' in optiondict3:
+            self.nocase = optiondict3['nocase']
+        if 'unique_column' in optiondict3:
+            self.unique_column = optiondict3['unique_column']
+        if 'maxrows' in optiondict3:
+            self.maxrows = optiondict3['maxrows']
+        if 'no_warnings' in optiondict3:
+            self.no_warnings = optiondict3['no_warnings']
+        if 'dieonbadoption' in optiondict3:
+            self.dieonbadoption = optiondict3['dieonbadoption']
+        if 'fix_missing' in optiondict3:
+            self.fix_missing = optiondict3['fix_missing']
 
         # check what got passed in
         self.warning_msg = badoptiondict_check('kvmatch:MatchRow:__init__', optiondict, badoptiondict, self.no_warnings,
-                                               self.dieonbadoption)
+                                               self.dieonbadoption, self.fix_missing)
 
         # copy over the translations dictionary and add values if required
         for key in xlatdict:

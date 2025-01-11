@@ -470,7 +470,8 @@ def readxls_findheader(xlsfile, req_cols, xlatdict=None, optiondict=None, col_ar
     }
 
     # check what got passed in
-    kvmatch.badoptiondict_check('kvxls.readxls_findheader', optiondict, badoptiondict, True)
+    msg=kvmatch.badoptiondict_check('kvxls.readxls_findheader', optiondict, badoptiondict, noshowwarning=True, fix_missing=True)
+    #kvmatch.badoptiondict_check('kvxls.readxls_findheader', optiondict, badoptiondict, True)
 
     # pull in passed values from optiondict
     if 'col_header' in optiondict: col_header = optiondict['col_header']
@@ -500,7 +501,7 @@ def readxls_findheader(xlsfile, req_cols, xlatdict=None, optiondict=None, col_ar
     logger.debug('optiondict:%s', optiondict)
 
     # build object that will be used for record matching
-    p = kvmatch.MatchRow(req_cols, xlatdict, optiondict)
+    p = kvmatch.MatchRow(req_cols, xlatdict, optiondict, {'noshowwarning': True, 'fix_missing': True})
 
     # determine what filetype we have here
     xlsxfiletype = xlsfile.endswith('.xlsx') or xlsfile.endswith('.xlsm')
@@ -717,33 +718,6 @@ def chgsheet_findheader(excel_dict, req_cols, xlatdict=None, optiondict=None,
     # local variables
     header = None
 
-    # debugging
-    if debug:
-        print('req_cols:', req_cols)
-        print('xlatdict:', xlatdict)
-        print('optiondict:', optiondict)
-        print('col_aref:', col_aref)
-    logger.debug('req_cols:%s', req_cols)
-    logger.debug('xlatdict:%s', xlatdict)
-    logger.debug('optiondict:%s', optiondict)
-    logger.debug('col_aref:%s', col_aref)
-
-    # check to see if we are actually changing anyting - if not return back what was sent in
-    if 'sheetname' in optiondict and excel_dict['sheet_name'] == optiondict['sheetname']:
-        logger.debug('nothing changed - return what was sent in')
-        return excel_dict
-
-    # set flags
-    col_header = False  # if true - we take the first row of the file as the header
-    no_header = False  # if true - there are no headers read - we either return
-    aref_result = False  # if true - we don't return dicts, we return a list
-    save_row = False  # if true - then we append/save the XLSRow with the record
-    keep_vba = True  # if true - we load the file and keep vba
-    
-    start_row = 0  # if passed in - we start the search at this row (starts at 1 or greater)
-
-    max_rows = 100000000
-
     # create the list of misconfigured solutions
     badoptiondict = {
         'startrow': 'start_row',
@@ -768,7 +742,35 @@ def chgsheet_findheader(excel_dict, req_cols, xlatdict=None, optiondict=None,
     }
 
     # check what got passed in
-    kvmatch.badoptiondict_check('kvxls.readxls_findheader', optiondict, badoptiondict, True)
+    msg=kvmatch.badoptiondict_check('kvxls.readxls_findheader', optiondict, badoptiondict, noshowwarning=True, fix_missing=True)
+
+    # debugging
+    if debug:
+        print('chg_findheader')
+        print('req_cols:', req_cols)
+        print('xlatdict:', xlatdict)
+        print('optiondict:', optiondict)
+        print('col_aref:', col_aref)
+    logger.debug('req_cols:%s', req_cols)
+    logger.debug('xlatdict:%s', xlatdict)
+    logger.debug('optiondict:%s', optiondict)
+    logger.debug('col_aref:%s', col_aref)
+
+    # check to see if we are actually changing anyting - if not return back what was sent in
+    if 'sheetname' in optiondict and excel_dict['sheet_name'] == optiondict['sheetname']:
+        logger.debug('nothing changed - return what was sent in')
+        return excel_dict
+
+    # set flags
+    col_header = False  # if true - we take the first row of the file as the header
+    no_header = False  # if true - there are no headers read - we either return
+    aref_result = False  # if true - we don't return dicts, we return a list
+    save_row = False  # if true - then we append/save the XLSRow with the record
+    keep_vba = True  # if true - we load the file and keep vba
+    
+    start_row = 0  # if passed in - we start the search at this row (starts at 1 or greater)
+
+    max_rows = 100000000
 
     # pull in passed values from optiondict
     if 'col_header' in optiondict: col_header = optiondict['col_header']
@@ -1292,6 +1294,7 @@ def writelist2xls(xlsfile, data, col_aref=None, optiondict=None, debug=False):
     replace_sheet - we are adding/inserting a sheet into an exising file if one exists or creating the file
     replace_index - if we want to position the new sheet- we can defiune where we want it
                     (0 is first sheet, -1 is last sheet, no value is last sheet)
+    start_row - the row we start the output on
 
     :param xlsfile: (string) - filename we are creating
     :param data: (list or list of dicts) - the material to be output
@@ -1387,6 +1390,9 @@ def writelist2xls(xlsfile, data, col_aref=None, optiondict=None, debug=False):
 
     # set the output row
     xlsrow = 0
+    if 'start_row' in optiondict and optiondict['start_row']:
+        xlsrow = optiondict['start_row'] - 1
+
 
     # get the header created
     if not no_header:
