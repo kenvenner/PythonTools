@@ -19,9 +19,10 @@ AppVersion = '1.09'
 
 # utility used to create a new consolidate key that is a multi-field key
 def build_multifield_key(rowdict, dictkeys, joinchar='|', debug=False):
+    # validate we passed in the required keys
     if not dictkeys:
-        logger.error('missing dictkeys')
-        raise
+        logger.debug('missing dictkeys')
+        raise Exception('dictkeys not provided')
     if debug:
         print('build_multifield_key:dictkeys:', dictkeys)
         print('build_multifield_key:rowdict:', rowdict)
@@ -44,17 +45,37 @@ def badoption_msg(func, val, val2, fixed=None):
 
 # the utility used to look at an optiondict and look for possibly bad keys passed in
 def badoptiondict_check(func, optiondict, badoptiondict, noshowwarning=False, dieonbadoption=False, fix_missing=False):
+    '''
+    func - str tells us who called this - usercontrolled
+    optiondict - list of options to be inspected, warned, terminated or fixed
+    badoptiondict - known list of bad keyss mapped to the proper key
+    noshowwarning - when true we do not display print statements about issues 
+    dieonbadoption - when true - if we have a badoption key die 
+    fix_missing - when true fix this key if the proper key does ot already exist
+    '''
+    
     # check optiondict for unexpected/mistyped values and provide warnings
     warnings = []
+    if False:
+        print('optiondict')
+        print(optiondict)
+        print('badoptiondict')
+        print(badoptiondict)
+        print(dieonbadoption, noshowwarning, fix_missing)
     for val in badoptiondict:
+        # for each bad entry
         if val in optiondict:
+            # do we have it - we do
             fixed=None
             if fix_missing:
+                # if we fix it check to see if the right value is already set
                 fixed=False
                 if badoptiondict[val] not in optiondict:
                     optiondict[badoptiondict[val]] = optiondict[val]
                     fixed=True
+            # fixed or not create the warning
             warnings.append(badoption_msg(func, val, badoptiondict[val], fixed=fixed))
+            # display directly is appropriate
             if not noshowwarning: print(warnings[-1])
 
     # check to see if we should raise an error if we find problems
@@ -67,6 +88,22 @@ def badoptiondict_check(func, optiondict, badoptiondict, noshowwarning=False, di
 
 # this is the object that is persistent and is used to find a matching record to the defined constraints of the __init__
 class MatchRow(object):
+    '''
+    req_cols - list of columns in the dictionary
+    xlat_dict - dict when populated, that changes the key of a column to a newkey
+    optiondict - setting vaues level 1
+    optiondict2 - setting values level 2 takes precidensce over level 1
+
+    option keys:
+    dieonbadoption - bool - when true - we will die if we receive invalid options
+    nocase - bool - if true - we check for key match case insensitive
+    maxrows - integer - max number of rows to check
+    unique_column - bool - if true - we must have unqiue columns in the final result
+    no_warnings - bool - when true - we do not display warnings but pass them back as an array
+    fix_missing - bool - when true - when a bad option is found we will attempt to fix them
+
+    '''
+
     # set up the parser with input information
     def __init__(self, req_cols, xlatdict={}, optiondict={}, optiondict2={}):
         # validate input types
@@ -76,6 +113,8 @@ class MatchRow(object):
             raise Exception(u'xlatdict must be a dict: {}'.format(req_cols))
         if optiondict and not isinstance(optiondict, dict):
             raise Exception(u'optiondict must be a dict: {}'.format(req_cols))
+        if optiondict2 and not isinstance(optiondict2, dict):
+            raise Exception(u'optiondict2 must be a dict: {}'.format(req_cols))
 
         # setup variables
         self._req_cols = req_cols[:]  # make sure we have a copy of this so it does not get changed on us
@@ -110,6 +149,9 @@ class MatchRow(object):
 
         # create the list of misconfigured solutions
         badoptiondict = {
+            'diebadoption': 'dieonbadoption',
+            'die_badoption': 'dieonbadoption',
+            'die_onbadoption': 'dieonbadoption',
             'no_case': 'nocase',
             'max_row': 'maxrows',
             'max_rows': 'maxrows',
@@ -125,7 +167,7 @@ class MatchRow(object):
         }
 
         optiondict3 = {}
-        for fld in ['nocase','unique_column','maxrows','no_warnings','diebadoption','fix_missing']:
+        for fld in ['nocase','unique_column','maxrows','no_warnings','dieonbadoption','fix_missing']:
             if fld in optiondict2:
                 optiondict3[fld] = optiondict2[fld]
             elif fld in optiondict:

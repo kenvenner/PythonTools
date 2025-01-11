@@ -421,6 +421,17 @@ def readxls_findheader(xlsfile, req_cols, xlatdict=None, optiondict=None, col_ar
         xlatdict = {}
     if optiondict is None:
         optiondict = {}
+
+    # type check
+    if col_aref is not None and type(col_aref) != list:
+        raise TypeError('col_aref must be type list but is: ' + str(type(col_aref)))
+    if type(req_cols) != list:
+        raise TypeError('req_cols must be type list but is: ' + str(type(req_cols)))
+    if type(optiondict) != dict:
+        raise TypeError('optiondict must be type dict but is: ' + str(type(optiondict)))
+    if type(xlatdict) != dict:
+        raise TypeError('xlatdict must be type dict but is: ' + str(type(xlatdict)))
+        
     # local variables
     header = None
 
@@ -471,7 +482,6 @@ def readxls_findheader(xlsfile, req_cols, xlatdict=None, optiondict=None, col_ar
 
     # check what got passed in
     msg=kvmatch.badoptiondict_check('kvxls.readxls_findheader', optiondict, badoptiondict, noshowwarning=True, fix_missing=True)
-    #kvmatch.badoptiondict_check('kvxls.readxls_findheader', optiondict, badoptiondict, True)
 
     # pull in passed values from optiondict
     if 'col_header' in optiondict: col_header = optiondict['col_header']
@@ -485,14 +495,17 @@ def readxls_findheader(xlsfile, req_cols, xlatdict=None, optiondict=None, col_ar
 
     # debugging
     if debug:
+        print('readxls_findheader')
+        print('req_cols:', req_cols)
+        print('col_aref:', col_aref)
         print('col_header:', col_header)
         print('aref_result:', aref_result)
         print('no_header:', no_header)
         print('start_row:', start_row)
         print('save_row:', save_row)
         print('optiondict:', optiondict)
-        print('max_rows:', max_rows)
-        print('keep_vba:', keep_vba)
+    logger.debug('req_cols:%s', req_cols)
+    logger.debug('col_aref%s', col_aref)
     logger.debug('col_header:%s', col_header)
     logger.debug('aref_result:%s', aref_result)
     logger.debug('no_header:%s', no_header)
@@ -500,8 +513,17 @@ def readxls_findheader(xlsfile, req_cols, xlatdict=None, optiondict=None, col_ar
     logger.debug('save_row:%s', save_row)
     logger.debug('optiondict:%s', optiondict)
 
+    # special condidtiaon for no header
+    if not col_header and not req_cols and start_row and col_aref:
+        no_header = True
+        if debug:
+            print('Setting no_header because of col_header, start_row, col_aref')
+            print('no_header:', no_header)
+    elif debug:
+        print(col_header, start_row, col_aref)
+
     # build object that will be used for record matching
-    p = kvmatch.MatchRow(req_cols, xlatdict, optiondict, {'noshowwarning': True, 'fix_missing': True})
+    p = kvmatch.MatchRow(req_cols, xlatdict, optiondict, optiondict2={'noshowwarning': True, 'fix_missing': True})
 
     # determine what filetype we have here
     xlsxfiletype = xlsfile.endswith('.xlsx') or xlsfile.endswith('.xlsm')
@@ -578,7 +600,9 @@ def readxls_findheader(xlsfile, req_cols, xlatdict=None, optiondict=None, col_ar
         # we need to subtract 1 here because we are going to increment PAST the header
         # in the next section - so if there is no header - we need to start at zero ( -1 + 1 later)
         row_header = start_row - 1
-
+        # 2025-01-11 changed to none as there was no row header
+        row_header = None
+        
         # if no col_aref - then we must force this to aref_result
         if not col_aref:
             aref_result = True
@@ -686,6 +710,9 @@ def readxls_findheader(xlsfile, req_cols, xlatdict=None, optiondict=None, col_ar
         'start_row': start_row,
     }
 
+    if debug:
+        print('excel_dict: ', excel_dict)
+
     return excel_dict
 
 
@@ -715,8 +742,41 @@ def chgsheet_findheader(excel_dict, req_cols, xlatdict=None, optiondict=None,
     if optiondict is None:
         optiondict = {}
 
+    # type check
+    if col_aref is not None and type(col_aref) != list:
+        raise TypeError('col_aref must be type list but is: ' + str(type(col_aref)))
+    if type(req_cols) != list:
+        raise TypeError('req_cols must be type list but is: ' + str(type(req_cols)))
+    if type(optiondict) != dict:
+        raise TypeError('optiondict must be type dict but is: ' + str(type(optiondict)))
+    if type(xlatdict) != dict:
+        raise TypeError('xlatdict must be type dict but is: ' + str(type(xlatdict)))
+        
+
     # local variables
     header = None
+
+    # debugging
+    if debug:
+        print('req_cols:', req_cols)
+        print('xlatdict:', xlatdict)
+        print('optiondict:', optiondict)
+        print('col_aref:', col_aref)
+    logger.debug('req_cols:%s', req_cols)
+    logger.debug('xlatdict:%s', xlatdict)
+    logger.debug('optiondict:%s', optiondict)
+    logger.debug('col_aref:%s', col_aref)
+
+    # set flags
+    col_header = False  # if true - we take the first row of the file as the header
+    no_header = False  # if true - there are no headers read - we either return
+    aref_result = False  # if true - we don't return dicts, we return a list
+    save_row = False  # if true - then we append/save the XLSRow with the record
+    keep_vba = True  # if true - then load the xlsx with vba scripts on and save as xlsm
+    
+    start_row = 0  # if passed in - we start the search at this row (starts at 1 or greater)
+
+    max_rows = 100000000
 
     # create the list of misconfigured solutions
     badoptiondict = {
@@ -742,35 +802,7 @@ def chgsheet_findheader(excel_dict, req_cols, xlatdict=None, optiondict=None,
     }
 
     # check what got passed in
-    msg=kvmatch.badoptiondict_check('kvxls.readxls_findheader', optiondict, badoptiondict, noshowwarning=True, fix_missing=True)
-
-    # debugging
-    if debug:
-        print('chg_findheader')
-        print('req_cols:', req_cols)
-        print('xlatdict:', xlatdict)
-        print('optiondict:', optiondict)
-        print('col_aref:', col_aref)
-    logger.debug('req_cols:%s', req_cols)
-    logger.debug('xlatdict:%s', xlatdict)
-    logger.debug('optiondict:%s', optiondict)
-    logger.debug('col_aref:%s', col_aref)
-
-    # check to see if we are actually changing anyting - if not return back what was sent in
-    if 'sheetname' in optiondict and excel_dict['sheet_name'] == optiondict['sheetname']:
-        logger.debug('nothing changed - return what was sent in')
-        return excel_dict
-
-    # set flags
-    col_header = False  # if true - we take the first row of the file as the header
-    no_header = False  # if true - there are no headers read - we either return
-    aref_result = False  # if true - we don't return dicts, we return a list
-    save_row = False  # if true - then we append/save the XLSRow with the record
-    keep_vba = True  # if true - we load the file and keep vba
-    
-    start_row = 0  # if passed in - we start the search at this row (starts at 1 or greater)
-
-    max_rows = 100000000
+    msg=kvmatch.badoptiondict_check('kvxls.chgsheet_findheader', optiondict, badoptiondict, noshowwarning=True, fix_missing=True)
 
     # pull in passed values from optiondict
     if 'col_header' in optiondict: col_header = optiondict['col_header']
@@ -782,14 +814,20 @@ def chgsheet_findheader(excel_dict, req_cols, xlatdict=None, optiondict=None,
     if 'max_rows' in optiondict: max_rows = optiondict['max_rows']
     if 'keep_vba' in optiondict: keep_vba = optiondict['keep_vba']
 
+
     # debugging
     if debug:
+        print('chgsheet_findheader')
+        print('req_cols:', req_cols)
+        print('col_aref:', col_aref)
         print('col_header:', col_header)
         print('aref_result:', aref_result)
         print('no_header:', no_header)
         print('start_row:', start_row)
         print('save_row:', save_row)
         print('optiondict:', optiondict)
+    logger.debug('req_cols:%s', req_cols)
+    logger.debug('col_aref%s', col_aref)
     logger.debug('col_header:%s', col_header)
     logger.debug('aref_result:%s', aref_result)
     logger.debug('no_header:%s', no_header)
@@ -797,8 +835,23 @@ def chgsheet_findheader(excel_dict, req_cols, xlatdict=None, optiondict=None,
     logger.debug('save_row:%s', save_row)
     logger.debug('optiondict:%s', optiondict)
 
+    # check to see if we are actually changing anyting - if not return back what was sent in
+    if 'sheetname' in optiondict and excel_dict['sheet_name'] == optiondict['sheetname']:
+        logger.debug('nothing changed - return what was sent in')
+        return excel_dict
+
+    # special condidtiaon for no header
+    if not col_header and not req_cols and start_row and col_aref:
+        no_header = True
+        if debug:
+            print('Setting no_header because of col_header, start_row, col_aref')
+            print('no_header:', no_header)
+    elif debug:
+        print(col_header, start_row, col_aref)
+
+
     # build object that will be used for record matching
-    p = kvmatch.MatchRow(req_cols, xlatdict, optiondict)
+    p = kvmatch.MatchRow(req_cols, xlatdict, optiondict, optiondict2={'noshowwarning': True, 'fix_missing': True})
 
     # read in values from excel_dict
     # determine what filetype we have here
@@ -863,6 +916,8 @@ def chgsheet_findheader(excel_dict, req_cols, xlatdict=None, optiondict=None,
         # we need to subtract 1 here because we are going to increment PAST the header
         # in the next section - so if there is no header - we need to start at zero ( -1 + 1 later)
         row_header = start_row - 1
+        # 2025-01-11 changed to none as there was no row header
+        row_header = None
 
         # if no col_aref - then we must force this to aref_result
         if not col_aref:
@@ -903,8 +958,17 @@ def chgsheet_findheader(excel_dict, req_cols, xlatdict=None, optiondict=None,
             if p.matchRowList(rowdata, debug=debug) or p.search_exceeded:
                 # determine if we found the header
                 if p.search_exceeded:
+                    # debugging
+                    if debug: print('maxrows_search_exceeded:', p.error_msg)
+                    logger.debug('maxrows in search exceeded:%s', p.error_msg)
                     # did not find the header
-                    raise
+                    raise Exception(p.error_msg)
+                elif p.search_failed:
+                    # debugging
+                    if debug: print('search_failed:', p.error_msg)
+                    logger.debug('search_failed:%s', p.error_msg)
+                    # did not find the header
+                    raise Exception(p.error_msg)
                 else:
                     # set the row_header
                     row_header = row
@@ -915,6 +979,9 @@ def chgsheet_findheader(excel_dict, req_cols, xlatdict=None, optiondict=None,
                     logger.debug('header_found:%s', header)
                     # break out of the loop
                     break
+            elif debug:
+                print('no match found loop again')
+
 
     # ------------------------------- HEADER END ------------------------------
 
@@ -959,6 +1026,11 @@ def chgsheet_findheader(excel_dict, req_cols, xlatdict=None, optiondict=None,
         'header': header,
         'start_row': start_row,
     }
+
+    
+    if debug:
+        print('excel_dict: ', excel_dict)
+
 
     return excel_dict
 
@@ -1113,6 +1185,13 @@ def excelDict2list_findheader(excel_dict, req_cols, xlatdict=None, optiondict=No
 
         aref_result = True
 
+    # if we dont' have a row_header then use start_row
+    if row_header is None:
+        row_data_start = start_row
+    else:
+        row_data_start = row_header + 1
+
+        
     # debugging
     if debug:
         print('sheettitle:', sheettitle)
@@ -1121,7 +1200,7 @@ def excelDict2list_findheader(excel_dict, req_cols, xlatdict=None, optiondict=No
 
     # ------------------------------- RECORDS START ------------------------------
 
-    for row in range(row_header + 1, sheetmaxrow):
+    for row in range(row_data_start, sheetmaxrow):
         # read in a row of data
         rowdata = _extract_excel_row_into_list(xlsxfiletype, s, row, sheetmincol, sheetmaxcol, debug)
 

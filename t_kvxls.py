@@ -22,6 +22,9 @@ filenamexlsx2 = kvutil.filename_unique( { 'base_filename' : 't_kvxlstest2', 'fil
 filenamexls3 = kvutil.filename_unique( { 'base_filename' : 't_kvxlstest3', 'file_ext' : '.xls', 'uniqtype' : 'datecnt', 'overwrite' : True, 'forceuniq' : True } )
 filenamexlsx3 = kvutil.filename_unique( { 'base_filename' : 't_kvxlstest3', 'file_ext' : '.xlsx', 'uniqtype' : 'datecnt', 'overwrite' : True, 'forceuniq' : True } )
 
+filenamexls4 = kvutil.filename_unique( { 'base_filename' : 't_kvxlstest4', 'file_ext' : '.xls', 'uniqtype' : 'datecnt', 'overwrite' : True, 'forceuniq' : True } )
+filenamexlsx4 = kvutil.filename_unique( { 'base_filename' : 't_kvxlstest4', 'file_ext' : '.xlsx', 'uniqtype' : 'datecnt', 'overwrite' : True, 'forceuniq' : True } )
+
 
 
 
@@ -48,6 +51,18 @@ records2 = [
 
 req_cols = ['Company', 'Wine']
 req_cols2 = ['StringField', 'DateField']
+
+xlatdict = {'Company': 'NewCompany', 'Wine': 'Winery'}
+req_cols_xlat = ['NewCompany', 'Winery']
+
+# multi sheet xlsx credated for testing chgsheet
+optiondict4 = {'sheet_name': 'set_sheet_name2', 'replace_sheet': True}
+req_cols4_1 = req_cols
+req_cols4_2 = req_cols2
+# create xlsx to be tested with
+kvxls.writelist2xls( filenamexlsx4, records)
+kvxls.writelist2xls( filenamexlsx4, records2, optiondict=optiondict4, debug=False )
+
 
 class TestKVxls(unittest.TestCase):
     @classmethod
@@ -119,8 +134,13 @@ class TestKVxls(unittest.TestCase):
     ########################################
     # the function name: def readxls2dump(xlsfile, rows=10, sep=':', no_warnings=False, returnrecs=False, sheet_name_col=None, debug=False):
     # def test_readxls2dump_p01_pass(self):
+
+
+    ### READXLS_FINDHEADER
+    
     ########################################
     # the function name: def readxls_findheader(xlsfile, req_cols, xlatdict=None, optiondict=None, col_aref=None, data_only=True, debug=False):
+    # XLS/XLSX - simple open and return excel_dict
     def test_readxls_findheader_p01_xls_pass(self):
         logger.debug('STARTUP')
         excel_dict = kvxls.readxls_findheader( filenamexls, req_cols, debug=False )
@@ -129,6 +149,7 @@ class TestKVxls(unittest.TestCase):
         self.assertEqual(excel_dict['row_header'], 0)
         self.assertEqual(excel_dict['xlsfile'], filenamexls)
         self.assertEqual(excel_dict['start_row'], 0)
+        self.assertEqual(excel_dict['sheetmaxrow'], 12)
     def test_readxls_findheader_p02_xlsx_pass(self):
         logger.debug('STARTUP')
         excel_dict = kvxls.readxls_findheader( filenamexlsx, req_cols, debug=False )
@@ -137,23 +158,211 @@ class TestKVxls(unittest.TestCase):
         self.assertEqual(excel_dict['row_header'], 0)
         self.assertEqual(excel_dict['xlsfile'], filenamexlsx)
         self.assertEqual(excel_dict['start_row'], 0)
+        self.assertEqual(excel_dict['sheetmaxrow'], 12)
+
+    # type of field check
+    def test_readxls_findheader_f01_fld_type_col_aref(self):
+        logger.debug('STARTUP')
+        with self.assertRaises(Exception) as context:
+            excel_dict = kvxls.readxls_findheader( filenamexls, req_cols, col_aref={},  debug=False )
+    def test_readxls_findheader_f02_fld_type_req_cols(self):
+        logger.debug('STARTUP')
+        with self.assertRaises(Exception) as context:
+            excel_dict = kvxls.readxls_findheader( filenamexls, {}, debug=False )
+    def test_readxls_findheader_f03_fld_type_optiondict(self):
+        logger.debug('STARTUP')
+        with self.assertRaises(Exception) as context:
+            excel_dict = kvxls.readxls_findheader( filenamexls, req_cols, optiondict='',  debug=False )
+    def test_readxls_findheader_f03_fld_type_xlatdict(self):
+        logger.debug('STARTUP')
+        with self.assertRaises(Exception) as context:
+            excel_dict = kvxls.readxls_findheader( filenamexls, req_cols, xlatdict='',  debug=False )
+    
+    
+    
+    # xlatdict
+    def test_readxls_findheader_p01_xls_xlat_pass(self):
+        logger.debug('STARTUP')
+        excel_dict = kvxls.readxls_findheader( filenamexls, req_cols_xlat, xlatdict=xlatdict, debug=False )
+        self.assertEqual(type(excel_dict), dict)
+        self.assertEqual(excel_dict['keep_vba'], True)
+        self.assertEqual(excel_dict['row_header'], 0)
+        self.assertEqual(excel_dict['xlsfile'], filenamexls)
+        self.assertEqual(excel_dict['start_row'], 0)
+    def test_readxls_findheader_p02_xlsx_xlat_pass(self):
+        logger.debug('STARTUP')
+        excel_dict = kvxls.readxls_findheader( filenamexlsx, req_cols_xlat, xlatdict=xlatdict, debug=False )
+        self.assertEqual(type(excel_dict), dict)
+        self.assertEqual(excel_dict['keep_vba'], True)
+        self.assertEqual(excel_dict['row_header'], 0)
+        self.assertEqual(excel_dict['xlsfile'], filenamexlsx)
+        self.assertEqual(excel_dict['start_row'], 0)
+
+    def test_readxls_findheader_f01_xls_xlat_pass(self):
+        logger.debug('STARTUP')
+        with self.assertRaises(Exception) as context:
+            excel_dict = kvxls.readxls_findheader( filenamexls, req_cols2, xlatdict=xlatdict, debug=False )
+    def test_readxls_findheader_f02_xlsx_xlat_pass(self):
+        logger.debug('STARTUP')
+        with self.assertRaises(Exception) as context:
+            excel_dict = kvxls.readxls_findheader( filenamexlsx, req_cols2, xlatdict=xlatdict, debug=False )
+
+    # col_header
+    def test_readxls_findheader_p01_xls_col_header(self):
+        logger.debug('STARTUP')
+        optiondict={'col_header': True}
+        excel_dict = kvxls.readxls_findheader( filenamexls, [], optiondict=optiondict, debug=False )
+        self.assertEqual(type(excel_dict), dict)
+        self.assertEqual(excel_dict['keep_vba'], True)
+        self.assertEqual(excel_dict['row_header'], 0)
+        self.assertEqual(excel_dict['xlsfile'], filenamexls)
+        self.assertEqual(excel_dict['start_row'], 0)
+    def test_readxls_findheader_p02_xlsx_col_header(self):
+        logger.debug('STARTUP')
+        optiondict={'col_header': True}
+        excel_dict = kvxls.readxls_findheader( filenamexlsx, [], optiondict=optiondict, debug=False )
+        self.assertEqual(type(excel_dict), dict)
+        self.assertEqual(excel_dict['keep_vba'], True)
+        self.assertEqual(excel_dict['row_header'], 0)
+        self.assertEqual(excel_dict['xlsfile'], filenamexlsx)
+        self.assertEqual(excel_dict['start_row'], 0)
+        
+    # no_header
+    def test_readxls_findheader_p01_xls_no_header(self):
+        logger.debug('STARTUP')
+        optiondict={'no_header': True}
+        col_aref = list(records[0].keys())
+        excel_dict = kvxls.readxls_findheader( filenamexls, [], optiondict=optiondict, col_aref=col_aref, debug=False )
+        self.assertEqual(type(excel_dict), dict)
+        self.assertEqual(excel_dict['keep_vba'], True)
+        self.assertEqual(excel_dict['row_header'], None)
+        self.assertEqual(excel_dict['xlsfile'], filenamexls)
+        self.assertEqual(excel_dict['start_row'], 0)
+    def test_readxls_findheader_p02_xlsx_no_header(self):
+        logger.debug('STARTUP')
+        optiondict={'no_header': True}
+        col_aref = list(records[0].keys())
+        excel_dict = kvxls.readxls_findheader( filenamexlsx, [], optiondict=optiondict, col_aref=col_aref, debug=False )
+        self.assertEqual(type(excel_dict), dict)
+        self.assertEqual(excel_dict['keep_vba'], True)
+        self.assertEqual(excel_dict['row_header'], None)
+        self.assertEqual(excel_dict['xlsfile'], filenamexlsx)
+        self.assertEqual(excel_dict['start_row'], 0)
+    
+    # col_aref only
+    def test_readxls_findheader_p01_xls_col_aref(self):
+        logger.debug('STARTUP')
+        optiondict={}
+        col_aref = ['ken1', 'ken2', 'ken3', 'ken4']
+        excel_dict = kvxls.readxls_findheader( filenamexls, [], optiondict=optiondict, col_aref=col_aref, debug=False )
+        self.assertEqual(type(excel_dict), dict)
+        self.assertEqual(excel_dict['keep_vba'], True)
+        self.assertEqual(excel_dict['row_header'], 0)
+        self.assertEqual(excel_dict['xlsfile'], filenamexls)
+        self.assertEqual(excel_dict['start_row'], 0)
+        self.assertEqual(excel_dict['header'], ['ken1', 'ken2', 'ken3', 'ken4', 'blank001', 'blank002', 'blank003'])
+    def test_readxls_findheader_p01_xlsx_col_aref(self):
+        logger.debug('STARTUP')
+        optiondict={}
+        col_aref = ['ken1', 'ken2', 'ken3', 'ken4']
+        excel_dict = kvxls.readxls_findheader( filenamexlsx, [], optiondict=optiondict, col_aref=col_aref, debug=False )
+        self.assertEqual(type(excel_dict), dict)
+        self.assertEqual(excel_dict['keep_vba'], True)
+        self.assertEqual(excel_dict['row_header'], 0)
+        self.assertEqual(excel_dict['xlsfile'], filenamexlsx)
+        self.assertEqual(excel_dict['start_row'], 0)
+        self.assertEqual(excel_dict['header'], ['ken1', 'ken2', 'ken3', 'ken4', 'blank001', 'blank002', 'blank003'])
+
+    # save_row
+    def test_readxls_findheader_p01_xls_save_row(self):
+        logger.debug('STARTUP')
+        optiondict={'save_row': True}
+        excel_dict = kvxls.readxls_findheader( filenamexls, [], optiondict=optiondict, debug=False )
+        self.assertEqual(type(excel_dict), dict)
+        self.assertEqual(excel_dict['keep_vba'], True)
+        self.assertEqual(excel_dict['row_header'], 0)
+        self.assertEqual(excel_dict['xlsfile'], filenamexls)
+        self.assertEqual(excel_dict['start_row'], 0)
+        # need to define what we do with row header on - nothing today
+        # self.assertEqual(excel_dict['header'][-1], 'XLSRow')
+    def test_readxls_findheader_p01_xlsx_save_row(self):
+        logger.debug('STARTUP')
+        optiondict={'save_row': True}
+        excel_dict = kvxls.readxls_findheader( filenamexlsx, [], optiondict=optiondict, debug=False )
+        self.assertEqual(type(excel_dict), dict)
+        self.assertEqual(excel_dict['keep_vba'], True)
+        self.assertEqual(excel_dict['row_header'], 0)
+        self.assertEqual(excel_dict['xlsfile'], filenamexlsx)
+        self.assertEqual(excel_dict['start_row'], 0)
+        # need to define what we do with row header on - nothing today
+        # self.assertEqual(excel_dict['header'][-1], 'XLSRow')
+
+    # simple put set the start row
+    def test_readxls_findheader_p01_xls_start_row_col_aref_blank_req_cols(self):
+        logger.debug('STARTUP')
+        optiondict={'start_row': 3}
+        col_aref = ['ken1', 'ken2', 'ken3', 'ken4']
+        excel_dict = kvxls.readxls_findheader( filenamexls, [], optiondict=optiondict, col_aref=col_aref, debug=False )
+        self.assertEqual(type(excel_dict), dict)
+        self.assertEqual(excel_dict['keep_vba'], True)
+        self.assertEqual(excel_dict['row_header'], None)
+        self.assertEqual(excel_dict['xlsfile'], filenamexls)
+        self.assertEqual(excel_dict['start_row'], 2)
+        self.assertEqual(excel_dict['header'], ['ken1', 'ken2', 'ken3', 'ken4', 'blank001', 'blank002', 'blank003'])
+    def test_readxls_findheader_p02_xlsx_pass(self):
+        logger.debug('STARTUP')
+        optiondict={'start_row': 3}
+        col_aref = ['ken1', 'ken2', 'ken3', 'ken4']
+        excel_dict = kvxls.readxls_findheader( filenamexlsx, [], optiondict=optiondict, col_aref=col_aref, debug=False )
+        self.assertEqual(type(excel_dict), dict)
+        self.assertEqual(excel_dict['keep_vba'], True)
+        self.assertEqual(excel_dict['row_header'], None)
+        self.assertEqual(excel_dict['xlsfile'], filenamexlsx)
+        self.assertEqual(excel_dict['start_row'], 2)
+        self.assertEqual(excel_dict['header'], ['ken1', 'ken2', 'ken3', 'ken4', 'blank001', 'blank002', 'blank003'])
+
+    # maxrowls
+    def test_readxls_findheader_p01_xls_max_rows(self):
+        logger.debug('STARTUP')
+        optiondict={'max_rows': 6}
+        excel_dict = kvxls.readxls_findheader( filenamexls, req_cols, optiondict=optiondict, debug=False )
+        self.assertEqual(type(excel_dict), dict)
+        self.assertEqual(excel_dict['keep_vba'], True)
+        self.assertEqual(excel_dict['row_header'], 0)
+        self.assertEqual(excel_dict['xlsfile'], filenamexls)
+        self.assertEqual(excel_dict['start_row'], 0)
+        self.assertEqual(excel_dict['sheetmaxrow'], 6)
+    def test_readxls_findheader_p02_xlsx_max_rows(self):
+        logger.debug('STARTUP')
+        optiondict={'max_rows': 6}
+        excel_dict = kvxls.readxls_findheader( filenamexlsx, req_cols, optiondict=optiondict, debug=False )
+        self.assertEqual(type(excel_dict), dict)
+        self.assertEqual(excel_dict['keep_vba'], True)
+        self.assertEqual(excel_dict['row_header'], 0)
+        self.assertEqual(excel_dict['xlsfile'], filenamexlsx)
+        self.assertEqual(excel_dict['start_row'], 0)
+        self.assertEqual(excel_dict['sheetmaxrow'], 6)
+
+
+
+        
+    ### CHGSHEET_FINDHEADER
 
     ########################################
     # the function name: def chgsheet_findheader(excel_dict, req_cols, xlatdict=None, optiondict=None,
     def test_chgsheet_findheader_p01_xls_pass(self):
         logger.debug('STARTUP')
-        optiondict = {'sheet_name': 'set_sheet_name2', 'replace_sheet': True}
-        # create xlsx to be tested with
-        kvxls.writelist2xls( filenamexlsx3, records)
-        kvxls.writelist2xls( filenamexlsx3, records2, optiondict=optiondict, debug=False )
         # read in teh first time
-        excel_dict = kvxls.readxls_findheader( filenamexlsx3, req_cols, debug=False )
-        #pprint.pprint(excel_dict)
+        excel_dict41 = kvxls.readxls_findheader( filenamexlsx4, req_cols4_1, debug=False )
+        #pprint.pprint(excel_dict41)
         # change sheet to the sheet of interest
-        excel_dict2 = kvxls.chgsheet_findheader(excel_dict, req_cols2, optiondict=optiondict, debug=False)
-        #pprint.pprint(excel_dict2)
-        self.assertEqual(type(excel_dict2), dict)
+        excel_dict42 = kvxls.chgsheet_findheader(excel_dict41, req_cols4_2, optiondict=optiondict4, debug=True)
+        #pprint.pprint(excel_dict42)
+        self.assertEqual(type(excel_dict42), dict)
         
+        
+    ### READXLS2LIST_FINDHEADER
+
     # XLS file processing - simple req_cols
     def test_readxls2list_findheader_p01_xls_simple_reqcols(self):
         logger.debug('STARTUP')
@@ -590,6 +799,7 @@ class TestKVxls(unittest.TestCase):
         with self.assertRaises(Exception) as context:
             kvxls.readxls2list_findheader( filenamexlsx3, req_cols, optiondict={'unique_column' : True}, debug=False )
         kvutil.remove_filename( filenamexlsx3, kvutil.functionName() )
+
 
     # the function name: def excelDict2list_findheader(excel_dict, req_cols, xlatdict=None, optiondict=None, col_aref=None, debug=False):
     # def test_excelDict2list_findheader_p01_pass(self):
