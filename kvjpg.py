@@ -1,7 +1,7 @@
 '''
 @author:   Ken Venner
 @contact:  ken@venerllc.com
-@version:  1.10
+@version:  1.11
 
 Library of tools used to process JPG image files
 '''
@@ -19,7 +19,7 @@ import logging
 logger = logging.getLogger(__name__)
 
 # global variables
-AppVersion = '1.10'
+AppVersion = '1.11'
 
 debug = False
 
@@ -178,8 +178,10 @@ def datetime_offset_for_matching_filename(filename_row, re_filename, timedelta_o
             if debug:
                 print('datetime_offset_for_matching_filename:filename_row[0]-after:', filename_row[0])
             logger.debug('filename_row[0]-after:%s', filename_row[0])
-
-
+        elif debug:
+            print('datetime_offset_for_matching_filename:filerange-match: false')            
+                
+        
 # display all exif attributes for the file passed in
 def display_exif_attributes(filename, debug=False):
     exif_dict = piexif.load(filename)
