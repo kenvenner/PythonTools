@@ -187,16 +187,16 @@ def getExcelCellPatternFill(excel_dict, row, col_name, debug=False):
         print('col_name:', col_name)
         print('col:', col)
         print('row:', row)
-        print('value:', excel_dict['s'].cell(row=row + 1, column=col + 1).value)
+        print('value:', excel_dict['s'].cell(row=row + 1 + excel_dict['row_header'], column=col + 1).value)
 
     # return none if no style
-    if not excel_dict['s'].cell(row=row + 1, column=col + 1).has_style:
+    if not excel_dict['s'].cell(row=row + 1 + excel_dict['row_header'], column=col + 1).has_style:
         return None, None, None, None
         
     # get cell value
     if excel_dict['xlsxfiletype']:
         # get fill settings
-        cell_fill = excel_dict['s'].cell(row=row + 1, column=col + 1).fill
+        cell_fill = excel_dict['s'].cell(row=row + 1 + excel_dict['row_header'], column=col + 1).fill
         # debugging
         if debug:
             print('setExcelCellPatternFill:start:', cell_fill.start_color,
@@ -248,16 +248,16 @@ def setExcelCellPatternFill(excel_dict, row, col_name, fill=None, start_color=No
     # get cell value
     if excel_dict['xlsxfiletype']:
         if start_color:
-            excel_dict['s'].cell(row=row + 1, column=col + 1).fill = openpyxl.styles.PatternFill(fill_type=fill_type,
+            excel_dict['s'].cell(row=row + 1 + excel_dict['row_header'], column=col + 1).fill = openpyxl.styles.PatternFill(fill_type=fill_type,
                                                                                                  start_color=start_color,
                                                                                                  end_color=end_color)
         elif fill:
             # passed in the fill type object - set it
-            excel_dict['s'].cell(row=row + 1, column=col + 1).fill = fill
+            excel_dict['s'].cell(row=row + 1 + excel_dict['row_header'], column=col + 1).fill = fill
         elif not fill_type:
-            excel_dict['s'].cell(row=row + 1, column=col + 1).fill = openpyxl.styles.PatternFill(fill_type=None)
+            excel_dict['s'].cell(row=row + 1 + excel_dict['row_header'], column=col + 1).fill = openpyxl.styles.PatternFill(fill_type=None)
         else:
-            excel_dict['s'].cell(row=row + 1, column=col + 1).fill = openpyxl.styles.PatternFill(fill_type=fill_type,
+            excel_dict['s'].cell(row=row + 1 + excel_dict['row_header'], column=col + 1).fill = openpyxl.styles.PatternFill(fill_type=fill_type,
                                                                                                  fgColor=fg_color)
     else:
         logger.error('feature not supported on xls file - only XLSX')

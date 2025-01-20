@@ -3,7 +3,7 @@ from __future__ import print_function
 '''
 @author:   Ken Venner
 @contact:  ken@venerllc.com
-@version:  1.79
+@version:  1.80
 
 Library of tools used in general by KV
 '''
@@ -33,8 +33,8 @@ import logging
 logger = logging.getLogger(__name__)
 
 # set the module version number
-AppVersion = '1.79'
-__version__ = '1.79'
+AppVersion = '1.80'
+__version__ = '1.80'
 HELP_KEYS = ('help', 'helpall',)
 HELP_VALUE_TABLE = ('tbl', 'table', 'helptbl', 'fmt',)
 
@@ -552,6 +552,8 @@ def kv_parse_command_line_display(optiondictconfig, defaultoptions=None, optiond
 #
 def remove_filename(filename, calledfrom='', debug=False, maxretry=20):
     logger.debug('Remove:%s:calledfrom:%s:maxretry:%d', filename, calledfrom, maxretry)
+    if debug:
+        print('removed_filename:calledfrom:', calledfrom, ':filename:', filename, ':exists:', os.path.exists(filename))
     cnt = 0
     if calledfrom:  calledfrom += ':'
     while os.path.exists(filename):
