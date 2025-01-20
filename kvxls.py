@@ -504,6 +504,7 @@ def readxls_findheader(xlsfile, req_cols, xlatdict=None, optiondict=None, col_ar
     save_row = False  # if true - then we append/save the XLSRow with the record
     keep_vba = True  # if true - then load the xlsx with vba scripts on and save as xlsm
     allow_empty = False # if true - we allow a header to be read in with no data
+    row_header = None # we will set this later
     
     start_row = 0  # if passed in - we start the search at this row (starts at 1 or greater)
 
@@ -584,7 +585,7 @@ def readxls_findheader(xlsfile, req_cols, xlatdict=None, optiondict=None, col_ar
         print(col_header, start_row, col_aref)
 
     # build object that will be used for record matching
-    p = kvmatch.MatchRow(req_cols, xlatdict, optiondict, optiondict2={'noshowwarning': True, 'fix_missing': True})
+    p = kvmatch.MatchRow(req_cols, xlatdict, optiondict, optiondict2={'noshowwarning': True, 'fix_missing': True}, debug=debug)
 
     # determine what filetype we have here
     xlsxfiletype = xlsfile.endswith('.xlsx') or xlsfile.endswith('.xlsm')
@@ -675,6 +676,18 @@ def readxls_findheader(xlsfile, req_cols, xlatdict=None, optiondict=None, col_ar
         logger.debug('no_header:start_row:%d', start_row)
 
     else:
+        # fail first if we have no data
+        if sheetmaxrow == 0:
+            # no recordds were find - we failed
+            if  not allow_empty:
+                # debug
+                if debug: print('exception:find_header:sheetmaxrow==0:no header to find')
+                logger.debug('exception:find_header:sheetmaxrow==0:no header to find')
+                
+                raise Exception('heetmaxrow==0:no header to find')
+            else:
+                # debug
+                if debug: print('find_header:sheetmaxrow==0:allow_empty enabled - continue')
         # debug
         if debug: print('find_header:start_row:', start_row)
         logger.debug('find_header:start_row:%d', start_row)
@@ -709,13 +722,13 @@ def readxls_findheader(xlsfile, req_cols, xlatdict=None, optiondict=None, col_ar
                 # determine if we found the header
                 if p.search_exceeded:
                     # debugging
-                    if debug: print('maxrows_search_exceeded:', p.error_msg)
+                    if debug: print('exception:maxrows_search_exceeded:', p.error_msg)
                     logger.debug('maxrows in search exceeded:%s', p.error_msg)
                     # did not find the header
                     raise Exception(p.error_msg)
                 elif p.search_failed:
                     # debugging
-                    if debug: print('search_failed:', p.error_msg)
+                    if debug: print('exception:search_failed:', p.error_msg)
                     logger.debug('search_failed:%s', p.error_msg)
                     # did not find the header
                     raise Exception(p.error_msg)
@@ -732,6 +745,7 @@ def readxls_findheader(xlsfile, req_cols, xlatdict=None, optiondict=None, col_ar
             elif debug:
                 print('no match found loop again')
 
+            
     # ------------------------------- HEADER END ------------------------------
 
     # debug

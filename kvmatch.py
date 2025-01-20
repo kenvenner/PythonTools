@@ -1,7 +1,7 @@
 """
 @author:   Ken Venner
 @contact:  ken@venerllc.com
-@version:  1.09
+@version:  1.10
 
 Library of tools used in finding matches - used by kvcsv and kvxls
 """
@@ -12,7 +12,7 @@ import logging
 logger = logging.getLogger(__name__)
 
 # global variables
-AppVersion = '1.09'
+AppVersion = '1.10'
 
 
 # this class is used to take a row and data and determine if it matches a minimal requirement
@@ -105,7 +105,7 @@ class MatchRow(object):
     '''
 
     # set up the parser with input information
-    def __init__(self, req_cols, xlatdict={}, optiondict={}, optiondict2={}):
+    def __init__(self, req_cols, xlatdict={}, optiondict={}, optiondict2={}, debug=False):
         # validate input types
         if req_cols and not isinstance(req_cols, list):
             raise Exception(u'req_cols must be a list: {}'.format(req_cols))
@@ -180,7 +180,14 @@ class MatchRow(object):
             elif v not in optiondict3 and fld in optiondict:
                 optiondict3[v] = optiondict[fld]
 
-        
+
+        # debugging
+        if debug:
+            print('kvmatch.MatchRow:init:optiondict3:')
+            for k,v in optiondict3.items():
+                print(k,v)
+
+
         # update flag/setting if options is set
         if 'nocase' in optiondict3:
             self.nocase = optiondict3['nocase']
@@ -425,5 +432,13 @@ class MatchRow(object):
 
             # return true
             return True
+        elif self.rowcount == self.max_rows:
+            if debug:  print('rowcount == max_rows - match not found, set variables and return None')
+            logger.debug('rowcount == max_rows - match not found, set variables and return None')
+            self.search_failed = True
+            self.search_exceeded = True
+            self.error_msg = 'Max search row count [%s] exceeded at row [%s] - no match found' % (self.max_rows, self.rowcount)
+            return False
+
 
 # eof
