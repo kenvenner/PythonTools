@@ -3,6 +3,7 @@ import kvutil
 import unittest
 import datetime
 import pprint
+from openpyxl.styles import PatternFill
 
 import os
 
@@ -43,6 +44,20 @@ records = [
     {'Company': 'WineClub', 'Wine': 'CHAPPELLET SIGNATURE RESERVE CABERNET SAUVIGNON', 'Vintage_Wine': 'CHAPPELLET SIGNATURE RESERVE CABERNET SAUVIGNON 2014', 'Vintage': '2014', 'Date': '7/15/2018', 'Type': 'red-cab', 'LastSeen': 'Never'} ,
     {'Company': 'Vons', 'Wine': 'Charles Krug Cabernet Sauvignon Wine - 750 Ml', 'Vintage_Wine': 'Charles Krug Cabernet Sauvignon Wine 2014 - 750 Ml', 'Vintage': '2014', 'Date': '2/21/2009', 'Type': 'red-cab', 'LastSeen': '2/27/2016'} ,
 ]
+
+records_multi_key = {
+    'BevMo': {'Caymus Cabernet Sauvignon Napa (750 ML)': {'2014': 2},
+              'Caymus Cabernet Sauvignon Special Select (750 ML)': {'2014': 3},
+              'Caymus Cabernet Special Select (750 ML)': {'2014': 4},
+              'Chappellet Cab Sauv Pritchard (750 ML)': {'2014': 7}},
+    'NHLiq': {'Caravan Cabernet Sauvignon': {'2014': 1}},
+    'TotalCA': {'Chappellet Cabernet Sauvignon Napa Signature': {'2014': 8}},
+    'Vons': {'Charles Krug Cabernet Sauvignon Wine - 750 Ml': {'2014': 11}},
+    'WineClub': {'CAYMUS VINEYARDS CABERNET SAUVIGNON': {'2014': 5},
+              'CAYMUS VINEYARDS SPECIAL SELECTION CABERNET SAUVIGNON': {'2014': 6},
+              'CHAPPELLET PRITCHARD HILL CABERNET SAUVIGNON': {'2014': 9},
+              'CHAPPELLET SIGNATURE RESERVE CABERNET SAUVIGNON': {'2014': 10}}
+}
 
 records2 = [
     {'StringField': 'this is a string line 1', 'DateField': datetime.datetime(2020, 1, 1, 0, 0), 'IntField': 1, 'NumberField': 12.34},
@@ -112,16 +127,141 @@ class TestKVxls(unittest.TestCase):
     # def test__extract_excel_row_into_list_p01_pass(self):
     ########################################
     # the function name: def getExcelCellValue(excel_dict, row, col_name, debug=False):
-    # def test_getExcelCellValue_p01_pass(self):
+    def test_getExcelCellValue_p01_pass(self):
+        logger.debug('STARTUP')
+        excel_dict = kvxls.readxls_findheader( filenamexlsx, req_cols, debug=False )
+        value = kvxls.getExcelCellValue(excel_dict, 1, 'Company')
+        self.assertEqual(value, 'NHLiq')
+        value = kvxls.getExcelCellValue(excel_dict, 3, 'Company')
+        self.assertEqual(value, 'BevMo')
+    def test_getExcelCellValue_p02_start_row_3(self):
+        logger.debug('STARTUP')
+        kvxls.writelist2xls( filenamexlsx3, records, optiondict={'start_row': 3}, debug=False)
+        excel_dict = kvxls.readxls_findheader( filenamexlsx3, req_cols, debug=False )
+        value = kvxls.getExcelCellValue(excel_dict, 1, 'Company')
+        self.assertEqual(value, 'NHLiq')
+        value = kvxls.getExcelCellValue(excel_dict, 3, 'Company')
+        self.assertEqual(value, 'BevMo')
+        kvutil.remove_filename( filenamexls3, kvutil.functionName() )
+        
     ########################################
     # the function name: def setExcelCellValue(excel_dict, row, col_name, value, debug=False):
-    # def test_setExcelCellValue_p01_pass(self):
+    def test_setExcelCellValue_p01_top(self):
+        logger.debug('STARTUP')
+        fstarter='tst5-'
+        kvxls.writelist2xls( fstarter+filenamexlsx3, records, debug=False)
+        excel_dict = kvxls.readxls_findheader( fstarter+filenamexlsx3, req_cols, debug=False )
+        value = kvxls.getExcelCellValue(excel_dict, 1, 'Company')
+        self.assertEqual(value, 'NHLiq')
+        kvxls.setExcelCellValue(excel_dict, 1, 'Company', 'KVValue')
+        value = kvxls.getExcelCellValue(excel_dict, 1, 'Company')
+        self.assertEqual(value, 'KVValue')
+        excel_dict['keep_vba'] = False
+        kvxls.writexls(excel_dict, fstarter+filenamexlsx3, debug=False)
+        excel_dict = kvxls.readxls_findheader( fstarter+filenamexlsx3, req_cols, debug=False )
+        value = kvxls.getExcelCellValue(excel_dict, 1, 'Company')
+        self.assertEqual(value, 'KVValue')
+        kvutil.remove_filename( fstarter+filenamexls3, kvutil.functionName() )
+    def test_setExcelCellValue_p02_start_row_3(self):
+        logger.debug('STARTUP')
+        fstarter='tst4-'
+        kvxls.writelist2xls( fstarter+filenamexlsx3, records, optiondict={'start_row': 3}, debug=False)
+        excel_dict = kvxls.readxls_findheader( fstarter+filenamexlsx3, req_cols, debug=False )
+        value = kvxls.getExcelCellValue(excel_dict, 1, 'Company')
+        self.assertEqual(value, 'NHLiq')
+        kvxls.setExcelCellValue(excel_dict, 1, 'Company', 'KVValue')
+        value = kvxls.getExcelCellValue(excel_dict, 1, 'Company')
+        self.assertEqual(value, 'KVValue')
+        excel_dict['keep_vba'] = False
+        kvxls.writexls(excel_dict, fstarter+filenamexlsx3, debug=False)
+        excel_dict = kvxls.readxls_findheader( fstarter+filenamexlsx3, req_cols, debug=False )
+        value = kvxls.getExcelCellValue(excel_dict, 1, 'Company')
+        self.assertEqual(value, 'KVValue')
+        kvutil.remove_filename( fstarter+filenamexls3, kvutil.functionName() )
+        
     ########################################
     # the function name: def getExcelCellPatternFill(excel_dict, row, col_name, debug=False):
     # def test_getExcelCellPatternFill_p01_pass(self):
     ########################################
     # the function name: def setExcelCellPatternFill(excel_dict, row, col_name, fill=None, start_color=None, end_color=None, fg_color=None, fill_type="solid", debug=False):
-    # def test_setExcelCellPatternFill_p01_pass(self):
+    def test_setExcelCellPatternFill_p01_fg_color(self):
+        logger.debug('STARTUP')
+        yellow_fill = 'FFFFFF00'
+        row = 2
+        fstarter = 'tst1-'
+        col_name = 'Date'
+        excel_dict = kvxls.readxls_findheader( filenamexlsx, req_cols, debug=False )
+        excel_dict['keep_vba'] = False
+        kvxls.setExcelCellPatternFill(excel_dict, row, col_name, fg_color=yellow_fill)
+        if False: print('-'*80)
+        kvxls.writexls(excel_dict, fstarter+filenamexlsx, debug=False)
+        if False: print('-'*80)
+        excel_dict = kvxls.readxls_findheader( fstarter+filenamexlsx, req_cols, debug=False )
+        cell_color, cell_fill_type, cell_start_color, cell_end_color = kvxls.getExcelCellPatternFill(excel_dict, row, col_name, debug=False)
+        self.assertEqual(yellow_fill, cell_color)
+        self.assertEqual('solid', cell_fill_type)
+        kvutil.remove_filename(fstarter+filenamexlsx)
+    def test_setExcelCellPatternFill_p02_fill(self):
+        logger.debug('STARTUP')
+        start_color="00FF0000" # red
+        end_color="00FF0000" # red
+        fill_type = 'solid'
+        row = 2
+        fstarter = 'tst2-'
+        col_name = 'Date'
+        # create the fill object
+        red_fill = PatternFill(start_color=start_color, end_color=end_color, fill_type=fill_type)
+        excel_dict = kvxls.readxls_findheader( filenamexlsx, req_cols, debug=False )
+        excel_dict['keep_vba'] = False
+        kvxls.setExcelCellPatternFill(excel_dict, row, col_name, fill=red_fill, debug=False)
+        # print('-'*80)
+        kvxls.writexls(excel_dict, fstarter+filenamexlsx, debug=False)
+        # print('-'*80)
+        excel_dict = kvxls.readxls_findheader( fstarter+filenamexlsx, req_cols, debug=False )
+        cell_color, cell_fill_type, cell_start_color, cell_end_color = kvxls.getExcelCellPatternFill(excel_dict, row, col_name, debug=False)
+        self.assertEqual(start_color, cell_color)
+        self.assertEqual(fill_type, cell_fill_type)
+        self.assertEqual(cell_start_color.rgb, start_color)
+        self.assertEqual(cell_end_color.rgb, end_color)
+        if False:
+            print('-'*80)
+            print('cell_start_color:', cell_start_color)
+            print('cell_start_color.rgb:', cell_start_color.rgb)
+            print('cell_end_color:', cell_end_color)
+            print('-'*80)
+        else:
+            kvutil.remove_filename(fstarter+filenamexlsx)
+    def test_setExcelCellPatternFill_p03_start_end_color(self):
+        logger.debug('STARTUP')
+        start_color="00FF0000" # red
+        end_color="00FF0000" # red
+        yellow_fill = 'FFFFFF00'
+        fill_type = 'solid'
+        row = 2
+        fstarter = 'tst3-'
+        col_name = 'Date'
+        excel_dict = kvxls.readxls_findheader( filenamexlsx, req_cols, debug=False )
+        excel_dict['keep_vba'] = False
+        kvxls.setExcelCellPatternFill(excel_dict, row, col_name, start_color=start_color, end_color=end_color, debug=False)
+        #print('-'*80)
+        kvxls.writexls(excel_dict, fstarter+filenamexlsx, debug=False)
+        #print('-'*80)
+        excel_dict = kvxls.readxls_findheader( fstarter+filenamexlsx, req_cols, debug=False )
+        cell_color, cell_fill_type, cell_start_color, cell_end_color = kvxls.getExcelCellPatternFill(excel_dict, row, col_name, debug=False)
+        self.assertEqual(start_color, cell_color)
+        self.assertEqual(fill_type, cell_fill_type)
+        self.assertEqual(cell_start_color.rgb, start_color)
+        self.assertEqual(cell_end_color.rgb, end_color)
+        if False:
+            print('-'*80)
+            print('cell_start_color:', cell_start_color)
+            print('cell_start_color.rgb:', cell_start_color.rgb)
+            print('cell_end_color:', cell_end_color)
+            print('-'*80)
+        else:
+            kvutil.remove_filename(fstarter+filenamexlsx)
+
+
     ########################################
     # the function name: def copyExcelCellFmtOnRow(excel_dict_src, src_row, excel_dict_out, row, debug=False):
     # def test_copyExcelCellFmtOnRow_p01_pass(self):
@@ -130,7 +270,13 @@ class TestKVxls(unittest.TestCase):
     # def test_setExcelColumnValue_p01_pass(self):
     ########################################
     # the function name: def create_multi_key_lookup_excel(excel_dict, fldlist, copy_fields=None):
-    # def test_create_multi_key_lookup_excel_p01_pass(self):
+    def test_create_multi_key_lookup_excel_p01_pass(self):
+        logger.debug('STARTUP')
+        excel_dict = kvxls.readxls_findheader( filenamexlsx, req_cols, debug=False )
+        multi_key_dict = kvxls.create_multi_key_lookup_excel(excel_dict, ['Company', 'Wine', 'Vintage'])
+        self.assertTrue(multi_key_dict, records_multi_key)
+        
+            
     ########################################
     # the function name: def readxls2list(xlsfile, sheetname=None, save_row=False, debug=False, optiondict=None):
     def test_readxls2list_p01_xls_pass(self):
@@ -188,6 +334,7 @@ class TestKVxls(unittest.TestCase):
         self.assertEqual( list(results2[0].keys()), ['Company', 'Wine', 'Vintage_Wine', 'Vintage', 'Date', 'Type', 'LastSeen', 'XLSRow'])
         self.assertTrue( 'XLSRow' in results2[0].keys() )
         self.assertEqual( len(results2), len(records) )
+        kvutil.remove_filename( filenamexls3, kvutil.functionName() )
 
 
     ########################################
@@ -225,7 +372,10 @@ class TestKVxls(unittest.TestCase):
             't_kvxlstest-20250111v01.xls:Sheet1:02:006:Never:',
             't_kvxlstest-20250111v01.xls:Sheet1:02:007:3:'
         ]
-        self.assertEqual(result[:len(expected_result)], expected_result)
+        run_result=[]
+        for x in expected_result:
+           run_result.append( x.replace('t_kvxlstest-20250111v01.xls', filenamexls))
+        self.assertEqual(result[:len(run_result)], run_result)
 
     ### READXLS_FINDHEADER
     
@@ -940,7 +1090,7 @@ class TestKVxls(unittest.TestCase):
         # self.assertEqual(filename, filenamexlsx3)
         results = kvxls.readxls2list( filenamexlsx3 )
         self.assertEqual( records, results )
-        kvutil.remove_filename( filenamexlsx3 )
+        kvutil.remove_filename( filenamexls3, kvutil.functionName() )
     def test_writelist2xls_p02_xlsx_nodata_allow_empty(self):
         # no data
         logger.debug('STARTUP')
@@ -948,7 +1098,7 @@ class TestKVxls(unittest.TestCase):
         # self.assertEqual(filename, filenamexlsx3)
         results = kvxls.readxls2list( filenamexlsx3, optiondict={'allow_empty': True} )
         self.assertEqual( results, [] )
-        kvutil.remove_filename( filenamexlsx3 )
+        kvutil.remove_filename( filenamexls3, kvutil.functionName() )
     def test_writelist2xls_p03_xlsx_set_sheet(self):
         # list of dicts and set the sheet name created
         logger.debug('STARTUP')
@@ -957,7 +1107,7 @@ class TestKVxls(unittest.TestCase):
         # self.assertEqual(filename, filenamexlsx3)
         results = kvxls.readxls2list( filenamexlsx3, optiondict=optiondict )
         self.assertEqual( records, results )
-        kvutil.remove_filename( filenamexlsx3 )
+        kvutil.remove_filename( filenamexls3, kvutil.functionName() )
     def test_writelist2xls_p04_xlsx_set_and_limit_column_order(self):
         # list of dicts - set column order and limit columns
         logger.debug('STARTUP')
@@ -967,7 +1117,7 @@ class TestKVxls(unittest.TestCase):
         results = kvxls.readxls2list( filenamexlsx3 )
         match_records = [{x: v[x] for x in col_aref} for v in records]
         self.assertEqual( results, match_records )
-        kvutil.remove_filename( filenamexlsx3 )
+        kvutil.remove_filename( filenamexls3, kvutil.functionName() )
     def test_writelist2xls_p05_xlsx_list(self):
         # array of data and we pass in the header
         logger.debug('STARTUP')
@@ -976,7 +1126,7 @@ class TestKVxls(unittest.TestCase):
         # self.assertEqual(filename, filenamexlsx3)
         results = kvxls.readxls2list( filenamexlsx3 )
         self.assertEqual( records, results )
-        kvutil.remove_filename( filenamexlsx3 )
+        kvutil.remove_filename( filenamexls3, kvutil.functionName() )
     def test_writelist2xls_p06_xlsx_set_sheet_2sheets(self):
         # list of dicts and set the sheet name created
         logger.debug('STARTUP')
@@ -992,7 +1142,7 @@ class TestKVxls(unittest.TestCase):
         self.assertEqual( records, results )
         results = kvxls.readxls2list( filenamexlsx3, optiondict=optiondict2 )
         self.assertEqual( records, results )
-        kvutil.remove_filename( filenamexlsx3 )
+        kvutil.remove_filename( filenamexls3, kvutil.functionName() )
     def test_writelist2xls_p07_xlsx_aref_result(self):
         # array of data and we pass in the header
         logger.debug('STARTUP')
@@ -1002,7 +1152,7 @@ class TestKVxls(unittest.TestCase):
         # self.assertEqual(filename, filenamexlsx3)
         results = kvxls.readxls2list( filenamexlsx3, optiondict=optiondict )
         self.assertEqual( rec_array, results )
-        kvutil.remove_filename( filenamexlsx3 )
+        kvutil.remove_filename( filenamexls3, kvutil.functionName() )
     def test_writelist2xls_p08_xlsx_no_header(self):
         # array of data and we pass in the header
         logger.debug('STARTUP')
@@ -1013,7 +1163,7 @@ class TestKVxls(unittest.TestCase):
 #        results = kvxls.readxls2list( filenamexlsx3, optiondict=optiondict, col_aref=col_aref )
         results = kvxls.readxls2list_findheader( filenamexlsx3, [], optiondict=optiondict, col_aref=col_aref, debug=False )
         self.assertEqual( records, results )
-        kvutil.remove_filename( filenamexlsx3 )
+        kvutil.remove_filename( filenamexls3, kvutil.functionName() )
     def test_writelist2xls_p09_xlsx_start_row(self):
         # list of dicts
         logger.debug('STARTUP')
@@ -1026,7 +1176,7 @@ class TestKVxls(unittest.TestCase):
         self.assertEqual(results[0], [None, None, None, None, None, None, None])
         self.assertEqual(results[2], list(records[0].keys()))
         self.assertEqual(results[3], list(records[0].values()))
-        kvutil.remove_filename( filenamexlsx3 )
+        kvutil.remove_filename( filenamexls3, kvutil.functionName() )
 
     def test_writelist2xls_f01_xlsx_nodata_not_allow_empty(self):
         # no data
@@ -1035,7 +1185,7 @@ class TestKVxls(unittest.TestCase):
         # self.assertEqual(filename, filenamexlsx3)
         with self.assertRaises(Exception) as context:
             results = kvxls.readxls2list( filenamexlsx3 )
-        kvutil.remove_filename( filenamexlsx3 )
+        kvutil.remove_filename( filenamexls3, kvutil.functionName() )
 
     # the function name: def writexls(excel_dict, xlsfile, xlsm=False, debug=False):
     # def test_writexls_p01_pass(self):

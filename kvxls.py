@@ -1,7 +1,7 @@
 '''
 @author:   Ken Venner
 @contact:  ken@venerllc.com
-@version:  1.28
+@version:  1.29
 
 Library of tools used to process XLS/XLSX files
 '''
@@ -24,7 +24,7 @@ import logging
 logger = logging.getLogger(__name__)
 
 # global variables
-AppVersion = '1.28'
+AppVersion = '1.29'
 
 # ----- OPTIONS ---------------------------------------
 # debug
@@ -103,6 +103,13 @@ def _extract_excel_row_into_list(xlsxfiletype, s, row, colstart, colmax, debug=F
 
 # routine to get a cell
 def getExcelCellValue(excel_dict, row, col_name, debug=False):
+    '''
+    row - integer
+    col_name - name of the column of interest
+
+    return:
+    value of the row, col_name
+    '''
     if debug:
         print('getExcelCellValue:excel_dict:', excel_dict)
         print('getExcelCellValue:row:', row)
@@ -116,13 +123,20 @@ def getExcelCellValue(excel_dict, row, col_name, debug=False):
 
     # get cell value
     if excel_dict['xlsxfiletype']:
-        return excel_dict['s'].cell(row=row + 1, column=col + 1).value
+        return excel_dict['s'].cell(row=row + 1 + excel_dict['row_header'], column=col + 1).value
     else:
         return excel_dict['s'].cell(row, col).value
 
 
 # routine to set a cell value
 def setExcelCellValue(excel_dict, row, col_name, value, debug=False):
+    '''
+    row - integer
+    col_name - name of the column of interest
+
+    return:
+    value of the row, col_name
+    '''
     if debug:
         print('setExcelCellValue:excel_dict:', excel_dict)
         print('setExcelCellValue:row:', row)
@@ -136,7 +150,7 @@ def setExcelCellValue(excel_dict, row, col_name, value, debug=False):
 
     # get cell value
     if excel_dict['xlsxfiletype']:
-        excel_dict['s'].cell(row=row + 1, column=col + 1, value=value)
+        excel_dict['s'].cell(row=row + 1 + excel_dict['row_header'], column=col + 1, value=value)
     else:
         logger.error('feature not supported on xls file - only XLSX')
         print('kvxls:setExcelCellValue:feature not supported on xls file - only XLSX')
@@ -145,6 +159,17 @@ def setExcelCellValue(excel_dict, row, col_name, value, debug=False):
 
 # routine to get a cell fill pattern - returns the (rgb, solid) values
 def getExcelCellPatternFill(excel_dict, row, col_name, debug=False):
+    '''
+    row - integer
+    col_name - name of the column of interest
+
+    return:
+    cell_color
+    cell_fill_type
+    cell_start_oclor
+    cell_end_color
+
+    '''
     if debug:
         print('setExcelCellPatternFill:excel_dict:', excel_dict)
         print('setExcelCellPatternFill:row:', row)
@@ -174,7 +199,9 @@ def getExcelCellPatternFill(excel_dict, row, col_name, debug=False):
         cell_fill = excel_dict['s'].cell(row=row + 1, column=col + 1).fill
         # debugging
         if debug:
-            print('start:', cell_fill.start_color, 'end:', cell_fill.end_color, 'color:', cell_fill.fgColor.rgb)
+            print('setExcelCellPatternFill:start:', cell_fill.start_color,
+                  'setExcelCellPatternFill:end:', cell_fill.end_color,
+                  'setExcelCellPatternFill:fgColor.rgb:', cell_fill.fgColor.rgb)
         # return cell_fill
         return cell_fill.fgColor.rgb, cell_fill.fill_type, cell_fill.start_color, cell_fill.end_color
     else:
@@ -185,14 +212,36 @@ def getExcelCellPatternFill(excel_dict, row, col_name, debug=False):
 
 # routine to set a cell fill pattern
 def setExcelCellPatternFill(excel_dict, row, col_name, fill=None, start_color=None, end_color=None, fg_color=None, fill_type="solid", debug=False):
+    '''
+    excel_dict
+    row - the row in the data
+    col_name - the name of the column we are setting
+    fill - PatternFill object
+    start_color - Specify the color of the fill using hex color codes.
+    end_color - Specify the color of the fill using hex color codes.
+    fg_color
+    fill_type - Specify the type of fill. Common types include:
+        solid: Solid color fill.
+        gray125: Light gray fill.
+        lightDown: Light diagonal stripes.
+        lightUp: Light diagonal stripes in the opposite direction.
+        darkDown: Dark diagonal stripes.
+        darkUp: Dark diagonal stripes in the opposite direction.
+    '''
+    
     if debug:
         print('setExcelCellPatternFill:excel_dict:', excel_dict)
         print('setExcelCellPatternFill:row:', row)
         print('setExcelCellPatternFill:col_name:', col_name)
+        print('setExcelCellPatternFill:fill-type:', type(fill))
     logger.debug('excel_dict:%s', excel_dict)
     logger.debug('row:%s', row)
     logger.debug('col_name:%s', col_name)
 
+    # make sure fill is set properly
+    if fill is not None and type(fill) != openpyxl.styles.fills.PatternFill:
+        raise TypeError('fill must be PatternFile type but is: ' + str(type(fill)))
+    
     # determine the col # we are using but doing a header lookup
     col = excel_dict['header'].index(col_name) + excel_dict['sheetmincol']
 
@@ -203,7 +252,8 @@ def setExcelCellPatternFill(excel_dict, row, col_name, fill=None, start_color=No
                                                                                                  start_color=start_color,
                                                                                                  end_color=end_color)
         elif fill:
-            excel_dict['s'].cell(row=row + 1, column=col + 1).fill = copy(fill)
+            # passed in the fill type object - set it
+            excel_dict['s'].cell(row=row + 1, column=col + 1).fill = fill
         elif not fill_type:
             excel_dict['s'].cell(row=row + 1, column=col + 1).fill = openpyxl.styles.PatternFill(fill_type=None)
         else:
@@ -1631,9 +1681,15 @@ def writexls(excel_dict, xlsfile, xlsm=False, debug=False):
 
     # change the file extention to xlsm if flag is set
     if xlsm or excel_dict['keep_vba']:
+        if debug:
+            print('Changing filename from: ', xlsfile)
         filename, file_ext = os.path.splitext(xlsfile)
         xlsfile = filename + '.xlsm'
 
+    # debugging
+    if debug:
+        print('Saving to: ', xlsfile)
+        
     # get the workbook
     wb = excel_dict['wb']
 
