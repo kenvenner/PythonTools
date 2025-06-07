@@ -8,6 +8,11 @@
 
     out_fname_append - enables the generation of the out_fname based in teh dst_fname and append a string.
 
+    rmv_fname
+
+    rmv_fname_append
+    rmv_fname_uniqtype
+
     src_reqcols - the list of column headers that we must find in order to find the header row - when not populated the first row is header
     dst_reqcols - the list of column headers that we must find in order to find the header row - when not populated the first row is header
 
@@ -29,7 +34,7 @@
 
 @author:   Ken Venner
 @contact:  ken.venner@sierrspace.com
-@version:  1.10
+@version:  1.13
 
     Created:   2024-05-20;kv
     Version:   2024-09-19;kv - more checks and additional features (like json_cfg_filename)
@@ -49,8 +54,8 @@ import os
 
 # ----------------------------------------
 
-AppVersion = '1.10'
-__version__ = '1.10'
+AppVersion = '1.13'
+__version__ = '1.13'
 
 
 # ----------------------------------------
@@ -60,7 +65,7 @@ __version__ = '1.10'
 
 optiondictconfig = {
     'AppVersion' : {
-        'value': '1.10',
+        'value': '1.13',
     },
     
     'debug' : {
@@ -82,16 +87,21 @@ optiondictconfig = {
         'type' : 'dir',
         'description': 'path to the location where the output file is placed',
     },
+    'rmv_dir' : {
+        'value' : None,
+        'type' : 'dir',
+        'description': 'path to the location where the removed records output file is placed',
+    },
     'src_fname' : {
-        'value' : "2024-04-23-PO-IT-Cleanup-v02.xlsx",
+        'value' : "",
         'description':  'filename of the file with the data to copy from',
     },
     'dst_fname' : {
-        'value' : "2024-05-04-PO-IT-Cleanup.xlsx",
+        'value' : "",
         'description':  'filename of the file with the data to copy into',
     },
     'out_fname' : {
-        'value' : "2024-05-04-PO-IT-Cleanup-v02.xlsx",
+        'value' : "",
         'description':  'filename of the output file',
     },
     'rmv_fname' : {
@@ -114,6 +124,21 @@ optiondictconfig = {
         'value' : None,
         'description':  'list of columns used to find the header - when none - first row is the header',
     },
+    'ignore_missing_src' : {
+        'value' : False,
+        'type': 'bool',
+        'description':  'when true if src file does not exist - exit quietly do not error out',
+    },
+    'ignore_missing_dst' : {
+        'value' : False,
+        'type': 'bool',
+        'description':  'when true if dst file does not exist - exit quietly do not error out',
+    },
+    'update_cnt' : {
+        'value' : False,
+        'type': 'bool',
+        'description':  'when true report on the number of records where an update took place',
+    },
     'dst_reqcols' : {
         'value' : None,
         'description':  'list of columns used to find the header - when none - first row is the header',
@@ -125,6 +150,10 @@ optiondictconfig = {
     'rmv_fname_append' : {
         'value' : "",
         'description':  'string to append to the dst_fname to create teh rmv_fname',
+    },
+    'rmv_fname_uniqtype' : {
+        'value' : "",
+        'description':  'unique filename code if you want a unique fname generated',
     },
     'json_cfg_filename' : {
         'value' : False,
@@ -261,13 +290,18 @@ if optiondict['json_cfg_filename']:
     sys.exit()
 
 # default fields that were not set
+if optiondict['out_dir'] and not optiondict['rmv_dir']:
+    optiondict['rmv_dir'] = optiondict['out_dir']
+    
 # set directories to match teh src_dir if not set
-for fld in ('dst_dir', 'out_dir'):
+for fld in ('dst_dir', 'out_dir', 'rmv_dir'):
     if not optiondict[fld]:
         optiondict[fld] = optiondict['src_dir']
 
 # make sure each directory ends with '/'
-for fld in ('src_dir', 'dst_dir', 'out_dir'):
+for fld in ('src_dir', 'dst_dir', 'out_dir', 'rmv_dir'):
+    if optiondict[fld][-1] == '\\':
+        optiondict[fld] = optiondict[fld][-1] + '/'
     if optiondict[fld][-1] != '/':
         optiondict[fld] += '/'
 
@@ -288,7 +322,17 @@ if optiondict['rmv_fname_append']:
     # build the new filename
     optiondict['rmv_fname'] = fname + optiondict['rmv_fname_append'] + fext
 
+# generate a unique remove filename
+if optiondict['rmv_fname_uniqtype']:
+    file_href = {
+        'file_path': optiondict['rmv_dir'],
+        'filename': os.path.join(optiondict['rmv_dir'], optiondict['rmv_fname']),
+        'uniqtype': optiondict['rmv_fname_uniqtype'],
+        'forceuniq': True,
+    }
+    optiondict['rmv_fname'] = os.path.basename(kvutil.filename_unique(filename_href=file_href, debug=False))
 
+    
 # validate the structure is correct if we are copying internally
 if optiondict['internal_copy_fields']:
     # if we have a dict - it shoudl have been a list - convert to a list with one dict entry
@@ -312,6 +356,17 @@ if optiondict['internal_copy_fields']:
 #pprint.pprint(optiondict)
 #sys.exit()
 
+# check for file existenace
+if optiondict['ignore_missing_src']:
+    # check for existence of the src file
+    if not os.path.exists(os.path.join(optiondict['src_dir'], optiondict['src_fname'])):
+        print('SRC File does not exist - moving along: '+os.path.join(optiondict['src_dir'], optiondict['src_fname']))
+        sys.exit()
+if optiondict['ignore_missing_dst']:
+    # check for existence of the dst file
+    if not os.path.exists(os.path.join(optiondict['dst_dir'], optiondict['dst_fname'])):
+        print('DST File does not exist - moving along: '+os.path.join(optiondict['dst_dir'], optiondict['dst_fname']))
+        sys.exit()
 
 #### Load the files
 if optiondict['src_reqcols']:
@@ -403,7 +458,10 @@ else:
 src_lookup = kvutil.create_multi_key_lookup(src_data, optiondict['key_fields'])
     
 # now step through the dst data and copy over matching data
-matched_recs = kvutil.copy_matched_data(dst_data, src_lookup, optiondict['key_fields'], optiondict['copy_fields'])
+if optiondict['update_cnt']:
+    matched_recs, updated_recs = kvutil.copy_matched_data_cnt(dst_data, src_lookup, optiondict['key_fields'], optiondict['copy_fields'])
+else:    
+    matched_recs = kvutil.copy_matched_data(dst_data, src_lookup, optiondict['key_fields'], optiondict['copy_fields'])
 
 # now copy over fields interest witin the output file
 if optiondict['internal_copy_fields']:
@@ -430,11 +488,14 @@ print('source recs.....: ', len(src_data))
 print('src set2default.: ', default_recs)
 print('new recs........: ', len(dst_data))
 print('matched_recs....: ', matched_recs)
+if optiondict['update_cnt']:
+    print('updated_recs....: ', updated_recs)
 if optiondict['rmv_fname']:
      print('removed recs....: ', len(rmv_data))
 
 # output what we came up with
-kvxls.writelist2xls(optiondict['out_dir'] + optiondict['out_fname'], dst_data)
+if optiondict['out_fname']:
+    kvxls.writelist2xls(optiondict['out_dir'] + optiondict['out_fname'], dst_data)
 
 # output what we came up with
 if optiondict['rmv_fname'] and rmv_data:
@@ -518,8 +579,9 @@ if optiondict['src_ws']:
 print('new data file...: ', optiondict['dst_dir'] + optiondict['dst_fname'])
 if optiondict['dst_ws']:
     print('new data ws.....: ', optiondict['dst_ws'])
-print('generated file..: ', optiondict['out_dir'] + optiondict['out_fname'])
+if optiondict['out_fname']:
+    print('generated file..: ', optiondict['out_dir'] + optiondict['out_fname'])
 if optiondict['rmv_fname'] and rmv_data:
-    print('generated file..: ', optiondict['out_dir'] + optiondict['rmv_fname'])
+    print('generated file..: ', optiondict['rmv_dir'] + optiondict['rmv_fname'])
     
 #eof

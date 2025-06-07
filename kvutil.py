@@ -3,7 +3,7 @@ from __future__ import print_function
 '''
 @author:   Ken Venner
 @contact:  ken@venerllc.com
-@version:  1.80
+@version:  1.83
 
 Library of tools used in general by KV
 '''
@@ -33,8 +33,8 @@ import logging
 logger = logging.getLogger(__name__)
 
 # set the module version number
-AppVersion = '1.80'
-__version__ = '1.80'
+AppVersion = '1.83'
+__version__ = '1.83'
 HELP_KEYS = ('help', 'helpall',)
 HELP_VALUE_TABLE = ('tbl', 'table', 'helptbl', 'fmt',)
 
@@ -552,8 +552,6 @@ def kv_parse_command_line_display(optiondictconfig, defaultoptions=None, optiond
 #
 def remove_filename(filename, calledfrom='', debug=False, maxretry=20):
     logger.debug('Remove:%s:calledfrom:%s:maxretry:%d', filename, calledfrom, maxretry)
-    if debug:
-        print('removed_filename:calledfrom:', calledfrom, ':filename:', filename, ':exists:', os.path.exists(filename))
     cnt = 0
     if calledfrom:  calledfrom += ':'
     while os.path.exists(filename):
@@ -804,6 +802,17 @@ def filename_proper(filename_full, file_dir=None, create_dir=False, write_check=
 def filename_remove(filename, calledfrom='', debug=False, maxretry=20):
     return remove_filename(filename, calledfrom='', debug=False, maxretry=20)
     
+# copy a filename to a new filename
+def filename_copy(src_filename, dst_filename):
+    # Check the operating system and use the respective command
+    if os.name == 'nt':  # Windows
+        cmd = f'copy "{src_filename}" "{dst_filename}"'
+    else:  # Unix/Linux
+        cmd = f'cp "{src_filename}" "{dst_filename}"'
+        
+    # Copy File
+    os.system(cmd)
+    
 # create a unique filename
 def filename_unique(filename=None, filename_href=None, debug=False):
     if filename_href is None:
@@ -928,8 +937,9 @@ def filename_unique(filename=None, filename_href=None, debug=False):
         filename = default_options['filename']
 
     # debugging
-    # print('file_unique:filename:', filename)
-    # print('file_unique:default_options:', default_options)
+    if debug:
+        print('file_unique:filename:', filename)
+        print('file_unique:default_options:', default_options)
 
     # take action if we are not going to overwrite the filename
     if not default_options['overwrite']:
@@ -1352,10 +1362,12 @@ def create_multi_key_lookup_excel(excel_dict, fldlist, copy_fields=None):
     return src_lookup
 
 
-def copy_matched_data(dst_data, src_lookup, key_fields, copy_fields):
+def copy_matched_data_cnt(dst_data, src_lookup, key_fields, copy_fields):
     '''
     copy into dst_data from src_lookup, copy_fields when there is a match
     on key_fields
+
+    provide the ability to return the number of records that were actual updated
     '''
     # make sure we passed in a list
     if type(key_fields) is not list:
@@ -1382,6 +1394,7 @@ def copy_matched_data(dst_data, src_lookup, key_fields, copy_fields):
     #
     # capture the count of matched records
     matched_recs = 0
+    updated_recs = 0
     # step through the dst_data
     for rec in dst_data:
         # cpature if we have a match
@@ -1404,9 +1417,25 @@ def copy_matched_data(dst_data, src_lookup, key_fields, copy_fields):
         matched_recs += 1
         # we did match so copy over the fields
         # ptr should point at the record of interest from src_lookup
+        cols_updated = 0
         for cfld in copy_fields:
+            if ptr[cfld] != rec[cfld]:
+                # this column is populated and thus causing an update
+                cols_updated += 1
             rec[cfld] = ptr[cfld]
+        # now increment updated count
+        if cols_updated:
+            updated_recs += 1
     # return the number of records that matched
+    return matched_recs, updated_recs
+
+def copy_matched_data(dst_data, src_lookup, key_fields, copy_fields):
+    '''
+    copy into dst_data from src_lookup, copy_fields when there is a match
+    on key_fields
+    '''
+    matched_recs, updated_recs = copy_matched_data_cnt(dst_data, src_lookup, key_fields, copy_fields)
+
     return matched_recs
 
 

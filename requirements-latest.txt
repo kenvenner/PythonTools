@@ -1,4 +1,3 @@
-attrdict3
 html2text
 importlib-metadata
 ipaddress

@@ -3,7 +3,7 @@ from __future__ import print_function
 '''
 @author:   Ken Venner
 @contact:  ken@venerllc.com
-@version:  1.03
+@version:  1.05
 
 Library of tools for date time processing used in general by KV
 
@@ -24,8 +24,8 @@ import logging
 logger = logging.getLogger(__name__)
 
 # set the module version number
-AppVersion = '1.03'
-__version__ = '1.03'
+AppVersion = '1.05'
+__version__ = '1.05'
 
 
 def current_timezone_string():
@@ -89,13 +89,16 @@ def datetime_from_str(value, skipblank=False):
     if skipblank and not value:
         return value
 
+    # if we passed in datetime we are done already
+    if type(value) == datetime.datetime:
+        return value
+    
     orig_value = value
     
     # strip the Z on the end before processing
     if value[-1].upper() == 'Z':
         value = value[:-1]
 
-    # debugging
     # print('value:', value)
 
     for (redate, datefmt) in datefmts:
@@ -124,6 +127,8 @@ def datetime_from_str(value, skipblank=False):
 #     YYYY-MM-DD HH:MM:SS.mmmm[+-]HH:HH
 #     YYYY-MM-DDTHH:MM:SS.mmmm[+-]HH:HH
 #
+#     2025-02-03T21:37:55Z
+#
 def datetimezone_from_str(value, skipblank=False):
     import re
     datefmtscleanup = (
@@ -134,10 +139,14 @@ def datetimezone_from_str(value, skipblank=False):
         (re.compile(r'\d{4}-\d{1,2}-\d{1,2} \d{1,2}:\d{1,2}:\d{1,2}\.\d+[+-]\d{4}$'), '%Y-%m-%d %H:%M:%S.%f%z'),
         (re.compile(r'\d{4}-\d{1,2}-\d{1,2}T\d{1,2}:\d{1,2}:\d{1,2}[+-]\d{4}$'), '%Y-%m-%dT%H:%M:%S%z'),
         (re.compile(r'\d{4}-\d{1,2}-\d{1,2} \d{1,2}:\d{1,2}:\d{1,2}[+-]\d{4}$'), '%Y-%m-%d %H:%M:%S%z'),
+        (re.compile(r'\d{4}-\d{1,2}-\d{1,2}T\d{1,2}:\d{1,2}:\d{1,2}Z$'), '%Y-%m-%dT%H:%M:%SZ'),
     )
 
     if skipblank and not value:
         return value
+
+    # trim the value to remove white space
+    value = value.strip()
 
     # see if we need to change the format of the data we got in
     for (redate, action) in datefmtscleanup:

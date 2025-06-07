@@ -1,7 +1,7 @@
 '''
 @author:   Ken Venner
 @contact:  ken.venner@hermeus.com
-@version:  1.06
+@version:  1.09
 
 This library provides tools used when interacting with sharepoint sites and local synch links to sharepoint sites
 
@@ -16,7 +16,7 @@ import kvcsv
 
 
 # global variables
-AppVersion = '1.06'
+AppVersion = '1.09'
 
 
 # LOCAL FUNCTIONS/HELPERS
@@ -132,7 +132,7 @@ def save_and_log_dbms_extract(excel_file_path, result, starttime, now, log_file_
         fp.write(f'{excel_file_path},{now.isoformat()},{len(result.index)},{(endtime-starttime)/60}\n')
 
 
-def save_and_log_exception_rpt(excel_file_path, result, starttime, now, log_file_path, log_filename=None):
+def save_and_log_exception_rpt(excel_file_path, result, starttime, now, log_file_path, log_filename=None, flds=None):
     '''
     Create the screen output and log file update for the dbms extract
 
@@ -142,6 +142,7 @@ def save_and_log_exception_rpt(excel_file_path, result, starttime, now, log_file
     now - datetime.datetime.now() at start of execution
     log_file_path - the path to where the log of run times is stored
     log_filename - name of hte log filename that houses the results
+    flds - list of fields to output to xlsx (if set)
     
     '''
 
@@ -165,7 +166,8 @@ def save_and_log_exception_rpt(excel_file_path, result, starttime, now, log_file
     
     # Write the DataFrame to an Excel file
     if result:
-        kvxls.writelist2xls(excel_file_path, result)
+        # print(flds)
+        kvxls.writelist2xls(excel_file_path, result, flds)
         print('Record count: ', len(result))
         print("Created file:  ", excel_file_path)
     else:
@@ -215,5 +217,16 @@ def save_lot_serial_csv_exception_rpt(excel_file_path, result, lotfield='islotit
         kvutil.remove_filename(serial_fname)
         
 
+def set_master_dir_strings():
+    
+    master_download_dir = '/Users/KenVenner/Downloads/'
+    master_dir = sp_synched_dir_path("/NetSuite Implementation - Documents/Master Mapping Files/")
+    master_output_dir = sp_synched_dir_path("/NetSuite Implementation - Documents/Master Mapping Files/output/static/")
+    master_static_dir = sp_synched_dir_path("/NetSuite Implementation - Documents/Master Mapping Files/output/static/")
+    master_mnfro_dir = sp_synched_dir_path("/NetSuite Implementation - Documents/Master Mapping Files/Manufacturo DataSets/")
+    master_ns_dir = sp_synched_dir_path("/NetSuite Implementation - Documents/Master Mapping Files/NetSuite DataSets/")
+    master_error_dir = sp_synched_dir_path("/NetSuite Implementation - Documents/Master Mapping Files/error/")
+
+    return master_download_dir, master_dir, master_output_dir, master_static_dir, master_mnfro_dir, master_ns_dir, master_error_dir
 
 #eof
