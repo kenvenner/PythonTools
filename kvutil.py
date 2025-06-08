@@ -3,7 +3,7 @@ from __future__ import print_function
 '''
 @author:   Ken Venner
 @contact:  ken@venerllc.com
-@version:  1.84
+@version:  1.85
 
 Library of tools used in general by KV
 '''
@@ -33,8 +33,8 @@ import logging
 logger = logging.getLogger(__name__)
 
 # set the module version number
-AppVersion = '1.84'
-__version__ = '1.84'
+AppVersion = '1.85'
+__version__ = '1.85'
 HELP_KEYS = ('help', 'helpall',)
 HELP_VALUE_TABLE = ('tbl', 'table', 'helptbl', 'fmt',)
 
@@ -1419,7 +1419,11 @@ def copy_matched_data_cnt(dst_data, src_lookup, key_fields, copy_fields):
         # ptr should point at the record of interest from src_lookup
         cols_updated = 0
         for cfld in copy_fields:
-            if ptr[cfld] != rec[cfld]:
+            if not ptr[cfld] and not rec[cfld]:
+                # if both fields are not populated we don't count this as a change
+                # so we don't count space replace None
+                pass
+            elif ptr[cfld] != rec[cfld]:
                 # this column is populated and thus causing an update
                 cols_updated += 1
             rec[cfld] = ptr[cfld]

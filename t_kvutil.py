@@ -1021,7 +1021,7 @@ class TestKVUtilFilenames(unittest.TestCase):
         self.assertEqual(matched_cnt, 2)
         self.assertEqual(updated_cnt, 1)
         self.assertEqual(dst_data, result)
-    
+
     def test_copy_matched_data_cnt_p03_2keys_1matches_col3diff(self):
         dst_data = [
             {'col1': 'val1',  'col2': 'val2',  'col3': 'val3',  'col4': 'val4'},
@@ -1042,6 +1042,32 @@ class TestKVUtilFilenames(unittest.TestCase):
         result = [
             {'col1': 'val1',  'col2': 'val2',  'col3': 'val3',  'col4': 'val44'},
             {'col1': 'val11', 'col2': 'val12', 'col3': 'val13', 'col4': 'val14'}
+        ]
+        matched_cnt, updated_cnt = kvutil.copy_matched_data_cnt(dst_data, src_lookup, key_fields, copy_fields)
+        self.assertEqual(matched_cnt, 2)
+        self.assertEqual(updated_cnt, 1)
+        self.assertEqual(dst_data, result)
+        
+    def test_copy_matched_data_cnt_p04_2keys_1matches_col3diff_none_space(self):
+        dst_data = [
+            {'col1': 'val1',  'col2': 'val2',  'col3': 'val3',  'col4': 'val4'},
+            {'col1': 'val11', 'col2': 'val12', 'col3': 'val13', 'col4': None}
+        ]
+        key_fields = ['col1', 'col2']
+        copy_fields = ['col4']
+        src_lookup =  {
+            'val1': {'val2': {'col1': 'val1',
+                              'col2': 'val2',
+                              'col3': 'val3',
+                              'col4': 'val44'}},
+            'val11': {'val12': {'col1': 'val11',
+                                'col2': 'val12',
+                                'col3': '',
+                                'col4': ''}}
+        }
+        result = [
+            {'col1': 'val1',  'col2': 'val2',  'col3': 'val3',  'col4': 'val44'},
+            {'col1': 'val11', 'col2': 'val12', 'col3': 'val13', 'col4': ''}
         ]
         matched_cnt, updated_cnt = kvutil.copy_matched_data_cnt(dst_data, src_lookup, key_fields, copy_fields)
         self.assertEqual(matched_cnt, 2)
