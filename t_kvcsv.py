@@ -131,6 +131,12 @@ class TestKVCsv(unittest.TestCase):
         kvcsv.writelist2csv( filename, records, header=False )
         kvcsv.writelist2csv( filename, records, header=False, mode='a' )
         self.assertTrue( os.path.exists(filename), 'Did not create filename:' + filename )
+    def test_writelist2csv_p10_set_output_cols(self):
+        col_aref=['Wine', 'Company', 'Vintage']
+        kvcsv.writelist2csv( filename, records, col_aref=col_aref, debug=False )
+        results = kvcsv.readcsv2list( filename )
+        match_records = [{x: v[x] for x in col_aref} for v in records]
+        self.assertEqual( results, match_records )
 
 
     def test_writedict2csv_p01_simple(self):
