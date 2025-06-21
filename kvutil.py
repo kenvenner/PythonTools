@@ -571,6 +571,7 @@ def remove_filename(filename, calledfrom='', debug=False, maxretry=20):
                 if debug: print(calledfrom, filename, ':raise error - exceed maxretry attempts:', maxretry)
                 logger.error('%s:%s:exceeded maxretry attempts:%d:raise error', calledfrom, filename, maxretry)
                 raise e
+            time.sleep(1)
         except WinError as f:
             if debug: print('Catch WinError:', str(f))
             logger.warning('Catch WinError:%s', str(f))
@@ -1419,14 +1420,16 @@ def copy_matched_data_cnt(dst_data, src_lookup, key_fields, copy_fields):
         # ptr should point at the record of interest from src_lookup
         cols_updated = 0
         for cfld in copy_fields:
-            if not ptr[cfld] and not rec[cfld]:
-                # if both fields are not populated we don't count this as a change
-                # so we don't count space replace None
-                pass
-            elif ptr[cfld] != rec[cfld]:
+            # they are not the same one one or both are populated
+            if ptr[cfld] != rec[cfld] and (ptr[cfld] or rec[cfld]):
                 # this column is populated and thus causing an update
                 cols_updated += 1
+                # debubging
+                # print('updt', cfld, rec[cfld], ptr[cfld])
+            # copy over the value from the src to the dst
             rec[cfld] = ptr[cfld]
+            # debugging
+            # print('chg.', cfld, rec[cfld], ptr[cfld])
         # now increment updated count
         if cols_updated:
             updated_recs += 1

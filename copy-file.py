@@ -1,4 +1,4 @@
-__version__ = '1.07'
+__version__ = '1.08'
 
 import argparse
 import sys
@@ -117,7 +117,7 @@ if __name__ == '__main__':
                         help="run winmerge diff rather than copy when timestamps are different")    
     parser.add_argument('--no_diff_chk', action="store_true", default=False,
                         help="Disable when timestamps are different run diff to see if they are the same")
-    parser.add_argument("--wmcmd", '-w', default='"C:\Program Files\WinMerge\WinMergeU.exe"',
+    parser.add_argument("--wmcmd", '-w', default='"C:\\Program Files\\WinMerge\\WinMergeU.exe"',
                         help="the format string used to generate the command to execute winmerge diff")
     parser.add_argument('-v', '--version', action='version', version='%(prog)s ' + __version__)
 

@@ -4,7 +4,7 @@ import datetime
 import os
 import re
 
-__version__ = '1.06'
+__version__ = '1.07'
 
 datestr = '2018-10-18'
 dateval = datetime.datetime.strptime(datestr, '%Y-%m-%d')
@@ -19,9 +19,9 @@ cntstr  = 'CNT00010'
 class TestKVJpg(unittest.TestCase):
 
     def test_parse_optiondict_timedelta_p01_simple(self):
-        self.assertEqual( kvjpg.parse_optiondict_timedelta( 'IMG_(\d+).JPG:-1800:3450:3470' ), (re.compile('IMG_(\d+).JPG'),-1800,range(3450,3470)))
+        self.assertEqual( kvjpg.parse_optiondict_timedelta( r'IMG_(\d+).JPG:-1800:3450:3470' ), (re.compile(r'IMG_(\d+).JPG'),-1800,range(3450,3470)))
     def test_parse_optiondict_timedelta_p02_single_value(self):
-        self.assertEqual( kvjpg.parse_optiondict_timedelta( 'IMG_(\d+).JPG:-1800:3450' ), (re.compile('IMG_(\d+).JPG'),-1800,3450))
+        self.assertEqual( kvjpg.parse_optiondict_timedelta( r'IMG_(\d+).JPG:-1800:3450' ), (re.compile(r'IMG_(\d+).JPG'),-1800,3450))
         
     def test_parse_date_from_filename_p01_simple_with_date(self):
         self.assertEqual( kvjpg.parse_date_from_filename( datestr + '-Ken.jpg'), dateval)
@@ -53,20 +53,20 @@ class TestKVJpg(unittest.TestCase):
 
     def test_datetime_offset_for_matching_filename_p01_match_exact(self):
         filerow = [datetime.datetime(2018, 10, 15, 11, 29, 51, 560672),'IMG_3466.JPG']
-        kvjpg.datetime_offset_for_matching_filename( filerow, re.compile('IMG_(\d+).JPG'), datetime.timedelta(seconds=-30*60), 3466)
+        kvjpg.datetime_offset_for_matching_filename( filerow, re.compile(r'IMG_(\d+).JPG'), datetime.timedelta(seconds=-30*60), 3466)
         self.assertEqual( filerow[0], datetime.datetime(2018, 10, 15, 10, 59, 51, 560672) )
     def test_datetime_offset_for_matching_filename_p02_match_range(self):
         filerow = [datetime.datetime(2018, 10, 15, 11, 29, 51, 560672),'IMG_3466.JPG']
-        kvjpg.datetime_offset_for_matching_filename( filerow, re.compile('IMG_(\d+).JPG'), datetime.timedelta(seconds=-30*60), range(3450,3470))
+        kvjpg.datetime_offset_for_matching_filename( filerow, re.compile(r'IMG_(\d+).JPG'), datetime.timedelta(seconds=-30*60), range(3450,3470))
         self.assertEqual( filerow[0], datetime.datetime(2018, 10, 15, 10, 59, 51, 560672) )
     def test_datetime_offset_for_matching_filename_p03_nomatch(self):
         filerow = [datetime.datetime(2018, 10, 15, 11, 29, 51, 560672),'IMG_3466.JPG']
-        kvjpg.datetime_offset_for_matching_filename( filerow, re.compile('IMG_4\d\d\d.JPG'), datetime.timedelta(seconds=-30*60), 4000)
+        kvjpg.datetime_offset_for_matching_filename( filerow, re.compile(r'IMG_4\d\d\d.JPG'), datetime.timedelta(seconds=-30*60), 4000)
         self.assertEqual( filerow[0], datetime.datetime(2018, 10, 15, 11, 29, 51, 560672) )
     def test_datetime_offset_for_matching_filename_f01_match_exact_no_group(self):
         with self.assertRaises(Exception) as context:
             filerow = [datetime.datetime(2018, 10, 15, 11, 29, 51, 560672),'IMG_3466.JPG']
-            kvjpg.datetime_offset_for_matching_filename( filerow, re.compile('IMG_\d+.JPG'), datetime.timedelta(seconds=-30*60), 3466)
+            kvjpg.datetime_offset_for_matching_filename( filerow, re.compile(r'IMG_\d+.JPG'), datetime.timedelta(seconds=-30*60), 3466)
 
     #def test_display_exif_attributes_p01_simple(self):
         #self.assertIsNone( kvjpg.display_exif_attributes("IMG_2666.JPG") )
