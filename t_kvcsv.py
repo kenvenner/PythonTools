@@ -9,6 +9,8 @@ import time
 import copy
 import os
 
+import sys
+
 
 # logging
 import kvlogger
@@ -192,6 +194,16 @@ class TestKVCsv(unittest.TestCase):
         kvcsv.writedict2csv( filename, dictrecords, header=False )
         kvcsv.writedict2csv( filename, dictrecords, header=False, mode='a' )
         self.assertTrue( os.path.exists(filename), 'Did not create filename:' + filename )
+    def test_writedict2csv_p10_set_output_cols(self):
+        col_aref=['Wine', 'Company', 'Vintage']
+        tempdict = copy.deepcopy(dictrecords)
+        key1 = list(tempdict.keys())[0]
+        key1='RecID'
+        col_aref.append(key1)
+        kvcsv.writedict2csv( filename, tempdict, col_aref=col_aref, debug=False )
+        results = kvcsv.readcsv2dict( filename, key1 )
+        match_records = {k: {x: v[x] for x in col_aref} for k, v in results.items()}
+        self.assertEqual( results, match_records )
 
 
     def test_readcsv2list_with_header_p01_simple(self):
