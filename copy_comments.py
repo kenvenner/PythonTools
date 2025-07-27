@@ -6,12 +6,23 @@
     dst_dir/dst_fname - the NEW file that we read in and apply teh src_data to
     out_dir/out_fname - the output file generated after we apply src_data to dst_fname.
 
+    src_fname_glob/src_fname_glob_rev - allow the system to do a glob search for max/min filenames to be used
+    dst_fname_glob/dst_fname_glob_rev - allow the system to do a glob search for max/min filenames to be used
+
     out_fname_append - enables the generation of the out_fname based in teh dst_fname and append a string.
 
-    rmv_fname
+    rmv_fname - show the records that used to be there but no longer are
 
     rmv_fname_append
     rmv_fname_uniqtype
+
+    # how to cause the format of the file to be read in and generate an output json used to drive formats
+    fmt_dir - format output directory
+    fmt_fname - format output filename
+    src_width - set to true
+    no_fmt - set to true to quit after you create the output file
+    format_output - set to true
+
 
     src_reqcols - the list of column headers that we must find in order to find the header row - when not populated the first row is header
     dst_reqcols - the list of column headers that we must find in order to find the header row - when not populated the first row is header
@@ -27,6 +38,11 @@
             'dst': <dst_fieldname>, 
             'if_blank': if true - only update dst field when empty - which is default
          }
+    internal_compare_fields - list of dictionaries that define dst fields taht compare fields and communicate diffferences
+         {
+            'src': <src_fieldname>, 
+            'dst': <dst_fieldname>, 
+         }
     col_width - a dictionary that is column letter and column width numberic
     format_output - boolean when true we format the out_fname, with col_width if passed in or calc col_width on our own
     format_cell - boolean when true we copy the formatting of cells based on match key from src to out_fname
@@ -34,10 +50,11 @@
 
 @author:   Ken Venner
 @contact:  ken.venner@sierrspace.com
-@version:  1.16
+@version:  1.21
 
     Created:   2024-05-20;kv
-    Version:   2024-09-19;kv - more checks and additional features (like json_cfg_filename)
+    Version:   2025-07-12;kv - lots of changes and now callable as a librarry
+               2024-09-19;kv - more checks and additional features (like json_cfg_filename)
                2024-07-24;kv - added hyperlink_fields
                2024-06-03;kv
 
@@ -45,8 +62,11 @@
 """
 
 import kvutil
+# import kvdate
 import kv_excel
 import kvxls
+# import kvdate
+# import kvmatch
 import pprint
 import sys
 import os
@@ -54,8 +74,8 @@ import os
 
 # ----------------------------------------
 
-AppVersion = '1.16'
-__version__ = '1.16'
+AppVersion = '1.21'
+__version__ = '1.21'
 
 
 # ----------------------------------------
@@ -65,15 +85,21 @@ __version__ = '1.16'
 
 optiondictconfig = {
     'AppVersion' : {
-        'value': '1.16',
+        'value': '1.21',
     },
     
     'debug' : {
         'value' : False,
         'type' : 'bool',
+        'description': 'causes debugging print statements to execute',
+    },
+    'disp_msg' : {
+        'value' : True,
+        'type' : 'bool',
+        'description': 'cause processing print statement to execute',
     },
     'src_dir' : {
-        'value' : "C:/Users/116919/Sierra Space Corporation/Sierra Space Information Technology - General/Ken's Material/2024-02-13-PO-Cleanup",
+        'value' : "",
         'type' : 'dir',
         'description': 'path to the file with the data to be copied from',
     },
@@ -101,9 +127,27 @@ optiondictconfig = {
         'value' : "",
         'description':  'filename of the file with the data to copy from',
     },
+    'src_fname_glob' : {
+        'value' : "",
+        'description':  'filename glob of the file with the data to copy from',
+    },
+    'src_fname_glob_rev' : {
+        'value' : True,
+        'type'  : 'bool',
+        'description':  'glob max or min flag - True gets largest, False gets smallest',
+    },
     'dst_fname' : {
         'value' : "",
         'description':  'filename of the file with the data to copy into',
+    },
+    'dst_fname_glob' : {
+        'value' : "",
+        'description':  'filename glob of the file with the data to copy into',
+    },
+    'dst_fname_glob_rev' : {
+        'value' : True,
+        'type'  : 'bool',
+        'description':  'glob max or min flag - True gets largest, False gets smallest',
     },
     'out_fname' : {
         'value' : "",
@@ -184,6 +228,12 @@ optiondictconfig = {
         'type' : 'liststr',
         'description': 'list of dictionaries that defines what we copy inside the dst file moving column data to other columns',
     },
+    'internal_compare_fields' : {
+        'value' : [
+        ],
+        'type' : 'liststr',
+        'description': 'list of dictionaries that defines what we compare inside the dst file and show differences',
+    },
     'key_fields' : {
         'value' : [
             'Purchasing Document',
@@ -237,6 +287,10 @@ optiondictconfig = {
         'value' : False,
         'type' : 'bool',
         'description': "when enabled we read in the format but we don't create the output - we exit",
+    },
+    'desc' : {
+        'value' : '',
+        'description': "holder for conf description",
     }
 }
 
@@ -292,276 +346,372 @@ Example col_width:
 '''
 
 
-# command line processing
-optiondict = kvutil.kv_parse_command_line( optiondictconfig ) # , keymapdict=keymapdict )
+def validate_inputs(optiondict):
+    '''
+    test inputs and set defaults
+    '''
 
-# dump a json file to be used as a configuration file
-if optiondict['json_cfg_filename']:
-    pprint.pprint(optiondict)
-    print('-'*40)
-    kvutil.dump_dict_to_json_file(optiondict['json_cfg_filename'], optiondict)
-    print('Created json_cfg file:  ' + optiondict['json_cfg_filename'])
-    sys.exit()
+    # expected values
+    if 'disp_msg' not in optiondict:
+        optiondict['disp_msg'] = False
+        
+    # default fields that were not set
+    if optiondict['out_dir'] and not optiondict['rmv_dir']:
+        optiondict['rmv_dir'] = optiondict['out_dir']
+        
+    # set directories to match teh src_dir if not set
+    for fld in ('dst_dir', 'out_dir', 'rmv_dir', 'fmt_dir'):
+        if not optiondict[fld]:
+            optiondict[fld] = optiondict['src_dir']
 
-# default fields that were not set
-if optiondict['out_dir'] and not optiondict['rmv_dir']:
-    optiondict['rmv_dir'] = optiondict['out_dir']
-    
-# set directories to match teh src_dir if not set
-for fld in ('dst_dir', 'out_dir', 'rmv_dir', 'fmt_dir'):
-    if not optiondict[fld]:
-        optiondict[fld] = optiondict['src_dir']
+    # make sure each directory ends with '/'
+    for fld in ('src_dir', 'dst_dir', 'out_dir', 'rmv_dir', 'fmt_dir'):
+        if optiondict[fld][-1] == '\\':
+            optiondict[fld] = optiondict[fld][-1] + '/'
+        if optiondict[fld][-1] != '/':
+            optiondict[fld] += '/'
 
-# make sure each directory ends with '/'
-for fld in ('src_dir', 'dst_dir', 'out_dir', 'rmv_dir', 'fmt_dir'):
-    if optiondict[fld][-1] == '\\':
-        optiondict[fld] = optiondict[fld][-1] + '/'
-    if optiondict[fld][-1] != '/':
-        optiondict[fld] += '/'
-
-# determine if we need to generate the output fname
-if optiondict['out_fname'] and optiondict['out_fname_append']:
-    print('ERROR:  you can not populated both attributes [out_fname] and [out_fname_append]')
-    sys.exit(1)
-elif optiondict['out_fname_append']:
-    # calculate the out_fname
-    fname, fext = os.path.splitext(optiondict['dst_fname'])
-    # build the new filename
-    optiondict['out_fname'] = fname + optiondict['out_fname_append'] + fext
-
-# generate the remove filename
-if optiondict['rmv_fname_append']:
-    # calculate the out_fname
-    fname, fext = os.path.splitext(optiondict['dst_fname'])
-    # build the new filename
-    optiondict['rmv_fname'] = fname + optiondict['rmv_fname_append'] + fext
-
-# generate a unique remove filename
-if optiondict['rmv_fname_uniqtype']:
-    file_href = {
-        'file_path': optiondict['rmv_dir'],
-        'filename': os.path.join(optiondict['rmv_dir'], optiondict['rmv_fname']),
-        'uniqtype': optiondict['rmv_fname_uniqtype'],
-        'forceuniq': True,
-    }
-    optiondict['rmv_fname'] = os.path.basename(kvutil.filename_unique(filename_href=file_href, debug=False))
-
-    
-# validate the structure is correct if we are copying internally
-if optiondict['internal_copy_fields']:
-    # if we have a dict - it shoudl have been a list - convert to a list with one dict entry
-    if type(optiondict['internal_copy_fields']) == dict:
-        optiondict['internal_copy_fields'] = [optiondict['internal_copy_fields']]
-
-    # this shoudl have a list of dicts
-    has_issues = False
-    for idx, copydict in enumerate(optiondict['internal_copy_fields']):
-        for fld in ['src', 'dst']:
-            if fld not in copydict:
-                print(f"internal_copy_fields [{idx+1}] missing required key [{fld}]: " + str(copydict))
-                has_issues = True
-        # set the default if not set
-        if 'is_blank' not in copydict:
-            copydict['is_blank'] = True
-    # finally if we have issue then terminate
-    if has_issues:
+    # determine if we need to generate the output fname
+    if optiondict['out_fname'] and optiondict['out_fname_append']:
+        # output messages
+        if optiondict['disp_msg']:
+            print('ERROR:  you can not populated both attributes [out_fname] and [out_fname_append]')
+        return False
         sys.exit(1)
+    elif optiondict['out_fname_append']:
+        # calculate the out_fname
+        fname, fext = os.path.splitext(optiondict['dst_fname'])
+        # build the new filename
+        optiondict['out_fname'] = fname + optiondict['out_fname_append'] + fext
 
-#pprint.pprint(optiondict)
-#sys.exit()
+    # generate the remove filename
+    if optiondict['rmv_fname_append']:
+        # calculate the out_fname
+        fname, fext = os.path.splitext(optiondict['dst_fname'])
+        # build the new filename
+        optiondict['rmv_fname'] = fname + optiondict['rmv_fname_append'] + fext
 
-# check for file existenace
-if optiondict['ignore_missing_src']:
-    # check for existence of the src file
-    if not os.path.exists(os.path.join(optiondict['src_dir'], optiondict['src_fname'])):
-        print('SRC File does not exist - moving along: '+os.path.join(optiondict['src_dir'], optiondict['src_fname']))
-        sys.exit()
-if optiondict['ignore_missing_dst']:
-    # check for existence of the dst file
-    if not os.path.exists(os.path.join(optiondict['dst_dir'], optiondict['dst_fname'])):
-        print('DST File does not exist - moving along: '+os.path.join(optiondict['dst_dir'], optiondict['dst_fname']))
-        sys.exit()
+    # generate a unique remove filename
+    if optiondict['rmv_fname_uniqtype']:
+        file_href = {
+            'file_path': optiondict['rmv_dir'],
+            'filename': os.path.join(optiondict['rmv_dir'], optiondict['rmv_fname']),
+            'uniqtype': optiondict['rmv_fname_uniqtype'],
+            'forceuniq': True,
+        }
+        optiondict['rmv_fname'] = os.path.basename(kvutil.filename_unique(filename_href=file_href, debug=False))
 
-#### Load the files
-if optiondict['src_reqcols']:
-    src_optiondict = {'sheetname': optiondict['src_ws'], 'save_row': True}
-    src_data = kvxls.readxls2list_findheader(optiondict['src_dir'] + optiondict['src_fname'], optiondict['src_reqcols'], optiondict=src_optiondict)
-else:
-    src_data = kvxls.readxls2list(optiondict['src_dir'] + optiondict['src_fname'], optiondict['src_ws'])
-if optiondict['dst_reqcols']:
-    dst_optiondict = {'sheetname': optiondict['dst_ws'], 'save_row': True}
-    dst_data = kvxls.readxls2list_findheader(optiondict['dst_dir'] + optiondict['dst_fname'], optiondict['dst_reqcols'], optiondict=dst_optiondict)
-else:    
-    dst_data = kvxls.readxls2list(optiondict['dst_dir'] + optiondict['dst_fname'], optiondict['dst_ws'])
+    # deal with src_fname_glob
+    if optiondict['src_fname_glob']:
+        optiondict['src_fname'] = os.path.basename(kvutil.filename_maxmin(optiondict['src_dir']+optiondict['src_fname_glob'], optiondict['src_fname_glob_rev']))
+    # deal with dst_fname_glob
+    if optiondict['dst_fname_glob']:
+        optiondict['dst_fname'] = os.path.basename(kvutil.filename_maxmin(optiondict['dst_dir']+optiondict['dst_fname_glob'], optiondict['dst_fname_glob_rev']))
 
-# check that we found records
-if not len(src_data):
-    print('Found no records in: ', optiondict['src_dir'] + optiondict['src_fname'])
-    sys.exit(1)
-# check that we got the right sheet - one of the keys is in this record
-if optiondict['key_fields'][0] not in src_data[0]:
-    print('You are MOST LIKELY reading in the wrong sheet as we can not find column: ',
-          optiondict['key_fields'][0] )
-    sys.exit(1)
-# check that the source records have the copy fields
-if optiondict['copy_fields']:
-    missing = False
-    for fld in optiondict['copy_fields']:
-        if fld not in src_data[0]:
-            print('Source record missing a copy column: ', fld)
-            missing = True
-    if missing:
-        sys.exit(1)
-# check the internal copy fields against dst file
-if optiondict['internal_copy_fields']:
-    missing = False
-    for idx, copydict in enumerate(optiondict['internal_copy_fields']):
-        for cfld in ['src', 'dst']:
-            fld = copydict[cfld]
-            if fld not in dst_data[0]:
-                print(f'internal_copy_fields dst record missing a copy column in record {idx}: ' + fld + '|' + str(copydict))
-                missing = True
-    if missing:
-        sys.exit(1)
+
+    # key fields comparison
+    if not 'key_fields' in optiondict:
+        # output messages
+        if optiondict['disp_msg']:
+            print('Must define the fields that make the business keys in:  key_fields')
+        return False
+
+    if type(optiondict['key_fields']) != list:
+        # output messages
+        if optiondict['disp_msg']:
+            print('Attribute key_fields must be a list but is a: ', type(optiondict['key_fields']))
+        return False
     
-# output when requested
-if optiondict['dump_recs']:
-    print('-'*80)
-    print('Original Source:')
-    pprint.pprint(src_data)
-    print('-'*80)
-    print('New Source:')
-    pprint.pprint(dst_data)
-    print('-'*80)
-    print('\n')
+    # validate the structure is correct if we are copying internally
+    if optiondict['internal_copy_fields']:
+        # if we have a dict - it shoudl have been a list - convert to a list with one dict entry
+        if type(optiondict['internal_copy_fields']) == dict:
+            optiondict['internal_copy_fields'] = [optiondict['internal_copy_fields']]
 
-# force copy fields into the dst_data records
-# make sure there is a place in the dictionary of the destination
-# record to accept the copy fields values
-if optiondict['force_copy_flds']:
-    for rec in dst_data:
-        for fld in optiondict['copy_fields']:
+        # this shoudl have a list of dicts
+        has_issues = False
+        for idx, copydict in enumerate(optiondict['internal_copy_fields']):
+            for fld in ['src', 'dst']:
+                if fld not in copydict:
+                    print(f"internal_copy_fields [{idx+1}] missing required key [{fld}]: " + str(copydict))
+                    has_issues = True
+                # set the default if not set
+                if 'is_blank' not in copydict:
+                    copydict['is_blank'] = True
+        # finally if we have issue then terminate
+        if has_issues:
+            return False
+
+    # validate the structure is correct if we are copying internally
+    if optiondict['internal_compare_fields']:
+        # if we have a dict - it shoudl have been a list - convert to a list with one dict entry
+        if type(optiondict['internal_compare_fields']) == dict:
+            optiondict['internal_compare_fields'] = [optiondict['internal_compare_fields']]
+
+        # this shoudl have a list of dicts
+        has_issues = False
+        for idx, copydict in enumerate(optiondict['internal_compare_fields']):
+            for fld in ['src', 'dst']:
+                if fld not in copydict:
+                    print(f"internal_compare_fields [{idx+1}] missing required key [{fld}]: " + str(copydict))
+                    has_issues = True
+            # set the default if not set
+            if 'is_blank' not in copydict:
+                copydict['is_blank'] = True
+        # finally if we have issue then terminate
+        if has_issues:
+            return False
+        
+
+    # validate we have copy_fields
+    if optiondict['force_copy_flds']:
+        if not 'copy_fields' in optiondict:
+            # output messages
+            if optiondict['disp_msg']:
+                print('When [force_copy_flds] is set you must defined [copy_fields] and have not')
+            return False
+        elif type(optiondict['copy_fields']) != list:
+            # output messages
+            if optiondict['disp_msg']:
+                print('When [copy_fields] is defined it must be list and is:  ', type(optiondict['copy_fields']))
+            return False
+        elif not optiondict['copy_fields']:
+            # output messages
+            if optiondict['disp_msg']:
+                print('When [copy_fields] exist it must have values and does not')
+            return False
+        
+    # return that all is ok
+    return True
+    
+def load_records(optiondict, srctype='src'):
+    '''
+    pass in the type of config variables we want to load from - then load and return that list of records
+
+    we require srctype+'_dir' and srctype+'_fname' to be populated but not the other vars
+    
+    srctype can be:  src|dst
+    '''
+    if srctype+'_ws' not in optiondict:
+        optiondict[srctype+'_ws'] = None
+
+    # get the full filename of the object we are going after
+    full_filename = os.path.join(optiondict[srctype+'_dir'], optiondict[srctype+'_fname'])
+    
+    # check for file existenace if we are allowed to not require the file
+    if optiondict['ignore_missing_'+srctype]:
+        # check for existence of the src file
+        if not os.path.exists(full_filename):
+            return []
+    # load the file
+    if srctype+'_reqcols' in optiondict and optiondict[srctype+'_reqcols']:
+        # look up the header because we defined the requirec columns
+        loaded_optiondict = {'sheetname': optiondict[srctype+'_ws'], 'save_row': True}
+        loaded_data = kvxls.readxls2list_findheader(full_filename, optiondict[srctype+'_reqcols'], optiondict=loaded_optiondict)
+    else:
+        # load with the assumption that the first row is the header
+        loaded_data = kvxls.readxls2list(full_filename, optiondict[srctype+'_ws'])
+
+    return loaded_data
+
+def read_src_file_format(optiondict):
+    '''
+    This reads in the src file and gets the format from it and stores it in optiondict
+    '''
+
+    # get full filename
+    full_filename = os.path.join(optiondict['src_dir'], optiondict['src_fname'])
+    
+    # check if we should load the col_width from the src_fname
+    if optiondict['src_width']:
+        # output messages
+        if optiondict['disp_msg']:
+            print('Getting col_width formatting from src_fname')
+        optiondict['col_width'] = kv_excel.get_existing_column_width(full_filename)
+
+def validate_missing_columns(loaded_data, optiondict, fld):
+    '''
+    Validate that the data has the columns required based on the list of columns defined by 'fld'
+    '''
+    # check to see if key is even there
+    if fld not in optiondict:
+        return []
+    
+    # get the list of key_fields columns that don't have that key in teh first record in this list
+    return [x for x in optiondict[fld] if x not in loaded_data[0]]
+
+def create_flds_in_records(loaded_data, fields):
+    '''
+    force the creation of a field if it does not exist in all records
+    '''
+    for rec in loaded_data:
+        for fld in fields:
             if fld not in rec:
                 rec[fld] = ''
 
-# convert hyperlink fields if defined
-if optiondict['hyperlink_fields']:
-    kvutil.convert_hyperlink_field_values(src_data, optiondict['hyperlink_fields'])
-    kvutil.convert_hyperlink_field_values(dst_data, optiondict['hyperlink_fields'])
+def convert_hyperlink_values(loaded_data, optiondict, hyperlink_fld='hyperlink_fields'):
+    '''
+    Take a list of fields and convert them to hyperlink fields
+    '''
+    kvutil.convert_hyperlink_field_values(loaded_data, optiondict, hyperlink_fld)
+    
+def src_to_dst_actions(src_data, dst_data, optiondict):
+    '''
+    take the action defined in option dict
+    '''
+    # set up keys with None if they don't exist
+    for fld in ['copy_fields', 'internal_copy_fields', 'internal_compare_fields']:
+        if fld not in optiondict:
+            optiondict[fld] = None
 
-    # output when requested
-    if optiondict['dump_recs']:
-        print('-'*80)
-        print('Hyperlink Original Source:')
-        pprint.pprint(src_data)
-        print('-'*80)
-        print('Hyperlink New Source:')
-        pprint.pprint(dst_data)
-        print('-'*80)
-        print('\n')
+    # nothing to do if there is not src_data
+    if not src_data:
+        return 0, 0, {}
+    
+    # generate lookup on source
+    src_lookup = kvutil.create_multi_key_lookup(src_data, optiondict['key_fields'])
+    
+    # do nothing if we have nothing to do
+    if not optiondict['copy_fields'] and not optiondict['internal_copy_fields'] and not optiondict['internal_compare_fields']:
+        return 0, 0, src_lookup
+    
+    # now step through the dst data and copy over matching data
+    if optiondict['copy_fields']:
+        if optiondict['update_cnt']:
+            matched_recs, updated_recs = kvutil.copy_matched_data_cnt(dst_data, src_lookup, optiondict['key_fields'], optiondict['copy_fields'])
+        else:    
+            matched_recs = kvutil.copy_matched_data(dst_data, src_lookup, optiondict['key_fields'], optiondict['copy_fields'])
+            updated_recs = matched_recs
+    else:
+        matched_recs = 0
+        updated_recs = 0
+    
+    # now copy over fields interest witin the output file
+    if optiondict['internal_copy_fields']:
+        # output messages
+        if optiondict['disp_msg']:
+            print('Copying data inside the file defined by internal_copy_fields')
+        # copy fields in the file we just read in
+        for rec in dst_data:
+            for copydict in optiondict['internal_copy_fields']:
+                if not copydict['is_blank'] or not rec[copydict['dst']]:
+                    # is_blank is False (we want to update all recrs, or dst is not populated then update from src
+                    rec[copydict['dst']] = rec[copydict['src']]
 
-    
-# set the values on blank entries in source file if configured
-if optiondict['set_blank_fields']:
-    default_recs = kvutil.set_blank_field_values(src_data, optiondict['set_blank_fields'])
-else:
-    default_recs = 0
-    
-    
-# generate lookup on source
-src_lookup = kvutil.create_multi_key_lookup(src_data, optiondict['key_fields'])
-    
-# now step through the dst data and copy over matching data
-if optiondict['copy_fields']:
-    if optiondict['update_cnt']:
-        matched_recs, updated_recs = kvutil.copy_matched_data_cnt(dst_data, src_lookup, optiondict['key_fields'], optiondict['copy_fields'])
-    else:    
-        matched_recs = kvutil.copy_matched_data(dst_data, src_lookup, optiondict['key_fields'], optiondict['copy_fields'])
-        updated_recs = matched_recs
-else:
-    matched_recs = 0
-    updated_recs = 0
-    
-# now copy over fields interest witin the output file
-if optiondict['internal_copy_fields']:
-    # copy fields in the file we just read in
-    print('Copying data inside the file defined by internal_copy_fields')
-    for rec in dst_data:
-        for copydict in optiondict['internal_copy_fields']:
-            if not copydict['is_blank'] or not rec[copydict['dst']]:
-                # is_blank is False (we want to update all recrs, or dst is not populated then update from src
-                rec[copydict['dst']] = rec[copydict['src']]
-            
-# if we want to save out the removed records then do that analysis
-if optiondict['rmv_fname']:
+    # now compare fields interest witin the output file
+    if optiondict['internal_compare_fields']:
+        # output messages
+        if optiondict['disp_msg']:
+            print('Comparing data inside the file defined by internal_compare_fields')
+        # copy fields in the file we just read in
+        for rec in dst_data:
+            # set the original value
+            rec['internal_compare'] = ''
+            for copydict in optiondict['internal_compare_fields']:
+                # compare and set field if
+                if rec[copydict['dst']] != rec[copydict['src']] and not rec['internal_compare']:
+                    rec['internal_compare'] = 'Mismatch'
+
+    return matched_recs, updated_recs, src_lookup
+
+
+def removed_records(src_data, dst_data, optiondict):
+    '''
+    find the records in src_data that are not in dst_data
+    '''
     dst_lookup = kvutil.create_multi_key_lookup(dst_data, optiondict['key_fields'])
     rmv_data = kvutil.extract_unmatched_data(src_data, dst_lookup, optiondict['key_fields'])
 
-if optiondict['dump_recs']:
-    print('-'*80)
-    print('DST Output Records:')
-    pprint.pprint(dst_data)
-    print('-'*80)
+    return rmv_data, dst_lookup
 
-print('source recs.....: ', len(src_data))
-print('src set2default.: ', default_recs)
-print('new recs........: ', len(dst_data))
-print('matched_recs....: ', matched_recs)
-if optiondict['update_cnt']:
-    print('updated_recs....: ', updated_recs)
-if optiondict['rmv_fname']:
-     print('removed recs....: ', len(rmv_data))
-
-# output what we came up with
-if optiondict['out_fname']:
-    kvxls.writelist2xls(optiondict['out_dir'] + optiondict['out_fname'], dst_data)
-    if optiondict['debug']:
-        print('out_write:', optiondict['out_dir'] + optiondict['out_fname'])
-elif optiondict['dst_fname'] and updated_recs:
-    kvxls.writelist2xls(optiondict['dst_dir'] + optiondict['dst_fname'], dst_data)
-    if optiondict['debug']:
-        print('dst_write:', optiondict['dst_dir'] + optiondict['dst_fname'])
-    
-# output what we came up with
-if optiondict['rmv_fname'] and rmv_data:
-    kvxls.writelist2xls(optiondict['rmv_dir'] + optiondict['rmv_fname'], rmv_data)
-    if optiondict['debug']:
-        print('rmv_write:', optiondict['rmv_dir'] + optiondict['rmv_fname'])
-
-# if they want it formatted
-if optiondict['format_output']:
-    print('\nFormatting output file')
-    # check if we should load the col_width from the src_fname
-    if optiondict['src_width']:
-        print('Getting col_width from src_fname')
-        optiondict['col_width'] = kv_excel.get_existing_column_width(optiondict['src_dir'] + optiondict['src_fname'])
-        # if we set fmt_fname then save this col width data
-        if optiondict['fmt_fname']:
-            kvutil.dump_dict_to_json_file(optiondict['fmt_dir'] + optiondict['fmt_fname'], {"col_width": optiondict['col_width']})
-            print('Saved col_width to:' + optiondict['fmt_dir'] + optiondict['fmt_fname'])
-    #
-    print('Performing output formatting')
+def generate_out_output_file_not_formatted(dst_data, optiondict, updated_recs):
+    '''
+    generate the output file is we create a new file
+    or recreate the destination file if records were updated
+    '''
+    # output what we came up with
     if optiondict['out_fname']:
-        excel_filename = optiondict['out_dir'] + optiondict['out_fname']
+        full_filename = os.path.join(optiondict['out_dir'], optiondict['out_fname'])
+        kvxls.writelist2xls(full_filename, dst_data)
+        if optiondict['debug']:
+            print('out_write:', full_filename)
+    elif optiondict['dst_fname'] and updated_recs:
+        full_filename = os.path.join(optiondict['dst_dir'], optiondict['dst_fname'])
+        kvxls.writelist2xls(full_filename, dst_data)
+        if optiondict['debug']:
+            print('dst_write:', full_filename)
+
+def generate_rmv_output_file_not_formatted(rmv_data, optiondict):
+    '''
+    generate the remove file if defined and we have remove file records
+    '''
+    # output what we came up with
+    if 'rmv_fname' in optiondict and optiondict['rmv_fname'] and rmv_data:
+        full_filename = os.path.join(optiondict['rmv_dir'], optiondict['rmv_fname'])
+        kvxls.writelist2xls(full_filename, rmv_data)
+        if optiondict['debug']:
+            print('rmv_write:', full_filename)
+
+
+def format_output(optiondict):
+    '''
+    Format the output file based on flags passed in
+    '''
+    
+    # if they want it formatted
+    if 'format_output' not in optiondict:
+        return
+    if not optiondict['format_output']:
+        return
+
+    # output messages
+    if optiondict['disp_msg']:
+        print('\nFormatting output file')
+    # if we set fmt_fname then save this col width data
+    if optiondict['fmt_fname']:
+        full_filename = os.path.join(optiondict['fmt_dir'], optiondict['fmt_fname'])
+        kvutil.dump_dict_to_json_file(full_filename, {"col_width": optiondict['col_width']})
+        # output messages
+        if optiondict['disp_msg']:
+            print('Saved col_width to:' + full_filename)
+    #
+    # output messages
+    if optiondict['disp_msg']:
+        print('Performing output formatting')
+    if optiondict['out_fname']:
+        excel_filename = os.path.join(optiondict['out_dir'],optiondict['out_fname'])
     else:
-        excel_filename = optiondict['dst_dir'] + optiondict['dst_fname']
+        excel_filename = os.path.join(optiondict['dst_dir'], optiondict['dst_fname'])
     if optiondict['debug'] or optiondict['no_fmt']:
-        print('reformat_out:', excel_filename)
-        pprint.pprint(optiondict['col_width'])
-    if optiondict['no_fmt']:
-        sys.exit()
+        # output messages
+        if optiondict['disp_msg']:
+            print('reformat_out:', excel_filename)
+            print('col_width we reformat with:')
+            pprint.pprint(optiondict['col_width'])
+    if optiondict['no_fmt'] or 'col_width' not in optiondict or not optiondict['col_width']:
+        return
+    # format this file with what is defined in col_width
     kv_excel.format_xlsx_with_filter_and_freeze(excel_filename, col_width=optiondict['col_width'])
 
-# if they want to copy over formatting
-if optiondict['format_cell']:
-    print('\nCopying Cell Formatting')
+def format_cell(optiondict):
+    '''
+    Copy over cell based formatting
+    '''
+    
+    # if they want to copy over formatting
+    if 'format_cell' not in optiondict or not optiondict['format_cell']:
+        return
+
+    # display we are cell formatting
+    if optiondict['disp_msg']:
+        print('\nCopying Cell Formatting')
 
     # debug
     # print('src file:', optiondict['src_dir'] + optiondict['src_fname'])
-
+    
     # reading in the source
     excel_dict_src = kvxls.readxls_findheader(
-        optiondict['src_dir'] + optiondict['src_fname'],
+        os.path.join(optiondict['src_dir'],  optiondict['src_fname']),
         [],
         optiondict={'col_header': True, 'keep_vba': False, 'sheetname': optiondict['src_ws']},
         data_only=False
@@ -569,12 +719,13 @@ if optiondict['format_cell']:
 
     # define which file we are pulling from as the output/destination
     if optiondict['out_fname']:
-        excel_filename = optiondict['out_dir'] + optiondict['out_fname']
+        excel_filename = os.path.join(optiondict['out_dir'], optiondict['out_fname'])
         sheetname = optiondict['out_ws']
     else:
-        excel_filename = optiondict['dst_dir'] + optiondict['dst_fname']
+        excel_filename = os.path.join(optiondict['dst_dir'], optiondict['dst_fname'])
         sheetname = optiondict['dst_ws']
 
+    # debugging
     if optiondict['debug']:
         print('reformat_cell:', excel_filename)
 
@@ -610,6 +761,7 @@ if optiondict['format_cell']:
         # if we did not find a match we are done
         if not matched:
             continue
+
         # we now have the src row
         src_row = ptr
 
@@ -623,16 +775,197 @@ if optiondict['format_cell']:
     # done copying over - save this file
     kvxls.writexls(excel_dict_out, excel_filename)
     
-print('')
-print('source file.....: ', optiondict['src_dir'] + optiondict['src_fname'])
-if optiondict['src_ws']:
-    print('source ws.......: ', optiondict['src_ws'])
-print('new data file...: ', optiondict['dst_dir'] + optiondict['dst_fname'])
-if optiondict['dst_ws']:
-    print('new data ws.....: ', optiondict['dst_ws'])
-if optiondict['out_fname']:
-    print('generated file..: ', optiondict['out_dir'] + optiondict['out_fname'])
-if optiondict['rmv_fname'] and rmv_data:
-    print('generated file..: ', optiondict['rmv_dir'] + optiondict['rmv_fname'])
+def generate_out_output_file_formatted(dst_data, optiondict, updated_recs):
+    '''
+    generate the output file is we create a new file
+    or recreate the destination file if records were updated
+    '''
+    generate_out_output_file_not_formatted(dst_data, optiondict, updated_recs)
+    format_output(optiondict)
+    format_cell(optiondict)
+
+
+# --------------------------------------------------------------------------------
+
+if __name__ == "__main__":
+
+    # command line processing
+    optiondict = kvutil.kv_parse_command_line( optiondictconfig ) # , keymapdict=keymapdict )
+
+    # dump a json file to be used as a configuration file
+    if optiondict['json_cfg_filename']:
+        pprint.pprint(optiondict)
+        print('-'*40)
+        kvutil.dump_dict_to_json_file(optiondict['json_cfg_filename'], optiondict)
+        print('Created json_cfg file:  ' + optiondict['json_cfg_filename'])
+        sys.exit()
+
+
+    # validate the inputs/settings
+    if not validate_inputs(optiondict):
+        sys.exit(1)
+
+    # debugging
+    #pprint.pprint(optiondict)
+    #sys.exit()
+
+    # check for file existenace
+    if optiondict['ignore_missing_src']:
+        # check for existence of the src file
+        full_filename = os.path.join(optiondict['src_dir'], optiondict['src_fname'])
+        if not os.path.exists(full_filename):
+            # output messages
+            if optiondict['disp_msg']:
+                print('SRC File does not exist - moving along: '+full_filename)
+            sys.exit()
+    if optiondict['ignore_missing_dst']:
+        # check for existence of the dst file
+        full_filename = os.path.join(optiondict['dst_dir'], optiondict['dst_fname'])
+        if not os.path.exists(full_filename):
+            # output messages
+            if optiondict['disp_msg']:
+                print('DST File does not exist - moving along: '+full_filename)
+            sys.exit()
+
+    # load the sourced and destination data
+    src_data = load_records(optiondict, 'src')
+    dst_data = load_records(optiondict, 'dst')
+
+    # check that we found records
+    if not len(src_data):
+        # output messages
+        if optiondict['disp_msg']:
+            print('Found no records in: ', os.path.join(optiondict['src_dir'], optiondict['src_fname']))
+        sys.exit(1)
+
+    # read in format for src file if we want it
+    read_src_file_format(optiondict)
+
+    # check that we have the key fields in the src_data
+    missing_cols = validate_missing_columns(src_data, optiondict, 'key_fields')
+    if missing_cols:
+        # output messages
+        if optiondict['disp_msg']:
+            print('You are MOST LIKELY reading in the wrong src sheet as we can not find column(s): ',
+                  '|'.join(missing_cols) )
+        sys.exit(1)        
+
+    # check that we have the copy_fields columns
+    missing_cols = validate_missing_columns(src_data, optiondict, 'copy_fields')
+    if missing_cols:
+        # output messages
+        if optiondict['disp_msg']:
+            print('You are missing in src_data the following copy_fields column(s): ',
+                  '|'.join(missing_cols) )
+        sys.exit(1)
+
+    # check that we have the internal_compare_fields  columns
+    missing_cols = validate_missing_columns(src_data, optiondict, 'internal_compare_fields')
+    if missing_cols:
+        # output messages
+        if optiondict['disp_msg']:
+            print('You are missing in src_data the following internal_compare_fields column(s): ',
+                  '|'.join(missing_cols) )
+        sys.exit(1)
+
+    # check that we have the internal_compare_fields  columns
+    missing_cols = validate_missing_columns(dst_data, optiondict, 'internal_compare_fields')
+    if missing_cols: 
+        # output messages
+        if optiondict['disp_msg']:
+            print('You are missing in dst_data the following internal_compare_fields column(s): ',
+                  '|'.join(missing_cols) )
+        sys.exit(1)
+
+    
+    # output when requested
+    if optiondict['dump_recs']:
+        print('-'*80)
+        print('Original Source:')
+        pprint.pprint(src_data)
+        print('-'*80)
+        print('New Source:')
+        pprint.pprint(dst_data)
+        print('-'*80)
+        print('\n')
+
+    # if we are forcing fields to be in the records make it happen
+    if optiondict['force_copy_flds']:
+        create_flds_in_records(dst_data, optiondict['copy_fields'])
+
+    # update the hyperlink fields
+    if optiondict['hyperlink_fields']:
+        convert_hyperlink_values(src_data, optiondict, 'hyperlink_fields')
+        convert_hyperlink_values(dst_data, optiondict, 'hyperlink_fields')
+
+    # output when requested
+    if optiondict['dump_recs']:
+        print('-'*80)
+        print('Hyperlink Original Source:')
+        pprint.pprint(src_data)
+        print('-'*80)
+        print('Hyperlink New Source:')
+        pprint.pprint(dst_data)
+        print('-'*80)
+        print('\n')
+
+    
+    # set the values on blank entries in source file if configured
+    if optiondict['set_blank_fields']:
+        default_recs = kvutil.set_blank_field_values(src_data, optiondict['set_blank_fields'])
+    else:
+        default_recs = 0
+
+    # now take the action
+    matched_recs, updated_recs, src_lookup = src_to_dst_actions(src_data, dst_data, optiondict)
+    
+    
+    # if we want to save out the removed records then do that analysis
+    if optiondict['rmv_fname']:
+        rmv_data, dst_lookup = removed_records(src_data, dst_data, optiondict)
+    else:
+        rmv_data = []
+
+    # output what is going on
+    if optiondict['dump_recs']:
+        print('-'*80)
+        print('DST Output Records:')
+        pprint.pprint(dst_data)
+        print('-'*80)
+
+    # display what is going on
+    if optiondict['disp_msg']:
+        print('source recs.....: ', len(src_data))
+        print('src set2default.: ', default_recs)
+        print('new recs........: ', len(dst_data))
+        print('matched_recs....: ', matched_recs)
+        if optiondict['update_cnt']:
+            print('updated_recs....: ', updated_recs)
+        if optiondict['rmv_fname']:
+            print('removed recs....: ', len(rmv_data))
+
+    # output raw outputs not formatted
+    generate_out_output_file_not_formatted(dst_data, optiondict, updated_recs)
+    generate_rmv_output_file_not_formatted(rmv_data, optiondict)
+
+    # format the output file
+    format_output(optiondict)
+
+    # format the output by cell
+    format_cell(optiondict)
+    
+    # display what is going on
+    if optiondict['disp_msg']:
+        print('')
+        print('source file.....: ', optiondict['src_dir'] + optiondict['src_fname'])
+        if optiondict['src_ws']:
+            print('source ws.......: ', optiondict['src_ws'])
+        print('new data file...: ', optiondict['dst_dir'] + optiondict['dst_fname'])
+        if optiondict['dst_ws']:
+            print('new data ws.....: ', optiondict['dst_ws'])
+        if optiondict['out_fname']:
+            print('generated file..: ', optiondict['out_dir'] + optiondict['out_fname'])
+        if optiondict['rmv_fname'] and rmv_data:
+            print('generated file..: ', optiondict['rmv_dir'] + optiondict['rmv_fname'])
     
 #eof

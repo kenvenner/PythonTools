@@ -1,7 +1,7 @@
 '''
 @author:   Ken Venner
 @contact:  ken.venner@hermeus.com
-@version:  1.09
+@version:  1.10
 
 This library provides tools used when interacting with sharepoint sites and local synch links to sharepoint sites
 
@@ -14,9 +14,10 @@ import kvxls
 import kvutil
 import kvcsv
 
+import copy_comments
 
 # global variables
-AppVersion = '1.09'
+AppVersion = '1.10'
 
 
 # LOCAL FUNCTIONS/HELPERS
@@ -132,7 +133,7 @@ def save_and_log_dbms_extract(excel_file_path, result, starttime, now, log_file_
         fp.write(f'{excel_file_path},{now.isoformat()},{len(result.index)},{(endtime-starttime)/60}\n')
 
 
-def save_and_log_exception_rpt(excel_file_path, result, starttime, now, log_file_path, log_filename=None, flds=None):
+def save_and_log_exception_rpt(excel_file_path, result, starttime, now, log_file_path, log_filename=None, flds=None, cc_cfg=None, cc_args=None):
     '''
     Create the screen output and log file update for the dbms extract
 
@@ -143,6 +144,9 @@ def save_and_log_exception_rpt(excel_file_path, result, starttime, now, log_file
     log_file_path - the path to where the log of run times is stored
     log_filename - name of hte log filename that houses the results
     flds - list of fields to output to xlsx (if set)
+
+    cc_cfg = filename of JSON copy_comments optiondict configuration options
+    cc_args = dictionary of command line args that override the cc_cfg settings
     
     '''
 
@@ -162,12 +166,44 @@ def save_and_log_exception_rpt(excel_file_path, result, starttime, now, log_file
 
     # check to see if log exists
     log_exists = os.path.exists( log_full_filename )
-    
+
+    # take action if you have to copy_comments
+    if cc_cfg:
+        # get configuration options
+        if not cc_args:
+            cc_args = {}
+        elif type(cc_args) != dict:
+            raise KeyError('cc_args must be a dictionary but is a: '+type(cc_args))
+        # set up the pass in values
+        cc_args['conf_json'] = cc_cfg
+        # now read in the JSON configuration
+        cc_optiondict = kvutil.kv_parse_command_line(copy_comments.optiondictconfig, cmdlineargs=cc_args, skipcmdlineargs=True)
+
+        # validate these configuration options
+        copy_comments.validate_inputs(cc_optiondict)
+        
+        # read in the previous data for this file - copy over any data that was in that file
+        src_data = copy_comments.load_records(cc_optiondict, 'src')
+
+        # read in the columns widths if this is defined to be done
+        copy_comments.read_src_file_format(cc_optiondict)
+
+        # update the destination arrray based on source data
+        matched_recs, updated_recs, src_lookup = copy_comments.src_to_dst_actions(src_data, result, cc_optiondict)
+        
+        # get the removed records
+        rmv_data, dst_lookup = copy_comments.removed_records(src_data, result, cc_optiondict)
+
+        # and if we have removed records generate them
+        copy_comments.generate_rmv_output_file_not_formatted(rmv_data, cc_optiondict)
     
     # Write the DataFrame to an Excel file
     if result:
         # print(flds)
         kvxls.writelist2xls(excel_file_path, result, flds)
+        # now apply formatting to this newly create file
+        if cc_cfg:
+            copy_comments.format_output(cc_optiondict)
         print('Record count: ', len(result))
         print("Created file:  ", excel_file_path)
     else:

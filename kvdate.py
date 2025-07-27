@@ -3,7 +3,7 @@ from __future__ import print_function
 '''
 @author:   Ken Venner
 @contact:  ken@venerllc.com
-@version:  1.05
+@version:  1.06
 
 Library of tools for date time processing used in general by KV
 
@@ -13,7 +13,7 @@ Update:  2024-06-06;kv - added try/except on datetime_from_str
 
 import os
 import datetime
-from dateutil import tz
+from dateutil import tz   ## python-dateutil
 from dateutil.zoneinfo import get_zonefile_instance
 import sys
 import errno
@@ -24,8 +24,8 @@ import logging
 logger = logging.getLogger(__name__)
 
 # set the module version number
-AppVersion = '1.05'
-__version__ = '1.05'
+AppVersion = '1.06'
+__version__ = '1.06'
 
 
 def current_timezone_string():
@@ -71,7 +71,7 @@ def datetime2utcdatetime(dt, default_tz=None, no_tz=False):
 #
 # and allow a Z to be on the end of this string that we will strip out
 #
-def datetime_from_str(value, skipblank=False):
+def datetime_from_str(value, skipblank=False, disp_msg=True):
     import re
     datefmts = (
         (re.compile(r'\d{1,2}/\d{1,2}/\d{2}$'), '%m/%d/%y'),
@@ -106,10 +106,11 @@ def datetime_from_str(value, skipblank=False):
             try:
                 return datetime.datetime.strptime(value, datefmt)
             except Exception as e:
-                print('-'*40)
-                print('datetime_from_str - conversion error:')
-                print(f'    value..:  {value}')
-                print(f'    datefmt:  {datefmt}')
+                if disp_msg:
+                    print('-'*40)
+                    print('datetime_from_str - conversion error:')
+                    print(f'    value..:  {value}')
+                    print(f'    datefmt:  {datefmt}')
                 raise e
             
     raise Exception(u'Unable to convert to date time:{}'.format(orig_value))

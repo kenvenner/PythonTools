@@ -1,7 +1,7 @@
 '''
 @author:   Ken Venner
 @contact:  ken@venerllc.com
-@version:  1.11
+@version:  1.12
 
 Library of tools used to process JPG image files
 '''
@@ -19,15 +19,15 @@ import logging
 logger = logging.getLogger(__name__)
 
 # global variables
-AppVersion = '1.11'
+AppVersion = '1.12'
 
 debug = False
 
 cntstrfmt = 'CNT%04d0-'
 datestrfmt = '%Y-%m-%d-'
 
-cntstrre = re.compile('CNT(\d+)-')
-datestrre = re.compile('(\d\d\d\d-\d\d-\d\d)-')
+cntstrre = re.compile(r'CNT(\d+)-')
+datestrre = re.compile(r'(\d\d\d\d-\d\d-\d\d)-')
 
 defaultdatetime = datetime.datetime.strptime('1901:01:01 00:00:01', '%Y:%m:%d %H:%M:%S')
 

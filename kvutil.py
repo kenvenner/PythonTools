@@ -3,7 +3,7 @@ from __future__ import print_function
 '''
 @author:   Ken Venner
 @contact:  ken@venerllc.com
-@version:  1.85
+@version:  1.88
 
 Library of tools used in general by KV
 '''
@@ -31,11 +31,13 @@ import json
 # setup the logger
 import logging
 
+debug_file= False
+
 logger = logging.getLogger(__name__)
 
 # set the module version number
-AppVersion = '1.85'
-__version__ = '1.85'
+AppVersion = '1.88'
+__version__ = '1.88'
 HELP_KEYS = ('help', 'helpall',)
 HELP_VALUE_TABLE = ('tbl', 'table', 'helptbl', 'fmt',)
 
@@ -68,7 +70,11 @@ def strtobool(val):
 #   optiondictconfig - key = variable, value = dict with keys ( value, type, descr, required )
 #   raise_error - bool flag - if true and we get a command line setting we don't know raise exception
 #   keymapdict - dictionary of misspelled command line values that are mapped to the official values
-#
+#   cmdlineargs - dictionary of variable/value pairs that enable you to pass in the equivalent of command line options
+#                 but bypass the command line - used to generate optiondict outcomes inside programs, usually you
+#                 pass in cmdlineargs={'conf_json': <path/filename>} to get the conf_json file loaded
+#   skipcmdlineargs - bool flag - when true we do NOT read from sys.args values
+
 # return:
 #   optiondict - dictionary of values from config and command line
 #
@@ -92,7 +98,16 @@ def strtobool(val):
 #     'dbg' : 'debug',
 # }
 #
-# optiondict = kv_parse_command_line( optiondictconfig, keymapdict=keymapdict )
+# setting in a program - getting from command line:
+#
+#     optiondict = kv_parse_command_line( optiondictconfig, keymapdict=keymapdict )
+#
+# creating an optiondict to be used to drive calls to some other command line inside a program
+#
+#     import copy_comments
+#     special_optiondict = kv_parse_command_line( copy_comments.optiondictconfig, cmdlineargs={'conf_json': './copy_po_master.json'}, skipcmdlineargs=True) 
+#
+#     skipcmdlineargs - when true - skips the loading of command line args
 #
 # -- Special behavior
 #  help=<value>
@@ -101,7 +116,7 @@ def strtobool(val):
 #
 #  if <value> in list ('tbl','table','helptbl','fmt'), then the output is mark down table
 #
-def kv_parse_command_line(optiondictconfig, raise_error=False, keymapdict=None, debug=False):
+def kv_parse_command_line(optiondictconfig, raise_error=False, keymapdict=None, cmdlineargs=None, skipcmdlineargs=False, debug=False, disp_msg=True):
     # debug
     if debug: print('kv_parse_command_line:sys.argv:', sys.argv)
     if debug: print('kv_parse_command_line:optiondictconfig:', optiondictconfig)
@@ -110,6 +125,11 @@ def kv_parse_command_line(optiondictconfig, raise_error=False, keymapdict=None, 
     logger.debug('sys.argv: %s', sys.argv)
     logger.debug('optiondictconfig: %s', optiondictconfig)
 
+    if debug_file:
+        print('1-load-cmdlineargs:', cmdlineargs, skipcmdlineargs)
+    if cmdlineargs is None:
+        cmdlineargs = {}
+        
     # default a set of basic config values - so we don't need to put them in each app
     defaultdictconfig = {
         'debug': {
@@ -189,37 +209,40 @@ def kv_parse_command_line(optiondictconfig, raise_error=False, keymapdict=None, 
         else:
             # no value option - set to None
             optiondict[key] = None
-
+    
     # read in the command line options that we care about and create dictionary
-    cmdlineargs = {}
-    for argpos in range(1, len(sys.argv)):
-        # check to see if they have an equal in the string
-        if '=' not in sys.argv[argpos]:
-            logger.error('Command line arguments must be key=value - there is no equal:%s', sys.argv[argpos])
-            raise Exception(
-                u'Command line arguments must be key=value - there is no equal:{}'.format(sys.argv[argpos]))
+    if not skipcmdlineargs:
+        if debug_file:
+            print('read in sys.argv-not skipcmdlineargs')
+            print('sys.argv:', sys.argv)
+        for argpos in range(1, len(sys.argv)):
+            # check to see if they have an equal in the string
+            if '=' not in sys.argv[argpos]:
+                logger.error('Command line arguments must be key=value - there is no equal:%s', sys.argv[argpos])
+                raise Exception(
+                    u'Command line arguments must be key=value - there is no equal:{}'.format(sys.argv[argpos]))
 
-        # get the argument and split it into key and value
-        (key, value) = sys.argv[argpos].split('=')
+            # get the argument and split it into key and value
+            (key, value) = sys.argv[argpos].split('=')
 
-        # debug
-        if debug: print('kv_parse_command_line:sys.argv[', argpos, ']:', sys.argv[argpos])
-        logger.debug('sys.argv[%s]:%s', argpos, sys.argv[argpos])
+            # debug
+            if debug: print('kv_parse_command_line:sys.argv[', argpos, ']:', sys.argv[argpos])
+            logger.debug('sys.argv[%s]:%s', argpos, sys.argv[argpos])
 
-        # skip this if the key is not populated
-        if not key:
-            if debug: print('kv_parse_command_line:key-not-populated-skipping-arg')
-            logger.debug('Key-not-populated-with-value-skipping-arg')
-            continue
+            # skip this if the key is not populated
+            if not key:
+                if debug: print('kv_parse_command_line:key-not-populated-skipping-arg')
+                logger.debug('Key-not-populated-with-value-skipping-arg')
+                continue
 
-        # check to see if we should use the keymapping
-        if keymapdict:
-            if key in keymapdict and key not in optiondict and key not in defaultdictconfig:
-                logger.debug('Remapping:%s:to:%s', key, keymapdict[key])
-                key = keymapdict[key]
+            # check to see if we should use the keymapping
+            if keymapdict:
+                if key in keymapdict and key not in optiondict and key not in defaultdictconfig:
+                    logger.debug('Remapping:%s:to:%s', key, keymapdict[key])
+                    key = keymapdict[key]
 
-        # put this into cmdlineargs dictionary
-        cmdlineargs[key] = value
+            # put this into cmdlineargs dictionary
+            cmdlineargs[key] = value
 
     # read in configuration from json files housing configuration data
     conf_json_files = []
@@ -257,7 +280,8 @@ def kv_parse_command_line(optiondictconfig, raise_error=False, keymapdict=None, 
                     'conf_mustload' in cmdlineargs and cmdlineargs['conf_mustload']):
                 raise Exception(u'Missing config file: {}'.format(conf_json_file))
             else:
-                logger.warning('Skipped missing config file:%s', conf_json_file)
+                if disp_msg:
+                    logger.warning('Skipped missing config file:%s', conf_json_file)
     if conf_files_read:
         # populate the list of config files with the actual files read in
         optiondict['conf_json'] = conf_files_read
@@ -290,6 +314,9 @@ def kv_parse_command_line(optiondictconfig, raise_error=False, keymapdict=None, 
         else:
             logger.debug('conf_json ignored because command line overrides it:%s:%s', key, value)
 
+    if debug_file:
+        print('2cmdlineargs:', cmdlineargs)
+    
     # now step through the configuration settings we have received
     for key, value in cmdlineargs.items():
         # logic to bring in "default/implied optiondict values if key passed is not part of app definition
@@ -321,6 +348,10 @@ def kv_parse_command_line(optiondictconfig, raise_error=False, keymapdict=None, 
             elif optiondictconfig[key]['type'] == 'bool':
                 optiondict[key] = bool(strtobool(value))
             elif optiondictconfig[key]['type'] == 'int':
+                if debug_file:
+                    print('1value:', value, type(value))
+                    print('1key:', key)
+                    print('1optiondict:', optiondict)
                 optiondict[key] = int(value)
             elif optiondictconfig[key]['type'] == 'float':
                 optiondict[key] = float(value)
@@ -329,9 +360,9 @@ def kv_parse_command_line(optiondictconfig, raise_error=False, keymapdict=None, 
             elif optiondictconfig[key]['type'] == 'liststr':
                 optiondict[key] = value.split(',')
             elif optiondictconfig[key]['type'] == 'date':
-                optiondict[key] = kvdate.datetime_from_str(value)
+                optiondict[key] = kvdate.datetime_from_str(value, disp_msg=disp_msg)
             elif optiondictconfig[key]['type'] == 'datetimezone':
-                optiondict[key] = kvdate.datetimezone_from_str(value)
+                optiondict[key] = kvdate.datetimezone_from_str(value, disp_msg=disp_msg)
             elif optiondictconfig[key]['type'] == 'inlist':
                 # value must be from a predefined list of acceptable values
                 if 'valid' not in optiondictconfig[key]:
@@ -355,7 +386,8 @@ def kv_parse_command_line(optiondictconfig, raise_error=False, keymapdict=None, 
             raise Exception(u'Unknown command line option:{}'.format(key))
         else:
             if debug: print('kv_parse_command_line:unknown-option:', key)
-            logger.warning('Unknown option:%s', key)
+            if disp_msg: 
+                logger.warning('Unknown option:%s', key)
 
         # special processing if we are asking for help
         if key in HELP_KEYS:
@@ -401,7 +433,8 @@ def kv_parse_command_line(optiondictconfig, raise_error=False, keymapdict=None, 
 
     # check to see if they set the dumpconfig setting if so display and exit
     if 'dumpconfig' in optiondict and optiondict['dumpconfig']:
-        print('kv_parse_command_line:Dump configuration requested:')
+        if debug_file:
+            print('kv_parse_command_line:Dump configuration requested:')
         for (key, val) in optiondict.items():
             print('{}{}:{}'.format(key, '.' * (30 - len(key)), val))
         sys.exit()
@@ -1231,7 +1264,7 @@ def convert_hyperlink_field_values(src_data, hyperlink_fields):
 
 
 # create a multi-key dictionary from a list of dictionaries
-def create_multi_key_lookup(src_data, fldlist, copy_fields=None):
+def create_multi_key_lookup(src_data, fldlist, copy_fields=None, disp_msg=True):
     '''
     Create a multi key dictionary that gets to the record based on the
     keys in the record
@@ -1241,27 +1274,36 @@ def create_multi_key_lookup(src_data, fldlist, copy_fields=None):
     to determine if any of the fields has a value, and if none have a value we skip
     that record
     '''
+    if not src_data:
+        return {}
+    if type(src_data) != list:
+        if disp_msg:
+            print('src_data must be a list but is:  ', type(src_data))
     if type(fldlist) is not list:
-        print('fldlist must be type - list - but is: ', type(fldlist))
+        if disp_msg:
+            print('fldlist must be type - list - but is: ', type(fldlist))
         raise TypeError()
     # check that the fldlist keys are in the first record
     for fld in fldlist:
         if fld not in src_data[0]:
-            print('ERROR:  Unable to find key field: ', fld)
-            print('in first record:')
-            pprint.pprint(src_data[0])
-            print('This routine will fail')
-    # check that the copy_fields keys are in the first record
-    if copy_fields:
-        if type(copy_fields) is not list:
-            print('copy_fields must be type - list - but is: ', type(copy_fields))
-            raise TypeError()
-        for fld in copy_fields:
-            if fld not in src_data[0]:
-                print('ERROR:  Unable to find copy field: ', fld)
+            if disp_msg:
+                print('ERROR:  Unable to find key field: ', fld)
                 print('in first record:')
                 pprint.pprint(src_data[0])
                 print('This routine will fail')
+    # check that the copy_fields keys are in the first record
+    if copy_fields:
+        if type(copy_fields) is not list:
+            if disp_msg:
+                print('copy_fields must be type - list - but is: ', type(copy_fields))
+            raise TypeError()
+        for fld in copy_fields:
+            if fld not in src_data[0]:
+                if disp_msg:
+                    print('ERROR:  Unable to find copy field: ', fld)
+                    print('in first record:')
+                    pprint.pprint(src_data[0])
+                    print('This routine will fail')
     #
     # set up the dictionary to be populated
     src_lookup = {}
@@ -1364,7 +1406,7 @@ def create_multi_key_lookup_excel(excel_dict, fldlist, copy_fields=None):
     return src_lookup
 
 
-def copy_matched_data_cnt(dst_data, src_lookup, key_fields, copy_fields):
+def copy_matched_data_cnt(dst_data, src_lookup, key_fields, copy_fields, disp_msg=True):
     '''
     copy into dst_data from src_lookup, copy_fields when there is a match
     on key_fields
@@ -1373,26 +1415,41 @@ def copy_matched_data_cnt(dst_data, src_lookup, key_fields, copy_fields):
     '''
     # make sure we passed in a list
     if type(key_fields) is not list:
-        print('key_fields must be type - list - but is: ', type(key_fields))
+        if disp_msg:
+            print('key_fields must be type - list - but is: ', type(key_fields), key_fields)
         raise TypeError()
-    # check that the key_fields keys are in the first record
+    # check that the key_fields keys are in the first record of dst_data
     for fld in key_fields:
         if fld not in dst_data[0]:
-            print('ERROR:  Unable to find key_field field: ', fld)
-            print('in first record:')
-            pprint.pprint(dst_data[0])
-            print('This routine will fail')
+            if disp_msg:
+                print('ERROR:  Unable to find key_field field: ', fld)
+                print('in first record of dst_data - here is the record:')
+                pprint.pprint(dst_data[0])
+                print('This routine will fail')
     # make sure we passed in a list
     if type(copy_fields) is not list:
-        print('copy_fields must be type - list - but is: ', type(copy_fields))
+        if disp_msg:
+            print('copy_fields must be type - list - but is: ', type(copy_fields))
         raise TypeError()
-    # check that the copy_fields keys are in the first record
+    # check that the copy_fields keys are in the first record of dst_data
     for fld in copy_fields:
         if fld not in dst_data[0]:
-            print('ERROR:  Unable to find copy_field field: ', fld)
-            print('in first record:')
-            pprint.pprint(dst_data[0])
-            print('This routine will fail')
+            if disp_msg:
+                print('ERROR:  Unable to find copy_field field: ', fld)
+                print('in first record of dst_data - here is the record:')
+                pprint.pprint(dst_data[0])
+                print('This routine will fail')
+    # check that the copy_fields keys are in the first record of src_lookup
+    src_rec = src_lookup
+    for bkey in key_fields:
+        src_rec = src_rec[list(src_rec.keys())[0]]
+    for fld in copy_fields:
+        if fld not in src_rec:
+            if disp_msg:
+                print('ERROR:  Unable to find copy_field field: ', fld)
+                print('in first record of src_lookup - here is the record:')
+                pprint.pprint(src_rec)
+                print('This routine will fail')
     #
     # capture the count of matched records
     matched_recs = 0
@@ -1437,12 +1494,12 @@ def copy_matched_data_cnt(dst_data, src_lookup, key_fields, copy_fields):
     # return the number of records that matched
     return matched_recs, updated_recs
 
-def copy_matched_data(dst_data, src_lookup, key_fields, copy_fields):
+def copy_matched_data(dst_data, src_lookup, key_fields, copy_fields, disp_msg=True):
     '''
     copy into dst_data from src_lookup, copy_fields when there is a match
     on key_fields
     '''
-    matched_recs, updated_recs = copy_matched_data_cnt(dst_data, src_lookup, key_fields, copy_fields)
+    matched_recs, updated_recs = copy_matched_data_cnt(dst_data, src_lookup, key_fields, copy_fields, disp_msg=disp_msg)
 
     return matched_recs
 
@@ -1532,6 +1589,9 @@ def extract_unmatched_data(src_data, dst_lookup, key_fields):
     if type(key_fields) is not list:
         print('key_fields must be type - list - but is: ', type(key_fields))
         raise TypeError()
+    # check to see if there is no work to do
+    if not src_data:
+        return []
     # check that the key_fields keys are in the first record
     for fld in key_fields:
         if fld not in src_data[0]:
