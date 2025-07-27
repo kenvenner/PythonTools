@@ -1,7 +1,7 @@
 '''
 @author:   Ken Venner
 @contact:  ken@venerllc.com
-@version:  1.29
+@version:  1.30
 
 Library of tools used to process XLS/XLSX files
 '''
@@ -24,7 +24,7 @@ import logging
 logger = logging.getLogger(__name__)
 
 # global variables
-AppVersion = '1.29'
+AppVersion = '1.30'
 
 # ----- OPTIONS ---------------------------------------
 # debug
@@ -794,6 +794,11 @@ def readxls_findheader(xlsfile, req_cols, xlatdict=None, optiondict=None, col_ar
         print('excel_dict: ', excel_dict)
 
     return excel_dict
+
+# different name for the same function - i think this name is more meaningful
+def readxls2excel_dict_findheader(xlsfile, req_cols, xlatdict=None, optiondict=None, col_aref=None, data_only=True, debug=False):
+    return readxls_findheader(xlsfile, req_cols, xlatdict=xlatdict, optiondict=optiondict, col_aref=col_aref, data_only=data_only, debug=debug)
+
 
 
 # or passed on to other routines to extract the data for processing

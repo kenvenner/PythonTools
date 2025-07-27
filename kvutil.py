@@ -3,7 +3,7 @@ from __future__ import print_function
 '''
 @author:   Ken Venner
 @contact:  ken@venerllc.com
-@version:  1.88
+@version:  1.91
 
 Library of tools used in general by KV
 '''
@@ -36,8 +36,8 @@ debug_file= False
 logger = logging.getLogger(__name__)
 
 # set the module version number
-AppVersion = '1.88'
-__version__ = '1.88'
+AppVersion = '1.91'
+__version__ = '1.91'
 HELP_KEYS = ('help', 'helpall',)
 HELP_VALUE_TABLE = ('tbl', 'table', 'helptbl', 'fmt',)
 
@@ -1418,6 +1418,9 @@ def copy_matched_data_cnt(dst_data, src_lookup, key_fields, copy_fields, disp_ms
         if disp_msg:
             print('key_fields must be type - list - but is: ', type(key_fields), key_fields)
         raise TypeError()
+    # no work to do if there are no records to compare
+    if not dst_data:
+        return 0, 0
     # check that the key_fields keys are in the first record of dst_data
     for fld in key_fields:
         if fld not in dst_data[0]:

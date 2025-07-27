@@ -1,7 +1,7 @@
 '''
 @author:   Ken Venner
 @contact:  ken.venner@hermeus.com
-@version:  1.10
+@version:  1.11
 
 This library provides tools used when interacting with sharepoint sites and local synch links to sharepoint sites
 
@@ -17,7 +17,7 @@ import kvcsv
 import copy_comments
 
 # global variables
-AppVersion = '1.10'
+AppVersion = '1.11'
 
 
 # LOCAL FUNCTIONS/HELPERS
@@ -133,7 +133,7 @@ def save_and_log_dbms_extract(excel_file_path, result, starttime, now, log_file_
         fp.write(f'{excel_file_path},{now.isoformat()},{len(result.index)},{(endtime-starttime)/60}\n')
 
 
-def save_and_log_exception_rpt(excel_file_path, result, starttime, now, log_file_path, log_filename=None, flds=None, cc_cfg=None, cc_args=None):
+def save_and_log_exception_rpt(excel_file_path, result, starttime, now, log_file_path, log_filename=None, flds=None, cc_cfg=None, cc_args=None, cc_src_files=None, disp_msg=False):
     '''
     Create the screen output and log file update for the dbms extract
 
@@ -148,6 +148,10 @@ def save_and_log_exception_rpt(excel_file_path, result, starttime, now, log_file
     cc_cfg = filename of JSON copy_comments optiondict configuration options
     cc_args = dictionary of command line args that override the cc_cfg settings
     
+    cc_src_files - list of src files to loop through to pull in data to copy over, if None - use what is defined in cc_cfg
+
+    disp_msg - when true we output messages about what is going on with print statements
+
     '''
 
     if not log_file_path:
@@ -179,23 +183,58 @@ def save_and_log_exception_rpt(excel_file_path, result, starttime, now, log_file
         # now read in the JSON configuration
         cc_optiondict = kvutil.kv_parse_command_line(copy_comments.optiondictconfig, cmdlineargs=cc_args, skipcmdlineargs=True)
 
-        # validate these configuration options
-        copy_comments.validate_inputs(cc_optiondict)
+	# capture the original src_dir
+        orig_src_dir = cc_optiondict['src_dir']
+	
+	# there are times we need to load update data from more than one source file
+        if cc_src_files is None:
+            # not specified - so use the single source file that was sent in
+            cc_src_files = [cc_optiondict['src_fname']]
+
+        # step through each of the src files
+        for src_fullfilename in cc_src_files:
+            # split the filename up into parts
+            src_dir = os.path.dirname(src_fullfilename)
+            src_file = os.path.basename(src_fullfilename)
+            # if a directory was in this filename
+            if src_dir:
+                # use the path passed in with the override file
+                cc_optiondict['src_dir'] = src_dir
+            else:
+                # use the path stored in the config file
+                cc_optiondict['src_dir'] = orig_src_dir
+            # now pull the filename and replace it in this file
+            cc_optiondict['src_fname'] = src_file
+            
+            # debugging
+            if disp_msg:
+                print('src_file: ', cc_optiondict['src_fname'])
+            
+            # validate these configuration options
+            copy_comments.validate_inputs(cc_optiondict)
         
-        # read in the previous data for this file - copy over any data that was in that file
-        src_data = copy_comments.load_records(cc_optiondict, 'src')
+            # read in the previous data for this file - copy over any data that was in that file
+            src_data = copy_comments.load_records(cc_optiondict, 'src')
 
-        # read in the columns widths if this is defined to be done
-        copy_comments.read_src_file_format(cc_optiondict)
+            # read in the columns widths if this is defined to be done
+            copy_comments.read_src_file_format(cc_optiondict)
 
-        # update the destination arrray based on source data
-        matched_recs, updated_recs, src_lookup = copy_comments.src_to_dst_actions(src_data, result, cc_optiondict)
+            # update the destination arrray based on source data
+            matched_recs, updated_recs, src_lookup = copy_comments.src_to_dst_actions(src_data, result, cc_optiondict)
         
-        # get the removed records
-        rmv_data, dst_lookup = copy_comments.removed_records(src_data, result, cc_optiondict)
+            # get the removed records
+            rmv_data, dst_lookup = copy_comments.removed_records(src_data, result, cc_optiondict)
 
-        # and if we have removed records generate them
-        copy_comments.generate_rmv_output_file_not_formatted(rmv_data, cc_optiondict)
+            # debugging
+            if disp_msg:
+                print('src_data: ', len(src_data))
+                print('matched.: ', matched_recs)
+                print('updated.: ', updated_recs)
+                print('rmv_recs: ', len(rmv_data))
+            
+                  
+            # and if we have removed records generate them
+            copy_comments.generate_rmv_output_file_not_formatted(rmv_data, cc_optiondict)
     
     # Write the DataFrame to an Excel file
     if result:
