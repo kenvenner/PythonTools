@@ -45,14 +45,16 @@ def generate_test_filenames( startfilename='t_kvutil_tst', ext_range=4):
 
     return fname_list
 
-def file_teardown(  startfilename='t_kvutil_tst', ext_range=4):
-    logger.info('removing files from startfilename:%s:ext_range:%d', startfilename,ext_range)
+def file_teardown(  startfilename='t_kvutil_tst', ext_range=4, disp_msg=True):
+    if disp_msg:
+        logger.info('removing files from startfilename:%s:ext_range:%d', startfilename,ext_range)
     for fname in generate_test_filenames( startfilename, ext_range ):
         if os.path.exists(fname):
             os.remove(fname)
 
-def file_setup(  startfilename='t_kvutil_tst', ext_range=4):
-    logger.info('creating files from startfilename:%s:ext_range:%d', startfilename, ext_range)
+def file_setup(  startfilename='t_kvutil_tst', ext_range=4, disp_msg=True):
+    if disp_msg:
+        logger.info('creating files from startfilename:%s:ext_range:%d', startfilename, ext_range)
     for fname in generate_test_filenames( startfilename, ext_range ):
         if not os.path.exists(fname):
             with open( fname, 'w' ) as t:
@@ -65,12 +67,12 @@ class TestKVUtilFilenames(unittest.TestCase):
     # set up features
     @classmethod
     def setUpClass(cls):
-        file_setup( tst_filename, tst_ext_range )
+        file_setup( tst_filename, tst_ext_range, disp_msg=False )
 
     # tear down features
     @classmethod
     def tearDownClass(cls):
-        file_teardown( tst_filename, tst_ext_range )
+        file_teardown( tst_filename, tst_ext_range, disp_msg=False )
 
     # the function name: def strtobool(val):
     def test_strtobool_p01_true(self):

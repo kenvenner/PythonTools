@@ -3,7 +3,7 @@ from __future__ import print_function
 '''
 @author:   Ken Venner
 @contact:  ken@venerllc.com
-@version:  1.91
+@version:  1.92
 
 Library of tools used in general by KV
 '''
@@ -36,8 +36,8 @@ debug_file= False
 logger = logging.getLogger(__name__)
 
 # set the module version number
-AppVersion = '1.91'
-__version__ = '1.91'
+AppVersion = '1.92'
+__version__ = '1.92'
 HELP_KEYS = ('help', 'helpall',)
 HELP_VALUE_TABLE = ('tbl', 'table', 'helptbl', 'fmt',)
 
@@ -258,7 +258,8 @@ def kv_parse_command_line(optiondictconfig, raise_error=False, keymapdict=None, 
         else:
             # need to make sure this setting is of the proper format
             # it was not structured correctly in the json file
-            logger.warning('conf_json entered as a string vs list - format converted')
+            if disp_msg:
+                logger.warning('conf_json entered as a string vs list - format converted')
             conf_json_files = [optiondict['conf_json']]
             optiondict['conf_json'] = conf_json_files
         logger.debug('Config files defined on optiondictconfig:%s', conf_json_files)
@@ -338,13 +339,15 @@ def kv_parse_command_line(optiondictconfig, raise_error=False, keymapdict=None, 
             # debug message on type
             if 'type' in optiondictconfig[key]:
                 if debug: print('type:', optiondictconfig[key]['type'])
-                logger.debug('Key:%stype:%s', key, optiondictconfig[key]['type'])
+                if disp_msg:
+                    logger.debug('Key:%stype:%s', key, optiondictconfig[key]['type'])
 
             if 'type' not in optiondictconfig[key]:
                 # user did not specify the type of this option
                 optiondict[key] = value
                 if debug: print('type not in optiondictconfig[key]')
-                logger.debug('Type not in optiondictconfig[key] for key:%s', key)
+                if disp_msg:
+                    logger.debug('Type not in optiondictconfig[key] for key:%s', key)
             elif optiondictconfig[key]['type'] == 'bool':
                 optiondict[key] = bool(strtobool(value))
             elif optiondictconfig[key]['type'] == 'int':
@@ -367,7 +370,8 @@ def kv_parse_command_line(optiondictconfig, raise_error=False, keymapdict=None, 
                 # value must be from a predefined list of acceptable values
                 if 'valid' not in optiondictconfig[key]:
                     if debug: print('missing optiondictconfig setting [valid] for key:', key)
-                    logger.error('Missing optiondictconfig setting [valid] for key:%s', key)
+                    if disp_msg:
+                        logger.error('Missing optiondictconfig setting [valid] for key:%s', key)
                     raise Exception(u'Missing optiondictconfig setting [valid] for key:{}'.format(key))
                 if value not in optiondictconfig[key]['valid']:
                     if debug: print('value:', value, ':not in defined list of valid values:',
@@ -380,9 +384,11 @@ def kv_parse_command_line(optiondictconfig, raise_error=False, keymapdict=None, 
                 # user set a type but we don't know what to do with this type
                 optiondict[key] = value
                 if debug: print('type not known:', type)
-                logger.debug('Type unknown:%s', type)
+                if disp_msg:
+                    logger.debug('Type unknown:%s', type)
         elif raise_error:
-            logger.error('Unknown command line option:%s', key)
+            if disp_msg:
+                logger.error('Unknown command line option:%s', key)
             raise Exception(u'Unknown command line option:{}'.format(key))
         else:
             if debug: print('kv_parse_command_line:unknown-option:', key)
@@ -419,7 +425,8 @@ def kv_parse_command_line(optiondictconfig, raise_error=False, keymapdict=None, 
             print('-' * 80)
             print(errmsg)
             print('')
-        logger.error(errmsg)
+        if disp_msg:
+            logger.error(errmsg)
         raise Exception(errmsg)
         # sys.exit(1)
 
@@ -584,31 +591,36 @@ def kv_parse_command_line_display(optiondictconfig, defaultoptions=None, optiond
 #    debug - bool defines if we display duggging print statements
 #    maxretry - int - number of times we try to delete and then give up (default: 20)
 #
-def remove_filename(filename, calledfrom='', debug=False, maxretry=20):
+def remove_filename(filename, calledfrom='', debug=False, maxretry=20, disp_msg=True):
     logger.debug('Remove:%s:calledfrom:%s:maxretry:%d', filename, calledfrom, maxretry)
     cnt = 0
     if calledfrom:  calledfrom += ':'
     while os.path.exists(filename):
         cnt += 1
         if debug: print(calledfrom, filename, ':exists:try to remove:cnt:', cnt)
-        logger.debug('%s:%s:exists:try to remove:cnt:%d', calledfrom, filename, cnt)
+        if disp_msg:
+            logger.debug('%s:%s:exists:try to remove:cnt:%d', calledfrom, filename, cnt)
         try:
             os.remove(filename)  # try to remove it directly
-            logger.debug('%s:%s:removed on count:%d', calledfrom, filename, cnt)
+            if disp_msg:
+                logger.debug('%s:%s:removed on count:%d', calledfrom, filename, cnt)
         except Exception as e:
             if debug: print(calledfrom, 'errno:', e.errno, ':ENOENT:', errno.ENOENT)
-            logger.debug('%s:errno:%d:ENOENT:%d', calledfrom, e.errno, errno.ENOENT)
+            if disp_msg:
+                logger.debug('%s:errno:%d:ENOENT:%d', calledfrom, e.errno, errno.ENOENT)
             if e.errno == errno.ENOENT:  # file doesn't exist
                 return
             if debug: print(calledfrom, filename, ':', str(e))
             if cnt > maxretry:
                 if debug: print(calledfrom, filename, ':raise error - exceed maxretry attempts:', maxretry)
-                logger.error('%s:%s:exceeded maxretry attempts:%d:raise error', calledfrom, filename, maxretry)
+                if disp_msg:
+                    logger.error('%s:%s:exceeded maxretry attempts:%d:raise error', calledfrom, filename, maxretry)
                 raise e
             time.sleep(1)
         except WinError as f:
             if debug: print('Catch WinError:', str(f))
-            logger.warning('Catch WinError:%s', str(f))
+            if disp_msg:
+                logger.warning('Catch WinError:%s', str(f))
 
 
 # utility used to remove a folder - in windows sometimes we have a delay
@@ -642,7 +654,8 @@ def remove_dir(dirname, calledfrom='', debug=False, maxretry=20):
                 raise e
         except WinError as f:
             if debug: print('Catch WinError:', str(f))
-            logger.warning('Catch WinError:%s', str(f))
+            if disp_msg:
+                logger.warning('Catch WinError:%s', str(f))
 
 def dir_remove(dirname, calledfrom='', debug=False, maxretry=20):
     return remove_dir(dirname, calledfrom='', debug=False, maxretry=20)
@@ -651,7 +664,7 @@ def dir_remove(dirname, calledfrom='', debug=False, maxretry=20):
 # that are based on the "day" the program starts running
 # generally used for short running tools
 # not used with tools that start and stay running
-def filename_log_day_of_month(filename, ext_override=None, path_override=None):
+def filename_log_day_of_month(filename, ext_override=None, path_override=None, disp_msg=True):
     file_path, base_filename, file_ext = filename_split(filename, path_blank=True)
     if ext_override:
         file_ext = ext_override
@@ -817,7 +830,8 @@ def filename_proper(filename_full, file_dir=None, create_dir=False, write_check=
         else:
             # needs to be created - option not enabled - raise an error
             if debug: print('kvutil:filename_proper:directory does not exist:%s' % file_dir)
-            logger.error('Directory does not exist:%s', file_dir)
+            if disp_msg:
+                logger.error('Directory does not exist:%s', file_dir)
             raise Exception(u'kvutil:filename_proper:directory does not exist:{}'.format(file_dir))
 
     # check to see if the directory is writeable if the flag is set
@@ -834,8 +848,8 @@ def filename_proper(filename_full, file_dir=None, create_dir=False, write_check=
     return os.path.normpath(full_filename)
 
 # remove a filename
-def filename_remove(filename, calledfrom='', debug=False, maxretry=20):
-    return remove_filename(filename, calledfrom='', debug=False, maxretry=20)
+def filename_remove(filename, calledfrom='', debug=False, maxretry=20, disp_msg=True):
+    return remove_filename(filename, calledfrom='', debug=False, maxretry=20, disp_msg=True)
     
 # copy a filename to a new filename
 def filename_copy(src_filename, dst_filename):
