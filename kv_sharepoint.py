@@ -1,7 +1,7 @@
 '''
 @author:   Ken Venner
 @contact:  ken.venner@hermeus.com
-@version:  1.11
+@version:  1.13
 
 This library provides tools used when interacting with sharepoint sites and local synch links to sharepoint sites
 
@@ -16,8 +16,10 @@ import kvcsv
 
 import copy_comments
 
+
+
 # global variables
-AppVersion = '1.11'
+AppVersion = '1.13'
 
 
 # LOCAL FUNCTIONS/HELPERS
@@ -83,7 +85,7 @@ def sp_synched_dir_path(sp_path, onedrive_path=None, local_path=None, debug=Fals
         return local_path
 
 
-def save_and_log_dbms_extract(excel_file_path, result, starttime, now, log_file_path, log_filename=None):
+def save_and_log_dbms_extract(excel_file_path, result, starttime, now, log_file_path, log_filename=None, disp_msg=True):
     '''
     Create the screen output and log file update for the dbms extract
 
@@ -96,9 +98,14 @@ def save_and_log_dbms_extract(excel_file_path, result, starttime, now, log_file_
     
     '''
 
+    # validate we have something define
     if not log_file_path:
-        print('must provide a file_path to the log file')
-        sys.exit(1)
+        raise Exception('must provide a file_path to the log file')
+
+    # validate it is a directory
+    if not os.path.isdir(log_file_path):
+        raise Exception('log_file_path is not a directory: '+log_file_path)
+    
     # make sure we have the end directory string on this input string
     if log_file_path[-1] != '/':
         log_file_path += '/'
@@ -117,12 +124,17 @@ def save_and_log_dbms_extract(excel_file_path, result, starttime, now, log_file_
     # Write the DataFrame to an Excel file
     result.to_excel(excel_file_path, index=False, header=True)
 
-    print("Record Count:  ", len(result.index))
-    print("Data exported to Excel file successfully: " + excel_file_path)
+    # message
+    if disp_msg:
+        print("Record Count:  ", len(result.index))
+        print("Data exported to Excel file successfully: " + excel_file_path)
 
     # capture adn display run time
     endtime = time.time()
-    print('PROGRAM EXECUTION TIME: ', (endtime-starttime)/60, 'min')
+
+    # messsage
+    if disp_msg:
+        print('PROGRAM EXECUTION TIME: ', (endtime-starttime)/60, 'min')
 
     # open the log file and output record
     with open(log_file_path+log_filename, 'a') as fp:
@@ -133,7 +145,7 @@ def save_and_log_dbms_extract(excel_file_path, result, starttime, now, log_file_
         fp.write(f'{excel_file_path},{now.isoformat()},{len(result.index)},{(endtime-starttime)/60}\n')
 
 
-def save_and_log_exception_rpt(excel_file_path, result, starttime, now, log_file_path, log_filename=None, flds=None, cc_cfg=None, cc_args=None, cc_src_files=None, disp_msg=False):
+def save_and_log_exception_rpt(excel_file_path, result, starttime, now, log_file_path, log_filename=None, flds=None, cc_cfg=None, cc_args=None, cc_src_files=None, disp_msg=True, disp_msg2=False):
     '''
     Create the screen output and log file update for the dbms extract
 
@@ -154,9 +166,18 @@ def save_and_log_exception_rpt(excel_file_path, result, starttime, now, log_file
 
     '''
 
+    # debugging
+    local_debug = False
+    
+    # validate we have something define
     if not log_file_path:
-        print('must provide a file_path to the log file')
+        raise Exception('must provide a file_path to the log file')
+
+    # validate it is a directory
+    if not os.path.isdir(log_file_path):
+        raise Exception('log_file_path is not a directory: '+log_file_path)
         sys.exit(1)
+        
     # make sure we have the end directory string on this input string
     if log_file_path[-1] != '/':
         log_file_path += '/'
@@ -178,11 +199,58 @@ def save_and_log_exception_rpt(excel_file_path, result, starttime, now, log_file
             cc_args = {}
         elif type(cc_args) != dict:
             raise KeyError('cc_args must be a dictionary but is a: '+type(cc_args))
+        else:
+            # make a local copy so we don't change upper level values
+            cc_args = cc_args.copy()
+
+        # Debugging
+        if local_debug:
+            import pprint
+            print('json: ', cc_cfg)
+            print('cc_args')
+            pprint.pprint(cc_args)
+            if False:
+                print('copy_comments.optiondictconfig')
+                pprint.pprint(copy_comments.optiondictconfig)
+        
         # set up the pass in values
         cc_args['conf_json'] = cc_cfg
+
         # now read in the JSON configuration
         cc_optiondict = kvutil.kv_parse_command_line(copy_comments.optiondictconfig, cmdlineargs=cc_args, skipcmdlineargs=True)
 
+        # force the out variables to match the file you passed in
+        fpath, fname, fext = kvutil.filename_split(excel_file_path, path_blank=True)
+        if 'out_fname' in cc_optiondict:
+            fld = 'out'
+        else:
+            fld = 'dst'
+
+        # check to see if you are overwriting them
+        if cc_optiondict[fld+'_dir'] != fpath:
+            if local_debug:
+                print('changed dir..: ', cc_optiondict[fld+'_dir'], fpath)
+            # overwriting the value to match the filename we are working with
+            cc_optiondict[fld+'_dir'] = fpath
+        if cc_optiondict[fld+'_fname'] != fname+fext:
+            if local_debug:
+                print('changed fname: ', cc_optiondict[fld+'_fname'], fname+fext)
+            # overwriting the value to match the filename we are working with
+            cc_optiondict[fld+'_fname'] = fname+fext
+
+        # debugging
+        if local_debug:
+            import pprint
+            if False:
+                print('copy_comments.optiondictconfig_out')
+                pprint.pprint(copy_comments.optiondictconfig)
+            print('cc_optiondict')
+            pprint.pprint(cc_optiondict)
+
+        
+        # use the standard name for the array
+        dst_data = result
+        
 	# capture the original src_dir
         orig_src_dir = cc_optiondict['src_dir']
 	
@@ -213,6 +281,12 @@ def save_and_log_exception_rpt(excel_file_path, result, starttime, now, log_file
             # validate these configuration options
             copy_comments.validate_inputs(cc_optiondict)
         
+            # debugging
+            if local_debug:
+                for fld in ['out','dst']:
+                    for fld2 in ['_dir', '_fname']:
+                        print(fld+fld2, cc_optiondict[fld+fld2])
+
             # read in the previous data for this file - copy over any data that was in that file
             src_data = copy_comments.load_records(cc_optiondict, 'src')
 
@@ -222,35 +296,90 @@ def save_and_log_exception_rpt(excel_file_path, result, starttime, now, log_file
             # update the destination arrray based on source data
             matched_recs, updated_recs, src_lookup = copy_comments.src_to_dst_actions(src_data, result, cc_optiondict)
         
-            # get the removed records
-            rmv_data, dst_lookup = copy_comments.removed_records(src_data, result, cc_optiondict)
+            # if we want to save out the removed records then do that analysis
+            if cc_optiondict['rmv_fname']:
+                rmv_data, dst_lookup = copy_comments.removed_records(src_data, dst_data, cc_optiondict)
+            else:
+                rmv_data = []
 
+            # if we want to save out the removed records then do that analysis
+            if cc_optiondict['add_fname']:
+                add_data = copy_comments.added_records(src_data, dst_data, src_lookup, cc_optiondict)
+            else:
+                add_data = []
+            
             # debugging
-            if disp_msg:
+            if disp_msg2:
                 print('src_data: ', len(src_data))
+                print('dst_data: ', len(dst_data))
+                print('result..: ', len(result))
                 print('matched.: ', matched_recs)
                 print('updated.: ', updated_recs)
                 print('rmv_recs: ', len(rmv_data))
-            
-                  
+                print('add_recs: ', len(rmv_data))
+
             # and if we have removed records generate them
+            copy_comments.generate_out_output_file_not_formatted(dst_data, cc_optiondict, updated_recs)
             copy_comments.generate_rmv_output_file_not_formatted(rmv_data, cc_optiondict)
+            copy_comments.generate_add_output_file_not_formatted(add_data, cc_optiondict)
     
     # Write the DataFrame to an Excel file
     if result:
-        # print(flds)
+        # debugging
+        if local_debug:
+            print('flds: ', flds)
+            print('inbound rec cnt: ', len(result))
+
+        # create the file
         kvxls.writelist2xls(excel_file_path, result, flds)
+
+        # debugging
+        if local_debug:
+            chk = kvxls.readxls2list(excel_file_path)
+            print('saved rec count: ', len(chk))
+
         # now apply formatting to this newly create file
         if cc_cfg:
+            # debugging
+            if local_debug:
+                print('format the output')
+
+            # format this file
             copy_comments.format_output(cc_optiondict)
-        print('Record count: ', len(result))
-        print("Created file:  ", excel_file_path)
+
+            # debugging
+            if local_debug:
+                chk = kvxls.readxls2list(excel_file_path)
+                print('fmtd rec count: ', len(chk))
+
+            # hard core debuggin
+            if False:
+                import pprint
+                print('post formatted records')
+                pprint.pprint(chk)
+
+        # message
+        if disp_msg:
+            print('Record count: ', len(result))
+            print("Created file:  ", excel_file_path)
     else:
         kvutil.remove_filename(excel_file_path)
-        print('No exceptions found')
+        if disp_msg:
+            print('No exceptions found-'+os.path.basename(excel_file_path))
+
+    # debbuging
+    if local_debug:
+        stevef='/Users/KenVenner/Hermeus Corp/NetSuite Implementation - Documents/Master Mapping Files/error/NS_PO_LINE_BUDGET_CODE_ELT_DETAILS_STEVEF.xlsx'
+        if os.path.exists(stevef):
+            chk = kvxls.readxls2list(stevef)
+            print('stevef: ', len(chk))
         
-    # capture adn display run time
+    # capture and display run time
     endtime = time.time()
+
+    # messsage
+    if False and disp_msg:
+        print('PROGRAM EXECUTION TIME: ', (endtime-starttime)/60, 'min')
 
     # open the log file and output record
     with open(log_file_path+log_filename, 'a') as fp:
@@ -261,7 +390,7 @@ def save_and_log_exception_rpt(excel_file_path, result, starttime, now, log_file
         fp.write(f'{excel_file_path},{now.isoformat()},{len(result)},{(endtime-starttime)/60}\n')
 
         
-def save_lot_serial_csv_exception_rpt(excel_file_path, result, lotfield='islotitem'):
+def save_lot_serial_csv_exception_rpt(excel_file_path, result, lotfield='islotitem', disp_msg=True):
     '''
     Create the CSV output files for lot and serial to simplify the load into netsuite
 
@@ -280,14 +409,16 @@ def save_lot_serial_csv_exception_rpt(excel_file_path, result, lotfield='islotit
     # now output the two results
     if lot_recs:
         kvcsv.writelist2csv(lot_fname, lot_recs)
-        print('Record count: ', len(lot_recs))
-        print("Created file:  ", lot_fname)
+        if disp_msg:
+            print('Record count: ', len(lot_recs))
+            print("Created file:  ", lot_fname)
     else:
         kvutil.remove_filename(lot_fname)
     if serial_recs:
         kvcsv.writelist2csv(serial_fname, serial_recs)
-        print('Record count: ', len(serial_recs))
-        print("Created file:  ", serial_fname)
+        if disp_msg:
+            print('Record count: ', len(serial_recs))
+            print("Created file:  ", serial_fname)
     else:
         kvutil.remove_filename(serial_fname)
         

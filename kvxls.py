@@ -709,7 +709,7 @@ def readxls_findheader(xlsfile, req_cols, xlatdict=None, optiondict=None, col_ar
                 header_value = [x for x in header if x]
                 # if we got nothing - error out
                 if not allow_empty and not header_value:
-                    raise Exception('no header values found in row: ' + str(row))
+                    raise Exception('no header values found in row: ' + str(row) + '|File: ' + xlsfile)
                 # break out of this loop we are done
                 break
 

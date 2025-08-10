@@ -3,7 +3,7 @@ from __future__ import print_function
 '''
 @author:   Ken Venner
 @contact:  ken@venerllc.com
-@version:  1.92
+@version:  1.93
 
 Library of tools used in general by KV
 '''
@@ -36,8 +36,8 @@ debug_file= False
 logger = logging.getLogger(__name__)
 
 # set the module version number
-AppVersion = '1.92'
-__version__ = '1.92'
+AppVersion = '1.93'
+__version__ = '1.93'
 HELP_KEYS = ('help', 'helpall',)
 HELP_VALUE_TABLE = ('tbl', 'table', 'helptbl', 'fmt',)
 
@@ -116,7 +116,11 @@ def strtobool(val):
 #
 #  if <value> in list ('tbl','table','helptbl','fmt'), then the output is mark down table
 #
-def kv_parse_command_line(optiondictconfig, raise_error=False, keymapdict=None, cmdlineargs=None, skipcmdlineargs=False, debug=False, disp_msg=True):
+def kv_parse_command_line(optiondictconfig, raise_error=False, keymapdict=None, cmdlineargs=None, skipcmdlineargs=False, disp_msg=True, debug=False):
+    # set the value when not set
+    if not cmdlineargs:
+        cmdlineargs = {}
+
     # debug
     if debug: print('kv_parse_command_line:sys.argv:', sys.argv)
     if debug: print('kv_parse_command_line:optiondictconfig:', optiondictconfig)
@@ -127,8 +131,6 @@ def kv_parse_command_line(optiondictconfig, raise_error=False, keymapdict=None, 
 
     if debug_file:
         print('1-load-cmdlineargs:', cmdlineargs, skipcmdlineargs)
-    if cmdlineargs is None:
-        cmdlineargs = {}
         
     # default a set of basic config values - so we don't need to put them in each app
     defaultdictconfig = {
@@ -683,7 +685,15 @@ def filename_log_day_of_month(filename, ext_override=None, path_override=None, d
 
 # return the filename that is max or min for a given query (UT)
 # default is to return the MIN filematch
-def filename_maxmin(file_glob, reverse=False):
+def filename_maxmin(file_glob, reverse=False, exclude_in_name=None):
+    '''
+    file_glob - glob string use to find a list of files
+    reverse - if True - find the max file, if false find the min file
+    exclude_in_name - defines the list of returned filenames to exclude
+       if a string - this excludes filenames that have this string in them (case sensitive)
+       if a list of strings - this excludes filenames that have any of these strings in them (case sensitive)
+    '''
+    
     # pull the list of files
     filelist = glob.glob(file_glob)
     # debugging
@@ -691,6 +701,19 @@ def filename_maxmin(file_glob, reverse=False):
     # if we got no files - return none
     if not filelist:
         logger.debug('Return none')
+        return None
+    # if exclude in name filter the list down
+    if exclude_in_name:
+        if type(exclude_in_name) == str:
+            # simple string - just exclude any filenames with this string in it (case sensitive)
+            filelist = [x for x in filelist if exclude_in_name not in x]
+        elif type(exclude_in_name) == list and type(excluded_in_name[0]) == str:
+            # list of strings - just exclude any filenames with this any of these strings
+            for remove_fname in exclude_in_name:
+                filelist = [x for x in filelist if remove_fname not in x]
+    # if we got no files - return none
+    if not filelist:
+        logger.debug('Return none after we excluded returned filenames')
         return None
     logger.debug('File:%s', sorted(filelist, reverse=reverse)[0])
     # sort this list - and return the desired value

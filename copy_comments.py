@@ -3,18 +3,32 @@
     matching on the keys between two files
 
     src_dir/src_fname - the file that has the existing data that we need to copy over
-    dst_dir/dst_fname - the NEW file that we read in and apply teh src_data to
+    dst_dir/dst_fname - the NEW file that we read in and apply the src_data to
     out_dir/out_fname - the output file generated after we apply src_data to dst_fname.
 
     src_fname_glob/src_fname_glob_rev - allow the system to do a glob search for max/min filenames to be used
     dst_fname_glob/dst_fname_glob_rev - allow the system to do a glob search for max/min filenames to be used
 
-    out_fname_append - enables the generation of the out_fname based in teh dst_fname and append a string.
+    src_ws - worksheet to read in
+    dst_ws - worksheet to read in and create if generating dst_fname
+    out_ws - worksheet to create 
+
+    out_fname_append - enables the generation of the out_fname based in the dst_fname and append a string.
 
     rmv_fname - show the records that used to be there but no longer are
 
     rmv_fname_append
-    rmv_fname_uniqtype
+    rmv_fname_uniqtype - causes unique filename 
+
+    add_fname - show the records that were added in the new file that were not in the old file
+
+    add_fname_append
+    add_fname_uniqtype - causes unique filename
+
+    default_fname - default 'dst_fname', valid values 'src_fname', 'dst_fname', 'out_fname'
+
+    ignore_missing_src/ignore_missing_dst - ignore (don't error out) if there are missing files
+
 
     # how to cause the format of the file to be read in and generate an output json used to drive formats
     fmt_dir - format output directory
@@ -36,7 +50,8 @@
          {
             'src': <src_fieldname>, 
             'dst': <dst_fieldname>, 
-            'if_blank': if true - only update dst field when empty - which is default
+            'src_not_blank': if true - update dst when src is not empty - overrules 'if_blank' when set do nothing on false
+            'if_blank': if true - only update dst field when empty - which is default, when else - just always update
          }
     internal_compare_fields - list of dictionaries that define dst fields taht compare fields and communicate diffferences
          {
@@ -48,9 +63,14 @@
     format_cell - boolean when true we copy the formatting of cells based on match key from src to out_fname
     src_width - when true, and format_output is true, we calculate col_width by reading the values from src_fname
 
+    disp_msg_add_rmv - when creating add/remove files output # of records and the filename
+    disp_msg
+    update_cnt - report on number of records that were updated with data copoied over to them
+
+
 @author:   Ken Venner
 @contact:  ken.venner@sierrspace.com
-@version:  1.21
+@version:  1.27
 
     Created:   2024-05-20;kv
     Version:   2025-07-12;kv - lots of changes and now callable as a librarry
@@ -74,8 +94,8 @@ import os
 
 # ----------------------------------------
 
-AppVersion = '1.21'
-__version__ = '1.21'
+AppVersion = '1.27'
+__version__ = '1.27'
 
 
 # ----------------------------------------
@@ -85,9 +105,8 @@ __version__ = '1.21'
 
 optiondictconfig = {
     'AppVersion' : {
-        'value': '1.21',
+        'value': '1.27',
     },
-    
     'debug' : {
         'value' : False,
         'type' : 'bool',
@@ -98,10 +117,19 @@ optiondictconfig = {
         'type' : 'bool',
         'description': 'cause processing print statement to execute',
     },
+    'disp_msg_add_rmv' : {
+        'value' : False,
+        'type' : 'bool',
+        'description': 'cause processing print statement when creating add or rmv file',
+    },
+    'default_fname' : {
+        'value' : 'dst_fname',
+        'description': 'filename to use when filenames are not provided - default is dst_fname',
+    },
     'src_dir' : {
         'value' : "",
         'type' : 'dir',
-        'description': 'path to the file with the data to be copied from',
+        'description': 'path to the file with the data to be copied from/existing data',
     },
     'dst_dir' : {
         'value' : None,
@@ -118,6 +146,11 @@ optiondictconfig = {
         'type' : 'dir',
         'description': 'path to the location where the removed records output file is placed',
     },
+    'add_dir' : {
+        'value' : None,
+        'type' : 'dir',
+        'description': 'path to the location where the added records output file is placed',
+    },
     'fmt_dir' : {
         'value' : None,
         'type' : 'dir',
@@ -125,11 +158,11 @@ optiondictconfig = {
     },
     'src_fname' : {
         'value' : "",
-        'description':  'filename of the file with the data to copy from',
+        'description':  'filename of the file with the data to copy from/existing',
     },
     'src_fname_glob' : {
         'value' : "",
-        'description':  'filename glob of the file with the data to copy from',
+        'description':  'filename glob of the file with the data to copy from/existing',
     },
     'src_fname_glob_rev' : {
         'value' : True,
@@ -138,11 +171,11 @@ optiondictconfig = {
     },
     'dst_fname' : {
         'value' : "",
-        'description':  'filename of the file with the data to copy into',
+        'description':  'filename of the file with the data to copy into/new version of data',
     },
     'dst_fname_glob' : {
         'value' : "",
-        'description':  'filename glob of the file with the data to copy into',
+        'description':  'filename glob of the file with the data to copy into/new version of data',
     },
     'dst_fname_glob_rev' : {
         'value' : True,
@@ -151,19 +184,47 @@ optiondictconfig = {
     },
     'out_fname' : {
         'value' : "",
-        'description':  'filename of the output file',
+        'description':  'filename of the output file-populated if different than dst_fname',
     },
     'rmv_fname' : {
         'value' : "",
         'description':  'filename of the removed records output file',
     },
+    'add_fname' : {
+        'value' : "",
+        'description':  'filename of the added records output file',
+    },
     'fmt_fname' : {
         'value' : "",
         'description':  'filename of the col_width dictionary output file',
     },
+    'out_fname_append' : {
+        'value' : "",
+        'description':  'string to append to the dst_fname to create the out_fname - do not set this and out_fname',
+    },
+    'out_fname_uniqtype' : {
+        'value' : "",
+        'description':  'unique filename code if you want a unique fname generated',
+    },
+    'rmv_fname_append' : {
+        'value' : "",
+        'description':  'string to append to the dst_fname to create the rmv_fname',
+    },
+    'rmv_fname_uniqtype' : {
+        'value' : "",
+        'description':  'unique filename code if you want a unique fname generated',
+    },
+    'add_fname_append' : {
+        'value' : "",
+        'description':  'string to append to the dst_fname to create the add_fname',
+    },
+    'add_fname_uniqtype' : {
+        'value' : "",
+        'description':  'unique filename code if you want a unique fname generated',
+    },
     'src_ws' : {
         'value' : None,
-        'description':  'worksheet in the file with the data to copy from',
+        'description':  'worksheet in the file with the data to copy from/existing',
     },
     'dst_ws' : {
         'value' : None,
@@ -174,6 +235,10 @@ optiondictconfig = {
         'description':  'worksheet in the output file',
     },
     'src_reqcols' : {
+        'value' : None,
+        'description':  'list of columns used to find the header - when none - first row is the header',
+    },
+    'dst_reqcols' : {
         'value' : None,
         'description':  'list of columns used to find the header - when none - first row is the header',
     },
@@ -192,32 +257,12 @@ optiondictconfig = {
         'type': 'bool',
         'description':  'when true report on the number of records where an update took place',
     },
-    'dst_reqcols' : {
-        'value' : None,
-        'description':  'list of columns used to find the header - when none - first row is the header',
-    },
-    'out_fname_append' : {
-        'value' : "",
-        'description':  'string to append to the dst_fname to create teh out_fname - do not set this and out_fname',
-    },
-    'rmv_fname_append' : {
-        'value' : "",
-        'description':  'string to append to the dst_fname to create teh rmv_fname',
-    },
-    'rmv_fname_uniqtype' : {
-        'value' : "",
-        'description':  'unique filename code if you want a unique fname generated',
-    },
     'json_cfg_filename' : {
         'value' : False,
         'description': 'when populated with a filename - we create a default cfg json file',
     },
     'copy_fields' : {
         'value' : [
-            'Comment',
-            'NewPORequestorID',
-            'NewPORequestorName',
-            'NewPORequestorEmail',
         ],
         'type' : 'liststr',
         'description': 'fields in the source file that are copied over into the destination file',
@@ -236,8 +281,6 @@ optiondictconfig = {
     },
     'key_fields' : {
         'value' : [
-            'Purchasing Document',
-            'Item',
         ],
         'type' : 'liststr',
         'description': 'fields that create the unique business key in the source and destination file',
@@ -351,56 +394,67 @@ def validate_inputs(optiondict):
     test inputs and set defaults
     '''
 
-    # expected values
+    debug = False
+    debug2 = False
+    if debug:
+        print('optiondict - validate_inputs')
+        pprint.pprint(optiondict)
+    
+    # expected values - set display message if not set
     if 'disp_msg' not in optiondict:
         optiondict['disp_msg'] = False
         
-    # default fields that were not set
-    if optiondict['out_dir'] and not optiondict['rmv_dir']:
-        optiondict['rmv_dir'] = optiondict['out_dir']
+    # default fields that were not set - set add/rmv to outdir if outdir set and they are not
+    for fld in ['rmv_dir', 'add_dir']:
+        if not optiondict[fld]:
+            if optiondict['out_dir']:
+                optiondict[fld] = optiondict['out_dir']
+            elif optiondict['dst_dir']:
+                optiondict[fld] = optiondict['dst_dir']
         
-    # set directories to match teh src_dir if not set
-    for fld in ('dst_dir', 'out_dir', 'rmv_dir', 'fmt_dir'):
+    # set directories to match the src_dir if not set
+    for fld in ('dst_dir', 'out_dir', 'rmv_dir', 'add_dir', 'fmt_dir'):
         if not optiondict[fld]:
             optiondict[fld] = optiondict['src_dir']
 
     # make sure each directory ends with '/'
-    for fld in ('src_dir', 'dst_dir', 'out_dir', 'rmv_dir', 'fmt_dir'):
+    for fld in ('src_dir', 'dst_dir', 'out_dir', 'rmv_dir', 'add_dir', 'fmt_dir'):
         if optiondict[fld][-1] == '\\':
             optiondict[fld] = optiondict[fld][-1] + '/'
         if optiondict[fld][-1] != '/':
             optiondict[fld] += '/'
 
-    # determine if we need to generate the output fname
-    if optiondict['out_fname'] and optiondict['out_fname_append']:
-        # output messages
-        if optiondict['disp_msg']:
-            print('ERROR:  you can not populated both attributes [out_fname] and [out_fname_append]')
-        return False
-        sys.exit(1)
-    elif optiondict['out_fname_append']:
-        # calculate the out_fname
-        fname, fext = os.path.splitext(optiondict['dst_fname'])
-        # build the new filename
-        optiondict['out_fname'] = fname + optiondict['out_fname_append'] + fext
+    # generate the remove and/or add filename
+    for fld in ['rmv', 'add', 'out']:
+        # determine if we need to create a staring value - if they want to add on - we must create
+        if optiondict[fld+'_fname_append'] or optiondict[fld+'_fname_uniqtype']:
+            # if fname not populated - take it from dst_fname
+            if not optiondict[fld+'_fname']:
+                optiondict[fld+'_fname'] = optiondict[optiondict['default_fname']]
+                
+        # we assume fname is set - that is done in validate_inputs()
+        if optiondict[fld+'_fname_append']:
+            # calculate the new filename
+            fname, fext = os.path.splitext(optiondict[fld+'_fname'])
+            # build the new filename
+            optiondict[fld+'_fname'] = fname + optiondict[fld+'_fname_append'] + fext
 
-    # generate the remove filename
-    if optiondict['rmv_fname_append']:
-        # calculate the out_fname
-        fname, fext = os.path.splitext(optiondict['dst_fname'])
-        # build the new filename
-        optiondict['rmv_fname'] = fname + optiondict['rmv_fname_append'] + fext
+        # generate a unique remove/add filename
+        if optiondict[fld+'_fname_uniqtype']:
+            # now build the dict that causes the generation of a unique filename
+            file_href = {
+                'file_path': optiondict[fld+'_dir'],
+                'filename': os.path.join(optiondict[fld+'_dir'], optiondict[fld+'_fname']),
+                'uniqtype': optiondict[fld+'_fname_uniqtype'],
+                'forceuniq': True,
+            }
+            optiondict[fld+'_fname'] = os.path.basename(kvutil.filename_unique(filename_href=file_href, debug=False))
 
-    # generate a unique remove filename
-    if optiondict['rmv_fname_uniqtype']:
-        file_href = {
-            'file_path': optiondict['rmv_dir'],
-            'filename': os.path.join(optiondict['rmv_dir'], optiondict['rmv_fname']),
-            'uniqtype': optiondict['rmv_fname_uniqtype'],
-            'forceuniq': True,
-        }
-        optiondict['rmv_fname'] = os.path.basename(kvutil.filename_unique(filename_href=file_href, debug=False))
-
+    # debugging
+    if debug:
+        print('optiondict - validate_inputs:mid')
+        pprint.pprint(optiondict)
+    
     # deal with src_fname_glob
     if optiondict['src_fname_glob']:
         optiondict['src_fname'] = os.path.basename(kvutil.filename_maxmin(optiondict['src_dir']+optiondict['src_fname_glob'], optiondict['src_fname_glob_rev']))
@@ -409,13 +463,14 @@ def validate_inputs(optiondict):
         optiondict['dst_fname'] = os.path.basename(kvutil.filename_maxmin(optiondict['dst_dir']+optiondict['dst_fname_glob'], optiondict['dst_fname_glob_rev']))
 
 
-    # key fields comparison
+    # key fields comparison - if no key return False - maybe change to raise Exception()
     if not 'key_fields' in optiondict:
         # output messages
         if optiondict['disp_msg']:
             print('Must define the fields that make the business keys in:  key_fields')
         return False
 
+    # if this fields is not the right type - return False - maybe change to raise Exception()
     if type(optiondict['key_fields']) != list:
         # output messages
         if optiondict['disp_msg']:
@@ -480,11 +535,18 @@ def validate_inputs(optiondict):
             if optiondict['disp_msg']:
                 print('When [copy_fields] exist it must have values and does not')
             return False
+
+    # debugging
+    if debug or debug2:
+        print('optiondict - validate_inputs:end')
+        pprint.pprint(optiondict)
+    if debug:
+        sys.exit()
         
     # return that all is ok
     return True
     
-def load_records(optiondict, srctype='src'):
+def load_records(optiondict, srctype='src', disp_msg=False):
     '''
     pass in the type of config variables we want to load from - then load and return that list of records
 
@@ -492,6 +554,7 @@ def load_records(optiondict, srctype='src'):
     
     srctype can be:  src|dst
     '''
+    # set the value if not set
     if srctype+'_ws' not in optiondict:
         optiondict[srctype+'_ws'] = None
 
@@ -502,6 +565,8 @@ def load_records(optiondict, srctype='src'):
     if optiondict['ignore_missing_'+srctype]:
         # check for existence of the src file
         if not os.path.exists(full_filename):
+            if disp_msg:
+                print('copy_comments:load_records:file does not exist: '+full_filename)
             return []
     # load the file
     if srctype+'_reqcols' in optiondict and optiondict[srctype+'_reqcols']:
@@ -512,6 +577,10 @@ def load_records(optiondict, srctype='src'):
         # load with the assumption that the first row is the header
         loaded_data = kvxls.readxls2list(full_filename, optiondict[srctype+'_ws'])
 
+    if False:
+        print(full_filename)
+        print(len(loaded_data))
+    
     return loaded_data
 
 def read_src_file_format(optiondict):
@@ -527,17 +596,17 @@ def read_src_file_format(optiondict):
         # output messages
         if optiondict['disp_msg']:
             print('Getting col_width formatting from src_fname')
-        optiondict['col_width'] = kv_excel.get_existing_column_width(full_filename)
+        optiondict['col_width'] = kv_excel.get_existing_column_width(full_filename, disp_msg=optiondict['disp_msg'])
 
 def validate_missing_columns(loaded_data, optiondict, fld):
     '''
     Validate that the data has the columns required based on the list of columns defined by 'fld'
     '''
-    # check to see if key is even there
+    # check to see if key is even there - if not we are not missing anything
     if fld not in optiondict:
         return []
     
-    # get the list of key_fields columns that don't have that key in teh first record in this list
+    # get the list of key_fields columns that don't have that key in the first record in this list
     return [x for x in optiondict[fld] if x not in loaded_data[0]]
 
 def create_flds_in_records(loaded_data, fields):
@@ -594,8 +663,13 @@ def src_to_dst_actions(src_data, dst_data, optiondict):
         # copy fields in the file we just read in
         for rec in dst_data:
             for copydict in optiondict['internal_copy_fields']:
-                if not copydict['is_blank'] or not rec[copydict['dst']]:
-                    # is_blank is False (we want to update all recrs, or dst is not populated then update from src
+                if 'src_not_blank' in copydict and copydict['src_not_blank'] and not rec[copydict['src']]:
+                    # copy source when not blank
+                    rec[copydict['dst']] = rec[copydict['src']]
+                elif (copydict['is_blank'] and not rec[copydict['dst']]) or not copydict['is_blank'] :
+                    # dst is not populated and flag set,
+                    # or is_blank is False (we want to update all recrs,
+                    # then update from src
                     rec[copydict['dst']] = rec[copydict['src']]
 
     # now compare fields interest witin the output file
@@ -624,6 +698,15 @@ def removed_records(src_data, dst_data, optiondict):
 
     return rmv_data, dst_lookup
 
+def added_records(src_data, dst_data, src_lookup, optiondict):
+    '''
+    find the records in dst_data that are not in src_data
+    but pass in the dictionary for src_lookup
+    '''
+    add_data = kvutil.extract_unmatched_data(dst_data, src_lookup, optiondict['key_fields'])
+
+    return add_data
+
 def generate_out_output_file_not_formatted(dst_data, optiondict, updated_recs):
     '''
     generate the output file is we create a new file
@@ -651,6 +734,23 @@ def generate_rmv_output_file_not_formatted(rmv_data, optiondict):
         kvxls.writelist2xls(full_filename, rmv_data)
         if optiondict['debug']:
             print('rmv_write:', full_filename)
+        if optiondict['disp_msg_add_rmv']:
+            print('Record count: ', len(rmv_data))
+            print('Created file: ' + full_filename)
+
+def generate_add_output_file_not_formatted(add_data, optiondict):
+    '''
+    generate the add file if defined and we have remove file records
+    '''
+    # output what we came up with
+    if 'add_fname' in optiondict and optiondict['add_fname'] and add_data:
+        full_filename = os.path.join(optiondict['add_dir'], optiondict['add_fname'])
+        kvxls.writelist2xls(full_filename, add_data)
+        if optiondict['debug']:
+            print('add_write:', full_filename)
+        if optiondict['disp_msg_add_rmv']:
+            print('Record count: ', len(add_data))
+            print('Created file: ' + full_filename)
 
 
 def format_output(optiondict):
@@ -667,6 +767,7 @@ def format_output(optiondict):
     # output messages
     if optiondict['disp_msg']:
         print('\nFormatting output file')
+
     # if we set fmt_fname then save this col width data
     if optiondict['fmt_fname']:
         full_filename = os.path.join(optiondict['fmt_dir'], optiondict['fmt_fname'])
@@ -742,7 +843,7 @@ def format_cell(optiondict):
     # debug
     # pprint.pprint(src_lookup)
 
-    # step through teh output and find the equivalent input and then copy over the formatting
+    # step through the output and find the equivalent input and then copy over the formatting
     for row in range(excel_dict_out['row_header']+1, excel_dict_out['sheetmaxrow']):
         matched = True
         ptr = src_lookup
@@ -926,6 +1027,12 @@ if __name__ == "__main__":
     else:
         rmv_data = []
 
+    # if we want to save out the removed records then do that analysis
+    if optiondict['add_fname']:
+        add_data = added_records(src_data, dst_data, src_lookup, optiondict)
+    else:
+        add_data = []
+
     # output what is going on
     if optiondict['dump_recs']:
         print('-'*80)
@@ -943,10 +1050,13 @@ if __name__ == "__main__":
             print('updated_recs....: ', updated_recs)
         if optiondict['rmv_fname']:
             print('removed recs....: ', len(rmv_data))
+        if optiondict['add_fname']:
+            print('added recs......: ', len(add_data))
 
     # output raw outputs not formatted
     generate_out_output_file_not_formatted(dst_data, optiondict, updated_recs)
     generate_rmv_output_file_not_formatted(rmv_data, optiondict)
+    generate_add_output_file_not_formatted(add_data, optiondict)
 
     # format the output file
     format_output(optiondict)
@@ -967,5 +1077,7 @@ if __name__ == "__main__":
             print('generated file..: ', optiondict['out_dir'] + optiondict['out_fname'])
         if optiondict['rmv_fname'] and rmv_data:
             print('generated file..: ', optiondict['rmv_dir'] + optiondict['rmv_fname'])
+        if optiondict['add_fname'] and add_data:
+            print('generated file..: ', optiondict['add_dir'] + optiondict['add_fname'])
     
 #eof

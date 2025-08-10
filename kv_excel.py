@@ -1,6 +1,7 @@
 import openpyxl
 from openpyxl.utils import get_column_letter
 from openpyxl.styles import Font
+import os
 
 
 def open_xlsx_get_ws_wb( xls_filename, ws_sheetname = None ):
@@ -20,14 +21,16 @@ def get_existing_column_width( xls_filename, ws_sheetname = None ):
     Pass in a filename
     Extract the column widths from a define xlsx filename
     '''
-    ws, wb = open_xlsx_get_ws_wb( xls_filename, ws_sheetname )
     col_width = {}
+    if not os.path.exists( xls_filename ):
+        return col_width
+    ws, wb = open_xlsx_get_ws_wb( xls_filename, ws_sheetname )
     for k, cd in ws.column_dimensions.items():
         col_width[k] = cd.width
     return col_width
 
 # convert this into a class and then apply to that object you opened
-def apply_col_width_ws_obj( ws, col_width ):
+def apply_col_width_ws_obj( ws, col_width, disp_msg=True ):
     '''
     Pass in a worksheet object and a column width dictionary
     Format the worksheet object to have column widths as defined in the dictionary
@@ -39,7 +42,8 @@ def apply_col_width_ws_obj( ws, col_width ):
                 # print('applied width to %s: %d', k, col_width[k])
                 ws.column_dimensions[k].width = col_width[k]
             else:
-                print('Skipped column: ', k)
+                if disp_msg:
+                    print('Skipped column: ', k)
     else:
         # print('column range')
         for col in range(ws.min_column, ws.max_column):
@@ -48,7 +52,8 @@ def apply_col_width_ws_obj( ws, col_width ):
                 # print('applied width to %s: %d', k, col_width[k])
                 ws.column_dimensions[k].width = col_width[k]
             else:
-                print('Skipped column: ', k)
+                if disp_msg:
+                    print('Skipped column: ', k)
             
 def apply_filter_all_columns( ws ):
     '''
@@ -95,7 +100,7 @@ def autofit_column_width( ws ):
         ws.column_dimensions[column_letter].width = adjusted_width
 
 
-def format_xlsx_with_filter_and_freeze( xls_filename, ws_sheetname=None, col_width=None ):
+def format_xlsx_with_filter_and_freeze( xls_filename, ws_sheetname=None, col_width=None, disp_msg=True ):
     '''
     Take in a xlsx filename
     Open this file
@@ -104,9 +109,11 @@ def format_xlsx_with_filter_and_freeze( xls_filename, ws_sheetname=None, col_wid
     Freeze
     Save back to the original filename
     '''
+    if not os.path.exists( xls_filename ):
+        raise Exception('File does not exist: ' + xls_filename)
     ws, wb = open_xlsx_get_ws_wb(xls_filename)
     if col_width:
-        apply_col_width_ws_obj(ws, col_width)
+        apply_col_width_ws_obj(ws, col_width, disp_msg=disp_msg)
     else:
         autofit_column_width(ws)
     apply_filter_all_columns(ws)
