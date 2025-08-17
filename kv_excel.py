@@ -1,10 +1,20 @@
+'''
+@author:   Ken Venner
+@contact:  ken@venerllc.com
+@version:  1.05
+
+Library of tools to work directly with excel files
+'''
+
 import openpyxl
 from openpyxl.utils import get_column_letter
 from openpyxl.styles import Font
 import os
 
+# global variables
+AppVersion = '1.05'
 
-def open_xlsx_get_ws_wb( xls_filename, ws_sheetname = None ):
+def open_xlsx_get_ws_wb( xls_filename, ws_sheetname = None, disp_msg=False ):
     '''
     Pass in a filename
     Open an xlsx document to the specified sheet name or the active sheetname
@@ -16,7 +26,7 @@ def open_xlsx_get_ws_wb( xls_filename, ws_sheetname = None ):
         ws = wb.active
     return ws, wb
 
-def get_existing_column_width( xls_filename, ws_sheetname = None ):
+def get_existing_column_width( xls_filename, ws_sheetname = None, disp_msg=False ):
     '''
     Pass in a filename
     Extract the column widths from a define xlsx filename
@@ -24,7 +34,7 @@ def get_existing_column_width( xls_filename, ws_sheetname = None ):
     col_width = {}
     if not os.path.exists( xls_filename ):
         return col_width
-    ws, wb = open_xlsx_get_ws_wb( xls_filename, ws_sheetname )
+    ws, wb = open_xlsx_get_ws_wb( xls_filename, ws_sheetname, disp_msg=disp_msg )
     for k, cd in ws.column_dimensions.items():
         col_width[k] = cd.width
     return col_width
@@ -111,7 +121,7 @@ def format_xlsx_with_filter_and_freeze( xls_filename, ws_sheetname=None, col_wid
     '''
     if not os.path.exists( xls_filename ):
         raise Exception('File does not exist: ' + xls_filename)
-    ws, wb = open_xlsx_get_ws_wb(xls_filename)
+    ws, wb = open_xlsx_get_ws_wb(xls_filename, disp_msg=disp_msg)
     if col_width:
         apply_col_width_ws_obj(ws, col_width, disp_msg=disp_msg)
     else:

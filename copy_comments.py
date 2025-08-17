@@ -70,7 +70,7 @@
 
 @author:   Ken Venner
 @contact:  ken.venner@sierrspace.com
-@version:  1.27
+@version:  1.28
 
     Created:   2024-05-20;kv
     Version:   2025-07-12;kv - lots of changes and now callable as a librarry
@@ -94,8 +94,8 @@ import os
 
 # ----------------------------------------
 
-AppVersion = '1.27'
-__version__ = '1.27'
+AppVersion = '1.28'
+__version__ = '1.28'
 
 
 # ----------------------------------------
@@ -105,7 +105,7 @@ __version__ = '1.27'
 
 optiondictconfig = {
     'AppVersion' : {
-        'value': '1.27',
+        'value': '1.28',
     },
     'debug' : {
         'value' : False,
@@ -568,6 +568,7 @@ def load_records(optiondict, srctype='src', disp_msg=False):
             if disp_msg:
                 print('copy_comments:load_records:file does not exist: '+full_filename)
             return []
+
     # load the file
     if srctype+'_reqcols' in optiondict and optiondict[srctype+'_reqcols']:
         # look up the header because we defined the requirec columns
@@ -587,12 +588,15 @@ def read_src_file_format(optiondict):
     '''
     This reads in the src file and gets the format from it and stores it in optiondict
     '''
+    # set the variable
+    if 'disp_msg' not in optiondict:
+        optiondict['disp_msg'] = True
 
     # get full filename
     full_filename = os.path.join(optiondict['src_dir'], optiondict['src_fname'])
     
     # check if we should load the col_width from the src_fname
-    if optiondict['src_width']:
+    if 'src_width' in optiondict and optiondict['src_width']:
         # output messages
         if optiondict['disp_msg']:
             print('Getting col_width formatting from src_fname')
@@ -693,6 +697,13 @@ def removed_records(src_data, dst_data, optiondict):
     '''
     find the records in src_data that are not in dst_data
     '''
+    if 'key_fields' not in optiondict:
+        raise Exception('key_fields not defined in optiondict')
+    if not optiondict['key_fields']:
+        raise Exception('key_fields defined and empty in optiondict')
+    if type(optiondict['key_fields']) != list:
+        raise TypeError('key_fields defined and not list but type: ' + str(type(optiondict['key_fields'])))
+    
     dst_lookup = kvutil.create_multi_key_lookup(dst_data, optiondict['key_fields'])
     rmv_data = kvutil.extract_unmatched_data(src_data, dst_lookup, optiondict['key_fields'])
 
@@ -703,6 +714,13 @@ def added_records(src_data, dst_data, src_lookup, optiondict):
     find the records in dst_data that are not in src_data
     but pass in the dictionary for src_lookup
     '''
+    if 'key_fields' not in optiondict:
+        raise Exception('key_fields not defined in optiondict')
+    if not optiondict['key_fields']:
+        raise Exception('key_fields defined and empty in optiondict')
+    if type(optiondict['key_fields']) != list:
+        raise TypeError('key_fields defined and not list but type: ' + str(type(optiondict['key_fields'])))
+
     add_data = kvutil.extract_unmatched_data(dst_data, src_lookup, optiondict['key_fields'])
 
     return add_data
@@ -713,15 +731,15 @@ def generate_out_output_file_not_formatted(dst_data, optiondict, updated_recs):
     or recreate the destination file if records were updated
     '''
     # output what we came up with
-    if optiondict['out_fname']:
+    if 'out_fname' in optiondict and optiondict['out_fname']:
         full_filename = os.path.join(optiondict['out_dir'], optiondict['out_fname'])
         kvxls.writelist2xls(full_filename, dst_data)
-        if optiondict['debug']:
+        if 'debug' in optiondict and optiondict['debug']:
             print('out_write:', full_filename)
-    elif optiondict['dst_fname'] and updated_recs:
+    elif 'dst_fname' in optiondict and optiondict['dst_fname'] and updated_recs:
         full_filename = os.path.join(optiondict['dst_dir'], optiondict['dst_fname'])
         kvxls.writelist2xls(full_filename, dst_data)
-        if optiondict['debug']:
+        if 'debug' in optiondict and optiondict['debug']:
             print('dst_write:', full_filename)
 
 def generate_rmv_output_file_not_formatted(rmv_data, optiondict):
@@ -732,9 +750,9 @@ def generate_rmv_output_file_not_formatted(rmv_data, optiondict):
     if 'rmv_fname' in optiondict and optiondict['rmv_fname'] and rmv_data:
         full_filename = os.path.join(optiondict['rmv_dir'], optiondict['rmv_fname'])
         kvxls.writelist2xls(full_filename, rmv_data)
-        if optiondict['debug']:
+        if 'debug' in optiondict and optiondict['debug']:
             print('rmv_write:', full_filename)
-        if optiondict['disp_msg_add_rmv']:
+        if 'disp_msg_add_rmv' in optiondict and optiondict['disp_msg_add_rmv']:
             print('Record count: ', len(rmv_data))
             print('Created file: ' + full_filename)
 
@@ -746,9 +764,9 @@ def generate_add_output_file_not_formatted(add_data, optiondict):
     if 'add_fname' in optiondict and optiondict['add_fname'] and add_data:
         full_filename = os.path.join(optiondict['add_dir'], optiondict['add_fname'])
         kvxls.writelist2xls(full_filename, add_data)
-        if optiondict['debug']:
+        if 'debug' in optiondict and optiondict['debug']:
             print('add_write:', full_filename)
-        if optiondict['disp_msg_add_rmv']:
+        if 'disp_msg_add_rmv' in optiondict and optiondict['disp_msg_add_rmv']:
             print('Record count: ', len(add_data))
             print('Created file: ' + full_filename)
 
@@ -765,21 +783,21 @@ def format_output(optiondict):
         return
 
     # output messages
-    if optiondict['disp_msg']:
+    if 'disp_msg' in optiondict and optiondict['disp_msg']:
         print('\nFormatting output file')
 
     # if we set fmt_fname then save this col width data
-    if optiondict['fmt_fname']:
+    if 'fmt_fname' in optiondict and optiondict['fmt_fname']:
         full_filename = os.path.join(optiondict['fmt_dir'], optiondict['fmt_fname'])
         kvutil.dump_dict_to_json_file(full_filename, {"col_width": optiondict['col_width']})
         # output messages
-        if optiondict['disp_msg']:
+        if 'disp_msg' in optiondict and optiondict['disp_msg']:
             print('Saved col_width to:' + full_filename)
     #
     # output messages
-    if optiondict['disp_msg']:
+    if 'disp_msg' in optiondict and optiondict['disp_msg']:
         print('Performing output formatting')
-    if optiondict['out_fname']:
+    if 'out_fname' in optiondict and optiondict['out_fname']:
         excel_filename = os.path.join(optiondict['out_dir'],optiondict['out_fname'])
     else:
         excel_filename = os.path.join(optiondict['dst_dir'], optiondict['dst_fname'])

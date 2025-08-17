@@ -3,7 +3,7 @@ from __future__ import print_function
 '''
 @author:   Ken Venner
 @contact:  ken@venerllc.com
-@version:  1.93
+@version:  1.94
 
 Library of tools used in general by KV
 '''
@@ -36,8 +36,8 @@ debug_file= False
 logger = logging.getLogger(__name__)
 
 # set the module version number
-AppVersion = '1.93'
-__version__ = '1.93'
+AppVersion = '1.94'
+__version__ = '1.94'
 HELP_KEYS = ('help', 'helpall',)
 HELP_VALUE_TABLE = ('tbl', 'table', 'helptbl', 'fmt',)
 
@@ -120,7 +120,6 @@ def kv_parse_command_line(optiondictconfig, raise_error=False, keymapdict=None, 
     # set the value when not set
     if not cmdlineargs:
         cmdlineargs = {}
-
     # debug
     if debug: print('kv_parse_command_line:sys.argv:', sys.argv)
     if debug: print('kv_parse_command_line:optiondictconfig:', optiondictconfig)
@@ -138,6 +137,11 @@ def kv_parse_command_line(optiondictconfig, raise_error=False, keymapdict=None, 
             'value': False,
             'type': 'bool',
             'description': 'defines if we are running in debug mode',
+        },
+        'disp_msg': {
+            'value': True,
+            'type': 'bool',
+            'description': 'defines if we are displaying messages',
         },
         'verbose': {
             'value': 1,
@@ -435,6 +439,25 @@ def kv_parse_command_line(optiondictconfig, raise_error=False, keymapdict=None, 
     # debug when we are done
     if debug: print('kv_parse_command_line:optiondict:', optiondict)
     logger.debug('optiondict:%s', optiondict)
+
+    # now deal with the fact that we process "all" commands and drive that processing
+    # all processing ONLY runs when all is in option dict, and it is enabled
+    # and there is at least one entry in optiondictconfig that as an 'notall' attribute and it is tru
+    # other wise we assume processing is done outside of this routine
+    if 'all' in optiondict and optiondict['all']:
+        anysetnotall = [k for k, v in optiondictconfig.items() if 'notall' in v and v['notall']]
+        if anysetnotall:
+            for k, v in optiondictconfig.items():
+                if k in ['debug']:
+                    continue
+                # created option to not change
+                if 'type' in v and v['type'] == 'bool':
+                    # check to see if we to not be changed by all
+                    if 'notall' in v and v['notall']:
+                        continue
+                    else:
+                        optiondict[k] = True
+    
 
     # check to see if we want to dump the optiondict out to a file
     if 'dumpconfigfile' in optiondict and optiondict['dumpconfigfile']:
