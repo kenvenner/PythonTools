@@ -281,6 +281,69 @@ class TestKVUtilFilenames(unittest.TestCase):
         set_argv(1,'test1=15') # push value onto command line (string)
         self.assertEqual(kvutil.kv_parse_command_line( optiondictconfig, skipcmdlineargs=True ), {'test1': 12} )
 
+    # passing skipcmdlineargs = True
+    def test_kv_parse_command_line_p31_cmdlineargs_config_set_type_int(self):
+        optiondictconfig = { 'test1' : { 'value' : 12, 'type' : 'int' }}
+        if debug_file:
+            print('\n\ntest_kv_parse_command_line_p30_skipcmdlineargs_config_set_type_int')
+            print('cfg:', optiondictconfig)
+            print(kvutil.kv_parse_command_line( optiondictconfig, skipcmdlineargs=True ))
+        clear_argv()
+        set_argv(1,'test1=15') # push value onto command line (string)
+        cmdlineargs = {'test1': 20}
+        self.assertEqual(kvutil.kv_parse_command_line( optiondictconfig, cmdlineargs=cmdlineargs ), {'test1': 15} )
+    def test_kv_parse_command_line_p32_cmdlineargs_config_set_type_int(self):
+        optiondictconfig = { 'test1' : { 'value' : 12, 'type' : 'int' }}
+        if debug_file:
+            print('\n\ntest_kv_parse_command_line_p30_skipcmdlineargs_config_set_type_int')
+            print('cfg:', optiondictconfig)
+            print(kvutil.kv_parse_command_line( optiondictconfig, skipcmdlineargs=True ))
+        clear_argv()
+        cmdlineargs = {'test1': 20}
+        self.assertEqual(kvutil.kv_parse_command_line( optiondictconfig, cmdlineargs=cmdlineargs ), {'test1': 20} )
+
+    # keymapdict
+    def test_kv_parse_command_line_p33_keymapdict_config_set_type_int(self):
+        optiondictconfig = { 'test1' : { 'value' : 12, 'type' : 'int' }}
+        keymapdict = {'test2': 'test1', 'test3': 'test1'}
+        if debug_file:
+            print('\n\ntest_kv_parse_command_line_p30_skipcmdlineargs_config_set_type_int')
+            print('cfg:', optiondictconfig)
+            print(kvutil.kv_parse_command_line( optiondictconfig, skipcmdlineargs=True ))
+        clear_argv()
+        set_argv(1,'test2=15') # push value onto command line (string)
+        self.assertEqual(kvutil.kv_parse_command_line( optiondictconfig, keymapdict=keymapdict ), {'test1': 15} )
+
+    # all
+    def test_kv_parse_command_line_p40_keymapdict_config_set_type_int(self):
+        optiondictconfig = { 'test1' : { 'value' : False, 'type' : 'bool' }, 'test2': {'type': 'bool', 'notall': True}, 'all': {'value': False, 'type': 'bool'}}
+        if debug_file:
+            print('\n\ntest_kv_parse_command_line_p30_skipcmdlineargs_config_set_type_int')
+            print('cfg:', optiondictconfig)
+            print(kvutil.kv_parse_command_line( optiondictconfig, skipcmdlineargs=True ))
+        clear_argv()
+        #set_argv(1,'test2=False') # push value onto command line (string)
+        self.assertEqual(kvutil.kv_parse_command_line( optiondictconfig ), {'test1': False, 'test2': None, 'all': False} )
+    def test_kv_parse_command_line_p41_keymapdict_config_set_type_int(self):
+        optiondictconfig = { 'test1' : { 'value' : False, 'type' : 'bool' }, 'test2': {'type': 'bool', 'notall': True}, 'all': {'value': False, 'type': 'bool'}}
+        if debug_file:
+            print('\n\ntest_kv_parse_command_line_p30_skipcmdlineargs_config_set_type_int')
+            print('cfg:', optiondictconfig)
+            print(kvutil.kv_parse_command_line( optiondictconfig, skipcmdlineargs=True ))
+        clear_argv()
+        set_argv(1,'test1=True') # push value onto command line (string)
+        self.assertEqual(kvutil.kv_parse_command_line( optiondictconfig ), {'test1': True, 'test2': None, 'all': False} )
+    def test_kv_parse_command_line_p42_keymapdict_config_set_type_int(self):
+        optiondictconfig = { 'test1' : { 'value' : False, 'type' : 'bool' }, 'test2': {'type': 'bool', 'notall': True}, 'all': {'value': False, 'type': 'bool'}}
+        if debug_file:
+            print('\n\ntest_kv_parse_command_line_p30_skipcmdlineargs_config_set_type_int')
+            print('cfg:', optiondictconfig)
+            print(kvutil.kv_parse_command_line( optiondictconfig, skipcmdlineargs=True ))
+        clear_argv()
+        set_argv(1,'all=True') # push value onto command line (string)
+        self.assertEqual(kvutil.kv_parse_command_line( optiondictconfig ), {'test1': True, 'test2': None, 'all': True} )
+
+        
     # additional tests to add
     # passing cc_cfg
     # passing cc_args
@@ -376,8 +439,15 @@ class TestKVUtilFilenames(unittest.TestCase):
 
     # hashmap setting
     def test_set_when_not_set_p01_key2_not_exist(self):
-        self.assertEqual(kvutil.set_when_not_set( { 'key1' : { 'key3' : 'value3'} }, 'key1', 'key2', 'value2' ), True )
-
+        origdict = { 'key1' : { 'key3' : 'value3'} }
+        self.assertEqual(kvutil.set_when_not_set( origdict, 'key1', 'key2', 'value2' ), True )
+        self.assertEqual(origdict, { 'key1' : { 'key3' : 'value3', 'key2': 'value2' } } )
+    def test_set_when_not_set_p03_key2_exists(self):
+        origdict = { 'key1' : { 'key3' : 'value3', 'key2': 'value4'} }
+        self.assertEqual(kvutil.set_when_not_set( origdict, 'key1', 'key2', 'value2' ), False )
+        self.assertEqual(origdict, { 'key1' : { 'key3' : 'value3', 'key2': 'value4' } } )
+        
+                         
     # the function name: def kv_parse_command_line_display(optiondictconfig, defaultoptions=None, optiondict=None, tblfmt=False, debug=False):
     def test_kv_parse_command_line_display_p01_pass(self):
         optiondictconfig={}
