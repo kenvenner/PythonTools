@@ -37,6 +37,11 @@
     no_fmt - set to true to quit after you create the output file
     format_output - set to true
 
+    # flags to set if you want to capture and output the src_width format data
+    src_width = True
+    src_width = True
+    no_fmt = True
+
 
     src_reqcols - the list of column headers that we must find in order to find the header row - when not populated the first row is header
     dst_reqcols - the list of column headers that we must find in order to find the header row - when not populated the first row is header
@@ -70,7 +75,7 @@
 
 @author:   Ken Venner
 @contact:  ken.venner@sierrspace.com
-@version:  1.28
+@version:  1.29
 
     Created:   2024-05-20;kv
     Version:   2025-07-12;kv - lots of changes and now callable as a librarry
@@ -94,8 +99,8 @@ import os
 
 # ----------------------------------------
 
-AppVersion = '1.28'
-__version__ = '1.28'
+AppVersion = '1.29'
+__version__ = '1.29'
 
 
 # ----------------------------------------
@@ -105,7 +110,7 @@ __version__ = '1.28'
 
 optiondictconfig = {
     'AppVersion' : {
-        'value': '1.28',
+        'value': '1.29',
     },
     'debug' : {
         'value' : False,
@@ -315,6 +320,11 @@ optiondictconfig = {
         'value' : True,
         'type' : 'bool',
         'description': 'when true and format_output is true - get col_width from the src_fname',
+    },
+    'src_width_disp' : {
+        'value' : False,
+        'type' : 'bool',
+        'description': 'when true, and src_width true display the source file column widths',
     },
     'force_copy_flds' : {
         'value' : False,
@@ -601,7 +611,15 @@ def read_src_file_format(optiondict):
         if optiondict['disp_msg']:
             print('Getting col_width formatting from src_fname')
         optiondict['col_width'] = kv_excel.get_existing_column_width(full_filename, disp_msg=optiondict['disp_msg'])
+        # display this if they are looking for it
+        if optiondict['src_width_disp']:
+            print('Source file col width:')
+            pprint.pprint(optiondict['col_width'])
+            if optiondict['no_fmt']:
+                print('src_width, src_width_disp and no_fmt set - exitting')
+                sys.exit()
 
+                
 def validate_missing_columns(loaded_data, optiondict, fld):
     '''
     Validate that the data has the columns required based on the list of columns defined by 'fld'
@@ -651,9 +669,23 @@ def src_to_dst_actions(src_data, dst_data, optiondict):
     # now step through the dst data and copy over matching data
     if optiondict['copy_fields']:
         if optiondict['update_cnt']:
-            matched_recs, updated_recs = kvutil.copy_matched_data_cnt(dst_data, src_lookup, optiondict['key_fields'], optiondict['copy_fields'])
+            matched_recs, updated_recs = kvutil.copy_matched_data_cnt(
+                dst_data,
+                src_lookup,
+                optiondict['key_fields'],
+                optiondict['copy_fields'],
+                force_copy_flds=optiondict.get('force_copy_flds', False),
+                disp_msg=False
+            )
         else:    
-            matched_recs = kvutil.copy_matched_data(dst_data, src_lookup, optiondict['key_fields'], optiondict['copy_fields'])
+            matched_recs = kvutil.copy_matched_data(
+                dst_data,
+                src_lookup,
+                optiondict['key_fields'],
+                optiondict['copy_fields'],
+                force_copy_flds=optiondict.get('force_copy_flds', False),
+                disp_msg=False
+            )
             updated_recs = matched_recs
     else:
         matched_recs = 0
@@ -782,10 +814,14 @@ def format_output(optiondict):
     if not optiondict['format_output']:
         return
 
+    disp_msg = True
     # output messages
-    if 'disp_msg' in optiondict and optiondict['disp_msg']:
-        print('\nFormatting output file')
-
+    if 'disp_msg' in optiondict:
+        if optiondict['disp_msg']:
+            print('\nFormatting output file')
+        else:
+            disp_msg = False
+            
     # if we set fmt_fname then save this col width data
     if 'fmt_fname' in optiondict and optiondict['fmt_fname']:
         full_filename = os.path.join(optiondict['fmt_dir'], optiondict['fmt_fname'])
@@ -810,7 +846,7 @@ def format_output(optiondict):
     if optiondict['no_fmt'] or 'col_width' not in optiondict or not optiondict['col_width']:
         return
     # format this file with what is defined in col_width
-    kv_excel.format_xlsx_with_filter_and_freeze(excel_filename, col_width=optiondict['col_width'])
+    kv_excel.format_xlsx_with_filter_and_freeze(excel_filename, col_width=optiondict['col_width'], disp_msg=disp_msg)
 
 def format_cell(optiondict):
     '''

@@ -1201,6 +1201,59 @@ class TestKVUtilFilenames(unittest.TestCase):
         self.assertEqual(updated_cnt, 1)
         self.assertEqual(dst_data, result)
     
+    def test_copy_matched_data_cnt_p05_2keys_2matches_force_copy_flds(self):
+        dst_data = [
+            {'col1': 'val1',  'col2': 'val2',  'col3': 'val3'},
+            {'col1': 'val11', 'col2': 'val12', 'col3': 'val13'}
+        ]
+        key_fields = ['col1', 'col2']
+        copy_fields = ['col4']
+        src_lookup =  {
+            'val1': {'val2': {'col1': 'val1',
+                              'col2': 'val2',
+                              'col3': 'val3',
+                              'col4': 'val44'}},
+            'val11': {'val12': {'col1': 'val11',
+                                'col2': 'val12',
+                                'col3': '',
+                                'col4': ''}}
+        }
+        result = [
+            {'col1': 'val1',  'col2': 'val2',  'col3': 'val3',  'col4': 'val44'},
+            {'col1': 'val11', 'col2': 'val12', 'col3': 'val13', 'col4': ''}
+        ]
+        matched_cnt, updated_cnt = kvutil.copy_matched_data_cnt(dst_data, src_lookup, key_fields, copy_fields, force_copy_flds=True, disp_msg=False)
+        self.assertEqual(matched_cnt, 2)
+        self.assertEqual(updated_cnt, 1)
+        self.assertEqual(dst_data, result)
+
+    def test_copy_matched_data_cnt_p06_2keys_0matches_force_copy_flds(self):
+        dst_data = [
+            {'col1': 'val1',  'col2': 'val2',  'col3': 'val3'},
+            {'col1': 'val11', 'col2': 'val12', 'col3': 'val13'}
+        ]
+        key_fields = ['col1', 'col2']
+        copy_fields = ['col4']
+        src_lookup =  {
+            'val3': {'val2': {'col1': 'val1',
+                              'col2': 'val2',
+                              'col3': 'val3',
+                              'col4': 'val44'}},
+            'val13': {'val12': {'col1': 'val11',
+                                'col2': 'val12',
+                                'col3': '',
+                                'col4': ''}}
+        }
+        result = [
+            {'col1': 'val1',  'col2': 'val2',  'col3': 'val3',  'col4': ''},
+            {'col1': 'val11', 'col2': 'val12', 'col3': 'val13', 'col4': ''}
+        ]
+        matched_cnt, updated_cnt = kvutil.copy_matched_data_cnt(dst_data, src_lookup, key_fields, copy_fields, force_copy_flds=True, disp_msg=False)
+        self.assertEqual(matched_cnt, 0)
+        self.assertEqual(updated_cnt, 0)
+        self.assertEqual(dst_data, result)
+
+
     # copy_matched_data(dst_data, src_lookup, key_fields, copy_fields)
     def test_copy_matched_data_p01_2keys(self):
         dst_data = [

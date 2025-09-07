@@ -1,7 +1,7 @@
 '''
 @author:   Ken Venner
 @contact:  ken.venner@hermeus.com
-@version:  1.13
+@version:  1.15
 
 This library provides tools used when interacting with sharepoint sites and local synch links to sharepoint sites
 
@@ -19,7 +19,7 @@ import copy_comments
 
 
 # global variables
-AppVersion = '1.13'
+AppVersion = '1.15'
 
 
 # LOCAL FUNCTIONS/HELPERS
@@ -219,6 +219,9 @@ def save_and_log_exception_rpt(excel_file_path, result, starttime, now, log_file
         # now read in the JSON configuration
         cc_optiondict = kvutil.kv_parse_command_line(copy_comments.optiondictconfig, cmdlineargs=cc_args, skipcmdlineargs=True)
 
+        # set the disp_msg in this optiondict based on what was passed in
+        cc_optiondict['disp_msg'] = disp_msg
+        
         # force the out variables to match the file you passed in
         fpath, fname, fext = kvutil.filename_split(excel_file_path, path_blank=True)
         if 'out_fname' in cc_optiondict:
@@ -390,21 +393,56 @@ def save_and_log_exception_rpt(excel_file_path, result, starttime, now, log_file
         fp.write(f'{excel_file_path},{now.isoformat()},{len(result)},{(endtime-starttime)/60}\n')
 
         
-def save_lot_serial_csv_exception_rpt(excel_file_path, result, lotfield='islotitem', disp_msg=True):
+def save_lot_serial_csv_exception_rpt(excel_file_path, result, lotfield='islotitem', outflds=None, fldmapping=None, disp_msg=True):
     '''
     Create the CSV output files for lot and serial to simplify the load into netsuite
 
     excel_file_path - full path and filename to output xlsx
     result - dataframe created from execution of SQL
+    lotfield - string - defines what field in the record defines if it is lot of serial
+
+    outflds = list of keys in the recrod that go into the genrated csv - if populated - if not the full record goes out
+    fldmapping - dictionary of keys that are in outfld and a new column name for that key - if we need to change the header
+    
     '''
 
     # remove the .xlsx and then put on the _Lot.csv
     lot_fname = excel_file_path[:-5]+"_Lot.csv"
     serial_fname = excel_file_path[:-5]+"_Serial.csv"
 
+    
+    # we need to build a new output if we have that defined
+    if result and (outflds or fldmapping):
+        # validate before we take action
+        bad_outflds = [x for x in outflds if x not in result[0]]
+        if bad_outflds:
+            print('ERROR in defintion - outflds: ', outflds)
+            print('Generating csv for: ' + excel_file_path)
+            raise Exception('Outflds defined not in the record: ' + ','.join(bad_outflds))
+        # now build new mapping
+        desired_result = []
+        for x in result:
+            if outflds:
+                if fldmapping:
+                    # we have limited fields and we have one or more field mappings
+                    new_rec = {fldmapping.get(fld, fld):x[fld] for fld in outflds}
+                else:
+                    # we have limited fields and not field mapping
+                    new_rec = {fld:x[fld] for fld in outflds}
+            elif fldmapping:
+                # we want all fields but with some field mapping
+                new_rec = {fldmapping.get(fld, fld):x[fld] for fnld in x.keys()}
+            else:
+                # take the entire record
+                new_rec = x
+            # save this new record
+            desired_result.append(new_rec)
+    else:
+        desired_result = result
+
     # now build the two arrays
-    lot_recs = [x for x in result if x[lotfield] == 'T']
-    serial_recs = [x for x in result if x[lotfield] == 'F']
+    lot_recs = [x for x in desired_result if x[lotfield] == 'T']
+    serial_recs = [x for x in desired_result if x[lotfield] == 'F']
 
     # now output the two results
     if lot_recs:

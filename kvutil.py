@@ -3,7 +3,7 @@ from __future__ import print_function
 '''
 @author:   Ken Venner
 @contact:  ken@venerllc.com
-@version:  1.94
+@version:  1.95
 
 Library of tools used in general by KV
 '''
@@ -36,8 +36,8 @@ debug_file= False
 logger = logging.getLogger(__name__)
 
 # set the module version number
-AppVersion = '1.94'
-__version__ = '1.94'
+AppVersion = '1.95'
+__version__ = '1.95'
 HELP_KEYS = ('help', 'helpall',)
 HELP_VALUE_TABLE = ('tbl', 'table', 'helptbl', 'fmt',)
 
@@ -1466,18 +1466,27 @@ def create_multi_key_lookup_excel(excel_dict, fldlist, copy_fields=None):
     return src_lookup
 
 
-def copy_matched_data_cnt(dst_data, src_lookup, key_fields, copy_fields, disp_msg=True):
+def copy_matched_data_cnt(dst_data, src_lookup, key_fields, copy_fields, force_copy_flds=False, disp_msg=True):
     '''
     copy into dst_data from src_lookup, copy_fields when there is a match
     on key_fields
 
+    dst_data - list of dict that is the destination data
+    src_lookup - dict - keyed by the list of business keys - the link back to the src recrods
+    key_fields - list of business keys
+    copy_fields - list of keys that get copy from src to dst
+    force_copy_flds - when true - we do not check to see if the fields is in dst we just copy over
+    disp_msg - when true - we display messages about what is going on
+
+    force the dst_data field if it does not exist
+
     provide the ability to return the number of records that were actual updated
     '''
     # make sure we passed in a list
-    if type(key_fields) is not list:
+    if not isinstance(key_fields, list):
         if disp_msg:
             print('key_fields must be type - list - but is: ', type(key_fields), key_fields)
-        raise TypeError()
+        raise TypeError('key_fields must be of type list but is type: '+str(type(key_fields)))
     # no work to do if there are no records to compare
     if not dst_data:
         return 0, 0
@@ -1490,18 +1499,20 @@ def copy_matched_data_cnt(dst_data, src_lookup, key_fields, copy_fields, disp_ms
                 pprint.pprint(dst_data[0])
                 print('This routine will fail')
     # make sure we passed in a list
-    if type(copy_fields) is not list:
+    if not isinstance(copy_fields, list):
         if disp_msg:
-            print('copy_fields must be type - list - but is: ', type(copy_fields))
-        raise TypeError()
+            print('copy_fields must be type - list - but is: ', type(copy_fields), copy_fields)
+        raise TypeError('copy_fields must be of type list but is type: '+str(type(copy_fields)))
     # check that the copy_fields keys are in the first record of dst_data
-    for fld in copy_fields:
-        if fld not in dst_data[0]:
-            if disp_msg:
-                print('ERROR:  Unable to find copy_field field: ', fld)
-                print('in first record of dst_data - here is the record:')
-                pprint.pprint(dst_data[0])
-                print('This routine will fail')
+    # if we have not set force_copy_flds
+    if not force_copy_flds:
+        for fld in copy_fields:
+            if fld not in dst_data[0]:
+                if disp_msg:
+                    print('ERROR:  Unable to find copy_field field: ', fld)
+                    print('in first record of dst_data - here is the record:')
+                    pprint.pprint(dst_data[0])
+                    print('This routine will fail')
     # check that the copy_fields keys are in the first record of src_lookup
     src_rec = src_lookup
     for bkey in key_fields:
@@ -1519,6 +1530,13 @@ def copy_matched_data_cnt(dst_data, src_lookup, key_fields, copy_fields, disp_ms
     updated_recs = 0
     # step through the dst_data
     for rec in dst_data:
+        # create dst fields if we are forcing copy fields
+        if force_copy_flds:
+            for cfld in copy_fields:
+                # if the field does not exist and we are forcing them to exist
+                if cfld not in rec:
+                    rec[cfld] = ''
+        # now see if there is a matching src record
         # cpature if we have a match
         matched = True
         # capture the pointer
@@ -1541,8 +1559,8 @@ def copy_matched_data_cnt(dst_data, src_lookup, key_fields, copy_fields, disp_ms
         # ptr should point at the record of interest from src_lookup
         cols_updated = 0
         for cfld in copy_fields:
-            # they are not the same one one or both are populated
-            if ptr[cfld] != rec[cfld] and (ptr[cfld] or rec[cfld]):
+            # they are not the same -  one or both are populated
+            if (ptr[cfld] != rec[cfld] and (ptr[cfld] or rec[cfld])):
                 # this column is populated and thus causing an update
                 cols_updated += 1
                 # debubging
@@ -1557,12 +1575,18 @@ def copy_matched_data_cnt(dst_data, src_lookup, key_fields, copy_fields, disp_ms
     # return the number of records that matched
     return matched_recs, updated_recs
 
-def copy_matched_data(dst_data, src_lookup, key_fields, copy_fields, disp_msg=True):
+def copy_matched_data(dst_data, src_lookup, key_fields, copy_field, force_copy_flds=False, disp_msg=True):
     '''
     copy into dst_data from src_lookup, copy_fields when there is a match
     on key_fields
     '''
-    matched_recs, updated_recs = copy_matched_data_cnt(dst_data, src_lookup, key_fields, copy_fields, disp_msg=disp_msg)
+    matched_recs, updated_recs = copy_matched_data_cnt(
+        dst_data, src_lookup,
+        key_fields,
+        copy_field,
+        force_copy_flds=force_copy_flds,
+        disp_msg=disp_msg
+    )
 
     return matched_recs
 
