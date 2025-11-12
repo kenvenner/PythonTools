@@ -97,7 +97,7 @@ def save_and_log_dbms_extract(excel_file_path, result, starttime, now, log_file_
     log_filename - name of hte log filename that houses the results
     
     '''
-
+    
     # validate we have something define
     if not log_file_path:
         raise Exception('must provide a file_path to the log file')
@@ -120,6 +120,8 @@ def save_and_log_dbms_extract(excel_file_path, result, starttime, now, log_file_
     # check to see if log exists
     log_exists = os.path.exists( log_full_filename )
     
+    # capture the save time
+    save_starttime = time.time()
     
     # Write the DataFrame to an Excel file
     result.to_excel(excel_file_path, index=False, header=True)
@@ -140,9 +142,11 @@ def save_and_log_dbms_extract(excel_file_path, result, starttime, now, log_file_
     with open(log_file_path+log_filename, 'a') as fp:
         # create header if the file did not exist
         if not log_exists:
-            fp.write(','.join(['excel_file_path', 'run_time', 'record_cnt', 'exec_time_min'])+'\n')
+            fp.write(','.join(['excel_file_path', 'run_time', 'record_cnt', 'exec_time_min', 'proc_time_min', 'save_time_min', 'proc_percent'])+'\n')
+        # calcs
+        proc_percent = (save_starttime-starttime) / (endtime-starttime)
         # output results
-        fp.write(f'{excel_file_path},{now.isoformat()},{len(result.index)},{(endtime-starttime)/60}\n')
+        fp.write(f'{excel_file_path},{now.isoformat()},{len(result.index)},{(endtime-starttime)/60},{(save_starttime-starttime)/60},{(endtime-save_starttime)/60}, {proc_percent}\n')
 
 
 def save_and_log_exception_rpt(excel_file_path, result, starttime, now, log_file_path, log_filename=None, flds=None, cc_cfg=None, cc_args=None, cc_src_files=None, disp_msg=True, disp_msg2=False):
@@ -219,9 +223,6 @@ def save_and_log_exception_rpt(excel_file_path, result, starttime, now, log_file
         # now read in the JSON configuration
         cc_optiondict = kvutil.kv_parse_command_line(copy_comments.optiondictconfig, cmdlineargs=cc_args, skipcmdlineargs=True)
 
-        # set the disp_msg in this optiondict based on what was passed in
-        cc_optiondict['disp_msg'] = disp_msg
-        
         # force the out variables to match the file you passed in
         fpath, fname, fext = kvutil.filename_split(excel_file_path, path_blank=True)
         if 'out_fname' in cc_optiondict:

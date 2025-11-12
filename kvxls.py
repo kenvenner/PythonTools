@@ -1,7 +1,7 @@
 '''
 @author:   Ken Venner
 @contact:  ken@venerllc.com
-@version:  1.30
+@version:  1.31
 
 Library of tools used to process XLS/XLSX files
 '''
@@ -24,7 +24,7 @@ import logging
 logger = logging.getLogger(__name__)
 
 # global variables
-AppVersion = '1.30'
+AppVersion = '1.31'
 
 # ----- OPTIONS ---------------------------------------
 # debug
@@ -445,6 +445,63 @@ def readxls2dump(xlsfile, rows=10, sep=':', no_warnings=False, returnrecs=False,
         return xlslines, xlsrecs
     else:
         return xlslines
+
+# read in workbook with multiple sheets - hopefully each sheet is the same structrue
+# and pull out all data from them - finding the header and then getting a list of dicts
+# return a dictionary keyed by sheetname, with values of the list of dicts that made up the data in that sheet
+def readxls2list_all_sheets(xlsfile, reqcols, xlatdict=None, optiondict=None, col_aref=None, data_only=True, debug=False):
+    """
+    This routine opens the xlsx and reads teh data in from all sheets -
+    but teh column headers have to be same across sheets
+
+    returns - a dict where teh key is teh sheet name and values to that key are teh list of dicts read in
+    and a list of the headers captured in teh right order
+    
+    """
+    
+    # capture the passed in sheet name and make sure we return it
+    origsheetname = None
+    if optiondict is None:
+        optiondict = {}
+
+    if 'sheetname' in optiondict:
+        origsheetname = optiondict['sheetname']
+        
+    # first open the xlsx file
+    excel_dict = readxls_findheader(xlsfile, req_cols, xlatdict=xlatdict, optiondict=optiondict, col_aref=col_aref, data_only=data_only, debug=debug)
+
+    # return if we got nothing
+    if excel_dict is None:
+        return excel_dict, None
+
+
+    # cpature the first header
+    header_first_sheet = excel_dict['header']
+
+    # create a dict with the results of each return value
+    all_sheet_data = {}
+
+    #  DEBUGGING - read in the data from this sheet - first time
+    if False:
+        all_sheet_data[excel_dict['sheet_name']] = excelDict2list_findheader(excel_dict, req_cols, xlatdict=xlatdict, optiondict=optiondict, col_aref=col_aref, debug=debug)
+
+        return all_sheet_data
+    
+    # step through each sheetname and get the list of recrods for that sheet
+    for s in excel_dict['sheet_names']:
+        #chagne to this sheet
+        optiondict['sheetname'] = s
+        excel_dict = chgsheet_findheader(excel_dict, req_cols, xlatdict=xlatdict, optiondict=optiondict, col_aref=col_aref, data_only=data_only, debug=debug)
+        # extract the data
+        all_sheet_data[excel_dict['sheet_name']] = excelDict2list_findheader(excel_dict, req_cols, xlatdict=xlatdict, optiondict=optiondict, col_aref=col_aref, debug=debug)
+
+    # return the value to its original value
+    if origsheetname is None:
+        del optiondict['sheetname']
+    else:
+        optiondict['sheetname'] = origsheetname
+    
+    return all_sheet_data, header_first_sheet
 
 
 # ---------- GENERIC OPEN EXCEL to enable EDIT ----------------------
