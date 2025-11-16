@@ -1,12 +1,12 @@
-from __future__ import print_function
-
 '''
 @author:   Ken Venner
 @contact:  ken@venerllc.com
-@version:  1.95
+@version:  1.96
 
 Library of tools used in general by KV
 '''
+
+from __future__ import print_function
 
 import glob
 import os
@@ -36,8 +36,8 @@ debug_file= False
 logger = logging.getLogger(__name__)
 
 # set the module version number
-AppVersion = '1.95'
-__version__ = '1.95'
+AppVersion = '1.96'
+__version__ = '1.96'
 HELP_KEYS = ('help', 'helpall',)
 HELP_VALUE_TABLE = ('tbl', 'table', 'helptbl', 'fmt',)
 
@@ -486,7 +486,7 @@ def set_when_not_set(input_dict, key1, key2, value):
 
 # display the optiondictconfig information in human readable format
 def kv_parse_command_line_display(optiondictconfig, defaultoptions=None, optiondict=None, tblfmt=False, debug=False):
-    if type(optiondictconfig) != dict:
+    if type(optiondictconfig) is not dict:
         raise TypeError('optiondictconfig must be a dictionary')
     
     if defaultoptions is None:
@@ -629,6 +629,7 @@ def remove_filename(filename, calledfrom='', debug=False, maxretry=20, disp_msg=
             os.remove(filename)  # try to remove it directly
             if disp_msg:
                 logger.debug('%s:%s:removed on count:%d', calledfrom, filename, cnt)
+        #        except OSError as e: # originally just checked for OSError - we now check for all exceptions`
         except Exception as e:
             if debug: print(calledfrom, 'errno:', e.errno, ':ENOENT:', errno.ENOENT)
             if disp_msg:
@@ -642,10 +643,6 @@ def remove_filename(filename, calledfrom='', debug=False, maxretry=20, disp_msg=
                     logger.error('%s:%s:exceeded maxretry attempts:%d:raise error', calledfrom, filename, maxretry)
                 raise e
             time.sleep(1)
-        except WinError as f:
-            if debug: print('Catch WinError:', str(f))
-            if disp_msg:
-                logger.warning('Catch WinError:%s', str(f))
 
 
 # utility used to remove a folder - in windows sometimes we have a delay
@@ -677,10 +674,6 @@ def remove_dir(dirname, calledfrom='', debug=False, maxretry=20):
                 if debug: print(calledfrom, dirname, ':raise error - exceed maxretry attempts:', maxretry)
                 logger.error('%s:%s:maxretry attempts:%d', calledfrom, dirname, maxretry)
                 raise e
-        except WinError as f:
-            if debug: print('Catch WinError:', str(f))
-            if disp_msg:
-                logger.warning('Catch WinError:%s', str(f))
 
 def dir_remove(dirname, calledfrom='', debug=False, maxretry=20):
     return remove_dir(dirname, calledfrom='', debug=False, maxretry=20)
@@ -727,10 +720,10 @@ def filename_maxmin(file_glob, reverse=False, exclude_in_name=None):
         return None
     # if exclude in name filter the list down
     if exclude_in_name:
-        if type(exclude_in_name) == str:
+        if type(exclude_in_name) is str:
             # simple string - just exclude any filenames with this string in it (case sensitive)
             filelist = [x for x in filelist if exclude_in_name not in x]
-        elif type(exclude_in_name) == list and type(excluded_in_name[0]) == str:
+        elif type(exclude_in_name) is list and type(exclude_in_name[0]) is str:
             # list of strings - just exclude any filenames with this any of these strings
             for remove_fname in exclude_in_name:
                 filelist = [x for x in filelist if remove_fname not in x]
@@ -876,7 +869,7 @@ def filename_proper(filename_full, file_dir=None, create_dir=False, write_check=
         else:
             # needs to be created - option not enabled - raise an error
             if debug: print('kvutil:filename_proper:directory does not exist:%s' % file_dir)
-            if disp_msg:
+            if debug:
                 logger.error('Directory does not exist:%s', file_dir)
             raise Exception(u'kvutil:filename_proper:directory does not exist:{}'.format(file_dir))
 
@@ -995,7 +988,7 @@ def filename_unique(filename=None, filename_href=None, debug=False):
 
     # check that we have valid values
     for key in validate_values:
-        if not default_options[key] in validate_values[key]:
+        if default_options[key] not in validate_values[key]:
             field_issues.append(key)
 
     # check to see if we have and field issues
@@ -1224,7 +1217,7 @@ def dict2update_list(in_dict, sorted_flds=None, col_names=None):
     output_col_names = []
 
     # make sure they passed the right type
-    if type(in_dict) != dict:
+    if type(in_dict) is not dict:
         raise TypeError('in_dict must be a dictionary')
 
     # the user can pass in the fields to be generated in a sorted order
@@ -1233,12 +1226,12 @@ def dict2update_list(in_dict, sorted_flds=None, col_names=None):
 
         
     # make sure they passed the right type
-    if type(sorted_flds) != list:
+    if type(sorted_flds) is not list:
         raise TypeError('sort_flds must be a list')
 
     
     # if they want to set the column headers
-    if col_names and type(col_names) == dict:
+    if col_names and type(col_names) is dict:
         for hdr in default_column_names:
             if hdr in col_names:
                 output_col_names.append(col_names[hdr])
@@ -1336,7 +1329,7 @@ def create_multi_key_lookup(src_data, fldlist, copy_fields=None, disp_msg=True):
     '''
     if not src_data:
         return {}
-    if type(src_data) != list:
+    if type(src_data) is not list:
         if disp_msg:
             print('src_data must be a list but is:  ', type(src_data))
     if type(fldlist) is not list:
@@ -1435,6 +1428,10 @@ def create_multi_key_lookup_excel(excel_dict, fldlist, copy_fields=None):
     #
     # set up the dictionary to be populated
     src_lookup = {}
+    src_data = [] # need to build what src_data looks like here.
+    # TODO - determine how to step through records on the excel_dict file
+    raise NotImplementedError('Not implemented yet')
+
     # step through each record
     for rec in src_data:
         # test that this record has values in the copy_fields attributes
@@ -1628,7 +1625,7 @@ def diff_matched_data(dst_data, src_lookup, key_fields, diff_fields=None, exc_fi
     # capture the count of matched records
     diffs = []
     matched_recs = 0
-    matched_recs_with_diff = 0
+    # matched_recs_with_diff = 0
     # step through the dst_data
     for rec in dst_data:
         # cpature if we have a match
