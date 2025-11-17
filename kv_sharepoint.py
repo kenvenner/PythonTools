@@ -1,7 +1,7 @@
 '''
 @author:   Ken Venner
 @contact:  ken.venner@hermeus.com
-@version:  1.15
+@version:  1.16
 
 This library provides tools used when interacting with sharepoint sites and local synch links to sharepoint sites
 
@@ -9,6 +9,7 @@ This library provides tools used when interacting with sharepoint sites and loca
 
 import os
 import time
+import sys
 
 import kvxls
 import kvutil
@@ -19,7 +20,7 @@ import copy_comments
 
 
 # global variables
-AppVersion = '1.15'
+AppVersion = '1.16'
 
 
 # LOCAL FUNCTIONS/HELPERS
@@ -201,7 +202,7 @@ def save_and_log_exception_rpt(excel_file_path, result, starttime, now, log_file
         # get configuration options
         if not cc_args:
             cc_args = {}
-        elif type(cc_args) != dict:
+        elif type(cc_args) is not dict:
             raise KeyError('cc_args must be a dictionary but is a: '+type(cc_args))
         else:
             # make a local copy so we don't change upper level values
@@ -432,7 +433,7 @@ def save_lot_serial_csv_exception_rpt(excel_file_path, result, lotfield='islotit
                     new_rec = {fld:x[fld] for fld in outflds}
             elif fldmapping:
                 # we want all fields but with some field mapping
-                new_rec = {fldmapping.get(fld, fld):x[fld] for fnld in x.keys()}
+                new_rec = {fldmapping.get(fld, fld):x[fld] for fld in x.keys()}
             else:
                 # take the entire record
                 new_rec = x

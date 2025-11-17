@@ -75,7 +75,7 @@
 
 @author:   Ken Venner
 @contact:  ken.venner@sierrspace.com
-@version:  1.29
+@version:  1.30
 
     Created:   2024-05-20;kv
     Version:   2025-07-12;kv - lots of changes and now callable as a librarry
@@ -99,8 +99,8 @@ import os
 
 # ----------------------------------------
 
-AppVersion = '1.29'
-__version__ = '1.29'
+AppVersion = '1.30'
+__version__ = '1.30'
 
 
 # ----------------------------------------
@@ -110,7 +110,7 @@ __version__ = '1.29'
 
 optiondictconfig = {
     'AppVersion' : {
-        'value': '1.29',
+        'value': '1.30',
     },
     'debug' : {
         'value' : False,
@@ -474,14 +474,14 @@ def validate_inputs(optiondict):
 
 
     # key fields comparison - if no key return False - maybe change to raise Exception()
-    if not 'key_fields' in optiondict:
+    if 'key_fields' not in optiondict:
         # output messages
         if optiondict['disp_msg']:
             print('Must define the fields that make the business keys in:  key_fields')
         return False
 
     # if this fields is not the right type - return False - maybe change to raise Exception()
-    if type(optiondict['key_fields']) != list:
+    if type(optiondict['key_fields']) is not list:
         # output messages
         if optiondict['disp_msg']:
             print('Attribute key_fields must be a list but is a: ', type(optiondict['key_fields']))
@@ -490,7 +490,7 @@ def validate_inputs(optiondict):
     # validate the structure is correct if we are copying internally
     if optiondict['internal_copy_fields']:
         # if we have a dict - it shoudl have been a list - convert to a list with one dict entry
-        if type(optiondict['internal_copy_fields']) == dict:
+        if type(optiondict['internal_copy_fields']) is dict:
             optiondict['internal_copy_fields'] = [optiondict['internal_copy_fields']]
 
         # this shoudl have a list of dicts
@@ -510,7 +510,7 @@ def validate_inputs(optiondict):
     # validate the structure is correct if we are copying internally
     if optiondict['internal_compare_fields']:
         # if we have a dict - it shoudl have been a list - convert to a list with one dict entry
-        if type(optiondict['internal_compare_fields']) == dict:
+        if type(optiondict['internal_compare_fields']) is dict:
             optiondict['internal_compare_fields'] = [optiondict['internal_compare_fields']]
 
         # this shoudl have a list of dicts
@@ -530,12 +530,12 @@ def validate_inputs(optiondict):
 
     # validate we have copy_fields
     if optiondict['force_copy_flds']:
-        if not 'copy_fields' in optiondict:
+        if 'copy_fields' not in optiondict:
             # output messages
             if optiondict['disp_msg']:
                 print('When [force_copy_flds] is set you must defined [copy_fields] and have not')
             return False
-        elif type(optiondict['copy_fields']) != list:
+        elif type(optiondict['copy_fields']) is not list:
             # output messages
             if optiondict['disp_msg']:
                 print('When [copy_fields] is defined it must be list and is:  ', type(optiondict['copy_fields']))
@@ -733,7 +733,7 @@ def removed_records(src_data, dst_data, optiondict):
         raise Exception('key_fields not defined in optiondict')
     if not optiondict['key_fields']:
         raise Exception('key_fields defined and empty in optiondict')
-    if type(optiondict['key_fields']) != list:
+    if type(optiondict['key_fields']) is not list:
         raise TypeError('key_fields defined and not list but type: ' + str(type(optiondict['key_fields'])))
     
     dst_lookup = kvutil.create_multi_key_lookup(dst_data, optiondict['key_fields'])
@@ -750,7 +750,7 @@ def added_records(src_data, dst_data, src_lookup, optiondict):
         raise Exception('key_fields not defined in optiondict')
     if not optiondict['key_fields']:
         raise Exception('key_fields defined and empty in optiondict')
-    if type(optiondict['key_fields']) != list:
+    if type(optiondict['key_fields']) is not list:
         raise TypeError('key_fields defined and not list but type: ' + str(type(optiondict['key_fields'])))
 
     add_data = kvutil.extract_unmatched_data(dst_data, src_lookup, optiondict['key_fields'])

@@ -1,9 +1,7 @@
-from __future__ import print_function
-
 '''
 @author:   Ken Venner
 @contact:  ken@venerllc.com
-@version:  1.06
+@version:  1.07
 
 Library of tools for date time processing used in general by KV
 
@@ -11,12 +9,14 @@ Update:  2024-06-06;kv - added try/except on datetime_from_str
 
 '''
 
-import os
+from __future__ import print_function
+
+# import os
 import datetime
 from dateutil import tz   ## python-dateutil
 from dateutil.zoneinfo import get_zonefile_instance
-import sys
-import errno
+# import sys
+# import errno
 
 # setup the logger
 import logging
@@ -24,8 +24,8 @@ import logging
 logger = logging.getLogger(__name__)
 
 # set the module version number
-AppVersion = '1.06'
-__version__ = '1.06'
+AppVersion = '1.07'
+__version__ = '1.07'
 
 
 def current_timezone_string():
@@ -90,7 +90,7 @@ def datetime_from_str(value, skipblank=False, disp_msg=True):
         return value
 
     # if we passed in datetime we are done already
-    if type(value) == datetime.datetime:
+    if type(value) is datetime.datetime:
         return value
     
     orig_value = value

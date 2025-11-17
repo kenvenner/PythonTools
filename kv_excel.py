@@ -1,7 +1,7 @@
 '''
 @author:   Ken Venner
 @contact:  ken@venerllc.com
-@version:  1.05
+@version:  1.06
 
 Library of tools to work directly with excel files
 '''
@@ -12,7 +12,7 @@ from openpyxl.styles import Font
 import os
 
 # global variables
-AppVersion = '1.05'
+AppVersion = '1.06'
 
 def open_xlsx_get_ws_wb( xls_filename, ws_sheetname = None, disp_msg=False ):
     '''
@@ -104,7 +104,7 @@ def autofit_column_width( ws ):
             try:
                 if len(str(cell.value)) > max_length:
                     max_length = len(cell.value)
-            except:
+            except Exception:
                 pass
         adjusted_width = (max_length + 2) * 1.2
         ws.column_dimensions[column_letter].width = adjusted_width

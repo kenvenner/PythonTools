@@ -1,7 +1,7 @@
 '''
 @author:   Ken Venner
 @contact:  ken@venerllc.com
-@version:  1.12
+@version:  1.13
 
 Library of tools used to process JPG image files
 '''
@@ -19,7 +19,7 @@ import logging
 logger = logging.getLogger(__name__)
 
 # global variables
-AppVersion = '1.12'
+AppVersion = '1.13'
 
 debug = False
 
@@ -261,7 +261,7 @@ def get_date_sorted_filelists(fileglob, datefrom='jpg', nonjpgdatefrom='filecrea
     logger.debug('jgpdefaultdate:%s', jpgdefaultdate)
 
     # update/change nonjpgdatefrom if datefrom is not jpg
-    if not 'jpg' in datefrom:
+    if 'jpg' not in datefrom:
         nonjpgdatefrom = datefrom
         logger.debug('set nonjpgdatefrom to value from datefrom:%s', datefrom)
 
@@ -284,7 +284,7 @@ def get_date_sorted_filelists(fileglob, datefrom='jpg', nonjpgdatefrom='filecrea
             # and set the default date properl
             try:
                 fdate = get_exif_datetime_attribute_from_jpg(fname, defaultdate=jpgdefaultdate)
-            except:
+            except Exception:
                 fdate = parse_date_from_filename(fname, defaultdate)
 
         # if the fdate is set, save it and loop again
@@ -403,7 +403,7 @@ if __name__ == '__main__':
     (filelist, sortedfilelist) = get_date_sorted_filelists('*.*')
     print('filelist:', filelist)
     print('sortedfilelist:', sortedfilelist)
-    save_file_change(sortedfilelist, 'file.bat', True)
+    # save_file_change(sortedfilelist, 'file.bat', True)
 
     jpgdate = get_exif_attribute_from_jpg("IMG_2666.JPG")
     print(type(jpgdate))
