@@ -1,11 +1,11 @@
-'''
+"""
 @author:   Ken Venner
 @contact:  ken.venner@hermeus.com
-@version:  1.16
+@version:  1.17
 
 This library provides tools used when interacting with sharepoint sites and local synch links to sharepoint sites
 
-'''
+"""
 
 import os
 import time
@@ -20,14 +20,14 @@ import copy_comments
 
 
 # global variables
-AppVersion = '1.16'
+AppVersion = '1.17'
 
 
 # LOCAL FUNCTIONS/HELPERS
 # ----------------------------------------
 
 def sp_synched_dir_path(sp_path, onedrive_path=None, local_path=None, debug=False):
-    '''
+    """
     For mac and windows return back the path to the synched folder in sharepoint of interest
 
     sp_path - the sharepoint name and folder path to the directory of interest
@@ -37,7 +37,7 @@ def sp_synched_dir_path(sp_path, onedrive_path=None, local_path=None, debug=Fals
     local_path - the path to return if the sp path does not exist
 
     requires:  import os
-    '''
+    """
 
     # strip the starting dir
     if sp_path[0] in '/\\':
@@ -87,7 +87,7 @@ def sp_synched_dir_path(sp_path, onedrive_path=None, local_path=None, debug=Fals
 
 
 def save_and_log_dbms_extract(excel_file_path, result, starttime, now, log_file_path, log_filename=None, disp_msg=True):
-    '''
+    """
     Create the screen output and log file update for the dbms extract
 
     excel_file_path - full path and filename to output xlsx
@@ -96,8 +96,8 @@ def save_and_log_dbms_extract(excel_file_path, result, starttime, now, log_file_
     now - datetime.datetime.now() at start of execution
     log_file_path - the path to where the log of run times is stored
     log_filename - name of hte log filename that houses the results
-    
-    '''
+
+    """
     
     # validate we have something define
     if not log_file_path:
@@ -150,8 +150,8 @@ def save_and_log_dbms_extract(excel_file_path, result, starttime, now, log_file_
         fp.write(f'{excel_file_path},{now.isoformat()},{len(result.index)},{(endtime-starttime)/60},{(save_starttime-starttime)/60},{(endtime-save_starttime)/60}, {proc_percent}\n')
 
 
-def save_and_log_exception_rpt(excel_file_path, result, starttime, now, log_file_path, log_filename=None, flds=None, cc_cfg=None, cc_args=None, cc_src_files=None, disp_msg=True, disp_msg2=False):
-    '''
+def save_and_log_exception_rpt(excel_file_path, result, starttime, now, log_file_path, log_filename=None, flds=None, cc_cfg=None, cc_args=None, cc_src_files=None, disp_msg=True, disp_msg2=False, no_log=False):
+    """
     Create the screen output and log file update for the dbms extract
 
     excel_file_path - full path and filename to output xlsx
@@ -164,16 +164,22 @@ def save_and_log_exception_rpt(excel_file_path, result, starttime, now, log_file
 
     cc_cfg = filename of JSON copy_comments optiondict configuration options
     cc_args = dictionary of command line args that override the cc_cfg settings
-    
+
     cc_src_files - list of src files to loop through to pull in data to copy over, if None - use what is defined in cc_cfg
 
     disp_msg - when true we output messages about what is going on with print statements
 
-    '''
+    disp_msg2 - when true we
+
+    no_log - when true, we do not write results out to the log file
+    """
 
     # debugging
     local_debug = False
-    
+
+    # local variables
+    cc_optiondict = {}
+
     # validate we have something define
     if not log_file_path:
         raise Exception('must provide a file_path to the log file')
@@ -181,7 +187,7 @@ def save_and_log_exception_rpt(excel_file_path, result, starttime, now, log_file
     # validate it is a directory
     if not os.path.isdir(log_file_path):
         raise Exception('log_file_path is not a directory: '+log_file_path)
-        sys.exit(1)
+        # sys.exit(1)
         
     # make sure we have the end directory string on this input string
     if log_file_path[-1] != '/':
@@ -256,10 +262,10 @@ def save_and_log_exception_rpt(excel_file_path, result, starttime, now, log_file
         # use the standard name for the array
         dst_data = result
         
-	# capture the original src_dir
+        # capture the original src_dir
         orig_src_dir = cc_optiondict['src_dir']
-	
-	# there are times we need to load update data from more than one source file
+
+        # there are times we need to load update data from more than one source file
         if cc_src_files is None:
             # not specified - so use the single source file that was sent in
             cc_src_files = [cc_optiondict['src_fname']]
@@ -368,6 +374,7 @@ def save_and_log_exception_rpt(excel_file_path, result, starttime, now, log_file
             print('Record count: ', len(result))
             print("Created file:  ", excel_file_path)
     else:
+        # no results so remove the file
         kvutil.remove_filename(excel_file_path)
         if disp_msg:
             print('No exceptions found-'+os.path.basename(excel_file_path))
@@ -386,6 +393,10 @@ def save_and_log_exception_rpt(excel_file_path, result, starttime, now, log_file
     if False and disp_msg:
         print('PROGRAM EXECUTION TIME: ', (endtime-starttime)/60, 'min')
 
+    # if we are not logging then just return here
+    if no_log:
+        return
+
     # open the log file and output record
     with open(log_file_path+log_filename, 'a') as fp:
         # create header if the file did not exist
@@ -396,7 +407,7 @@ def save_and_log_exception_rpt(excel_file_path, result, starttime, now, log_file
 
         
 def save_lot_serial_csv_exception_rpt(excel_file_path, result, lotfield='islotitem', outflds=None, fldmapping=None, disp_msg=True):
-    '''
+    """
     Create the CSV output files for lot and serial to simplify the load into netsuite
 
     excel_file_path - full path and filename to output xlsx
@@ -405,8 +416,8 @@ def save_lot_serial_csv_exception_rpt(excel_file_path, result, lotfield='islotit
 
     outflds = list of keys in the recrod that go into the genrated csv - if populated - if not the full record goes out
     fldmapping - dictionary of keys that are in outfld and a new column name for that key - if we need to change the header
-    
-    '''
+
+    """
 
     # remove the .xlsx and then put on the _Lot.csv
     lot_fname = excel_file_path[:-5]+"_Lot.csv"

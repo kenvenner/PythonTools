@@ -1,10 +1,10 @@
-'''
+"""
 @author:   Ken Venner
 @contact:  ken@venerllc.com
-@version:  1.33
+@version:  1.34
 
 Library of tools used to process XLS/XLSX files
-'''
+"""
 
 import openpyxl  # xlsx (read/write)
 import xlrd  # xls (read)
@@ -12,6 +12,7 @@ import xlwt  # xls (write)
 from xlutils.copy import copy as xl_copy # xls(read copy over tool to enalve write)/ pip install xlutils
 import os  # determine if a file exists
 import pprint
+from typing import List, Any, Tuple
 
 import kvdate
 import kvmatch
@@ -24,7 +25,7 @@ import logging
 logger = logging.getLogger(__name__)
 
 # global variables
-AppVersion = '1.33'
+AppVersion = '1.34'
 
 # ----- OPTIONS ---------------------------------------
 # debug
@@ -52,14 +53,14 @@ ILLEGAL_CHARACTERS_RE = r'[\000-\010]|[\013-\014]|[\016-\037]'
 # ---- UTILITY FUNCTIONS ------------------------------
 
 # remove characters that can not go into XLS files
-def strip_xls_illegal_chars(value):
+def strip_xls_illegal_chars(value: str) -> str:
     if isinstance(value, (str, bytes)):
         return re.sub(ILLEGAL_CHARACTERS_RE, ' ', value)
     return value
 
 
 # utility used to convert an xls date number into a datetime object
-def xldate_to_datetime(xldate, skipblank=False):
+def xldate_to_datetime(xldate: str | int, skipblank: bool =False) -> datetime.datetime:
     if isinstance(xldate, str):
         logger.debug('converting xldate string to date using kvdate.datetime_from_str:%s', xldate)
         return kvdate.datetime_from_str(xldate, skipblank)
@@ -71,7 +72,7 @@ def xldate_to_datetime(xldate, skipblank=False):
 
 
 # routine extracts a row from the excel file and passes back as a list
-def _extract_excel_row_into_list(xlsxfiletype, s, row, colstart, colmax, debug=False):
+def _extract_excel_row_into_list(xlsxfiletype: bool, s, row: int, colstart: int, colmax: int, debug: bool=False) -> List[Any | None]:
     # debugging
     if debug:
         print('_extract_excel_row_into_list:row:', row)
@@ -102,14 +103,14 @@ def _extract_excel_row_into_list(xlsxfiletype, s, row, colstart, colmax, debug=F
 
 
 # routine to get a cell
-def getExcelCellValue(excel_dict, row, col_name, debug=False):
-    '''
+def getExcelCellValue(excel_dict: dict, row: int, col_name: str, debug: bool=False) -> Any | None:
+    """
     row - integer
     col_name - name of the column of interest
 
     return:
     value of the row, col_name
-    '''
+    """
     if debug:
         print('getExcelCellValue:excel_dict:', excel_dict)
         print('getExcelCellValue:row:', row)
@@ -129,14 +130,14 @@ def getExcelCellValue(excel_dict, row, col_name, debug=False):
 
 
 # routine to set a cell value
-def setExcelCellValue(excel_dict, row, col_name, value, debug=False):
-    '''
+def setExcelCellValue(excel_dict: dict, row: int, col_name: str, value: Any, debug: bool=False) -> None:
+    """
     row - integer
     col_name - name of the column of interest
 
     return:
     value of the row, col_name
-    '''
+    """
     if debug:
         print('setExcelCellValue:excel_dict:', excel_dict)
         print('setExcelCellValue:row:', row)
@@ -158,8 +159,8 @@ def setExcelCellValue(excel_dict, row, col_name, value, debug=False):
 
 
 # routine to get a cell fill pattern - returns the (rgb, solid) values
-def getExcelCellPatternFill(excel_dict, row, col_name, debug=False):
-    '''
+def getExcelCellPatternFill(excel_dict: dict, row: int, col_name: str, debug: bool=False) -> tuple[str | None, str | None,  str | None, str | None]:
+    """
     row - integer
     col_name - name of the column of interest
 
@@ -169,7 +170,7 @@ def getExcelCellPatternFill(excel_dict, row, col_name, debug=False):
     cell_start_oclor
     cell_end_color
 
-    '''
+    """
     if debug:
         print('setExcelCellPatternFill:excel_dict:', excel_dict)
         print('setExcelCellPatternFill:row:', row)
@@ -211,8 +212,8 @@ def getExcelCellPatternFill(excel_dict, row, col_name, debug=False):
 
 
 # routine to set a cell fill pattern
-def setExcelCellPatternFill(excel_dict, row, col_name, fill=None, start_color=None, end_color=None, fg_color=None, fill_type="solid", debug=False):
-    '''
+def setExcelCellPatternFill(excel_dict: dict, row: int, col_name: str, fill: str=None, start_color: str=None, end_color: str=None, fg_color: str=None, fill_type: str="solid", debug: bool=False) -> None:
+    """
     excel_dict
     row - the row in the data
     col_name - the name of the column we are setting
@@ -227,7 +228,7 @@ def setExcelCellPatternFill(excel_dict, row, col_name, fill=None, start_color=No
         lightUp: Light diagonal stripes in the opposite direction.
         darkDown: Dark diagonal stripes.
         darkUp: Dark diagonal stripes in the opposite direction.
-    '''
+    """
     
     if debug:
         print('setExcelCellPatternFill:excel_dict:', excel_dict)
@@ -265,7 +266,7 @@ def setExcelCellPatternFill(excel_dict, row, col_name, fill=None, start_color=No
         raise
 
 # copy the cell formatting from src into out cell by cell - this is color and fill
-def copyExcelCellFmtOnRow(excel_dict_src, src_row, excel_dict_out, row, debug=False):
+def copyExcelCellFmtOnRow(excel_dict_src: dict, src_row: int, excel_dict_out: dict, row: int, debug: bool=False) -> None:
     # step through the output columns
     for fld in excel_dict_out['header']:
         # validate the out column exists in the source
@@ -296,21 +297,21 @@ def copyExcelCellFmtOnRow(excel_dict_src, src_row, excel_dict_out, row, debug=Fa
         )
 
 # updated in place for a column the values in that column
-def setExcelColumnValue(excel_dict, col_name, value='', debug=False):
-    '''
+def setExcelColumnValue(excel_dict: dict, col_name: str, value: Any='', debug: bool=False) -> None:
+    """
     Find the column, then clear all cell values in that column
     Then iterate through that column and set the values
-    '''
+    """
     for row in range(excel_dict['row_header']+1, excel_dict['sheetmaxrow']):
         setExcelCellValue(excel_dict, row, col_name, value, debug)
 
 
 # taken from kvutil
 # return true if one of the copy_fields values is populated
-def any_field_is_populated(rec, copy_fields):
-    '''
+def any_field_is_populated(rec: dict, copy_fields: list[str]) -> bool:
+    """
     Return a TRUE if any of the 'copy_fields' elements in rec is populated
-    '''
+    """
     for fld in copy_fields:
         # current conditions - if it returns true or has a length
         if rec[fld]:
@@ -327,8 +328,8 @@ def any_field_is_populated(rec, copy_fields):
 # create a multi-key dictionary from a excel object
 # this was taken and modified from kvutil that does
 # the same thing but for lists
-def create_multi_key_lookup_excel(excel_dict, fldlist, copy_fields=None):
-    '''
+def create_multi_key_lookup_excel(excel_dict: dict, fldlist: list[Any], copy_fields:list[Any]=None) -> dict:
+    """
     Create a multi key dictionary that gets to the record based on the
     keys in the record
 
@@ -336,7 +337,7 @@ def create_multi_key_lookup_excel(excel_dict, fldlist, copy_fields=None):
     then we check the record
     to determine if any of the fields has a value, and if none have a value we skip
     that record
-    '''
+    """
     if type(fldlist) is not list:
         print('fldlist must be type - list - but is: ', type(fldlist))
         raise TypeError()
@@ -365,9 +366,9 @@ def create_multi_key_lookup_excel(excel_dict, fldlist, copy_fields=None):
     for row in range(excel_dict['row_header']+1, excel_dict['sheetmaxrow']):
         # test that this record has values in the copy_fields attributes
         ## TODO - build out this logic 
-        if False and copy_fields and not any_field_is_populated(row, copy_fields):
+        #if False and copy_fields and not any_field_is_populated(row, copy_fields):
             # no values set in copy_fields has a value so we don't convert this record
-            continue
+            #continue
         # get the first key and value
         fld = fldlist[0]
         fldvalue = getExcelCellValue(excel_dict, row, fld)
@@ -402,7 +403,7 @@ def create_multi_key_lookup_excel(excel_dict, fldlist, copy_fields=None):
 
 # read in the XLS and create a dictionary to the records
 # assumes the first line of the XLS file is the header/defintion of the XLS
-def readxls2list(xlsfile, sheetname=None, save_row=False, debug=False, optiondict=None):
+def readxls2list(xlsfile: str, sheetname: str | None=None, save_row: bool=False, debug: bool=False, optiondict: None | dict=None) -> list[dict]:
     if optiondict is None:
         optiondict = {'col_header': True, 'save_row': save_row}
     else:
@@ -416,7 +417,7 @@ def readxls2list(xlsfile, sheetname=None, save_row=False, debug=False, optiondic
 # read in the XLS and create a dictionary to the records
 # based on one or more key fields
 # assumes the first line of the CSV file is the header/defintion of the CSV
-def readxls2dict(xlsfile, dictkeys, sheetname=None, save_row=False, dupkeyfail=False, debug=False, optiondict=None):
+def readxls2dict(xlsfile: str, dictkeys : list[str], sheetname: str | None=None, save_row: bool=False, dupkeyfail: bool=False, debug: bool=False, optiondict: None | dict=None) -> dict:
     if optiondict is None:
         optiondict = {'col_header': True, 'save_row': save_row}
     else:
@@ -428,7 +429,7 @@ def readxls2dict(xlsfile, dictkeys, sheetname=None, save_row=False, dupkeyfail=F
 
 
 # read in the xls - output the first XX lines
-def readxls2dump(xlsfile, rows=10, sep=':', no_warnings=False, returnrecs=False, sheet_name_col=None, debug=False):
+def readxls2dump(xlsfile: str, rows: int=10, sep: str=':', no_warnings: bool=False, returnrecs: bool=False, sheet_name_col: None|str=None, debug: bool=False):
     if sheet_name_col is None:
         sheet_name_col = 'sheet_name'
     fmtstr1 = sep.join(('{}', '{}', '{}', '{}', '{}')) + sep
@@ -466,14 +467,16 @@ def readxls2dump(xlsfile, rows=10, sep=':', no_warnings=False, returnrecs=False,
 # read in workbook with multiple sheets - hopefully each sheet is the same structrue
 # and pull out all data from them - finding the header and then getting a list of dicts
 # return a dictionary keyed by sheetname, with values of the list of dicts that made up the data in that sheet
-def readxls2list_all_sheets(xlsfile, req_cols, xlatdict=None, optiondict=None, col_aref=None, data_only=True, debug=False):
+def readxls2list_all_sheets(xlsfile: str, req_cols: list[str], xlatdict: None | dict=None, optiondict: None | dict=None, col_aref: None | list[str]=None, data_only: bool=True, debug: bool=False) -> Tuple[None | dict, None | list[str], None | dict]:
     """
     This routine opens the xlsx and reads teh data in from all sheets -
     but teh column headers have to be same across sheets
 
-    returns - a dict where teh key is teh sheet name and values to that key are teh list of dicts read in
-    and a list of the headers captured in teh right order
-    
+    returns -
+        a dict where the key is the sheet name and values list of dicts read in for that sheet
+        a list of the headers captured in the right order for the first sheet read in
+        a dict by sheetname of errors found when reading in sheets
+
     """
     
     # capture the passed in sheet name and make sure we return it
@@ -493,10 +496,10 @@ def readxls2list_all_sheets(xlsfile, req_cols, xlatdict=None, optiondict=None, c
     
     # return if we got nothing
     if excel_dict is None:
-        return excel_dict, None
+        return excel_dict, None, None
 
 
-    # cpature the first header
+    # capture the first header
     header_first_sheet = excel_dict['header']
 
     # create a dict with the results of each return value
@@ -507,7 +510,7 @@ def readxls2list_all_sheets(xlsfile, req_cols, xlatdict=None, optiondict=None, c
     if False:
         all_sheet_data[excel_dict['sheet_name']] = excelDict2list_findheader(excel_dict, req_cols, xlatdict=xlatdict, optiondict=optiondict, col_aref=col_aref, debug=debug)
 
-        return all_sheet_data
+        return all_sheet_data, None, None
     
     # step through each sheetname and get the list of recrods for that sheet
     for s in excel_dict['sheet_names']:
@@ -575,7 +578,7 @@ def readxls2list_all_sheets(xlsfile, req_cols, xlatdict=None, optiondict=None, c
 # that then create the dictionary/list of that xls and then close out that XLS.
 #    data_only - when set to FALSE - will allow you to read macro enable file and update directly
 #                and save the updated file
-def readxls_excelDict(xlsfile, req_cols, xlatdict=None, optiondict=None, col_aref=None, data_only=True, debug=False):
+def readxls_excelDict(xlsfile: str, req_cols: list[str], xlatdict: dict | None=None, optiondict: dict | None=None, col_aref: list[str] | None=None, data_only: bool=True, debug: bool=False) -> dict[str, list[str]]:
     if xlatdict is None:
         xlatdict = {}
     if optiondict is None:
@@ -782,7 +785,7 @@ def readxls_excelDict(xlsfile, req_cols, xlatdict=None, optiondict=None, col_are
 # that then create the dictionary/list of that xls and then close out that XLS.
 #    data_only - when set to FALSE - will allow you to read macro enable file and update directly
 #                and save the updated file
-def readxls_findheader(xlsfile, req_cols, xlatdict=None, optiondict=None, col_aref=None, data_only=True, debug=False):
+def readxls_findheader(xlsfile: str, req_cols: list[str], xlatdict: dict | None=None, optiondict: dict | None=None, col_aref: list[str] | None=None, data_only: bool=True, debug: bool=False) -> dict:
     if xlatdict is None:
         xlatdict = {}
     if optiondict is None:
@@ -1081,7 +1084,7 @@ def readxls_findheader(xlsfile, req_cols, xlatdict=None, optiondict=None, col_ar
         # user defined the row definiton - make sure they passed in enough values to fill the row
         if len(col_aref) < sheetmaxcol - sheetmincol:
             # not enough entries - so we add more to the end
-            for colcnt in range(1, sheetmaxcol - sheetmincol - len(col_aref) + 1):
+            for _ in range(1, sheetmaxcol - sheetmincol - len(col_aref) + 1):
                 header.append('')
 
         # now pass the final information through remapped
@@ -1115,7 +1118,7 @@ def readxls_findheader(xlsfile, req_cols, xlatdict=None, optiondict=None, col_ar
     return excel_dict
 
 # different name for the same function - i think this name is more meaningful
-def readxls2excel_dict_findheader(xlsfile, req_cols, xlatdict=None, optiondict=None, col_aref=None, data_only=True, debug=False):
+def readxls2excel_dict_findheader(xlsfile: str, req_cols: list[str], xlatdict: dict | None=None, optiondict: dict | None=None, col_aref: list[str] | None=None, data_only: bool=True, debug: bool=False) -> dict:
     return readxls_findheader(xlsfile, req_cols, xlatdict=xlatdict, optiondict=optiondict, col_aref=col_aref, data_only=data_only, debug=debug)
 
 
@@ -1139,8 +1142,8 @@ def readxls2excel_dict_findheader(xlsfile, req_cols, xlatdict=None, optiondict=N
 # that then create the dictionary/list of that xls and then close out that XLS.
 #    data_only - when set to FALSE - will allow you to read macro enable file and update directly
 #                and save the updated file
-def chgsheet_findheader(excel_dict, req_cols, xlatdict=None, optiondict=None,
-                        col_aref=None, data_only=True, debug=False):
+def chgsheet_findheader(excel_dict: dict, req_cols: list[str], xlatdict: dict | None=None, optiondict: dict | None=None,
+                        col_aref: list[str] | None=None, data_only: bool=True, debug: bool=False) -> dict:
     if xlatdict is None:
         xlatdict = {}
     if optiondict is None:
@@ -1486,7 +1489,7 @@ def chgsheet_findheader(excel_dict, req_cols, xlatdict=None, optiondict=None,
 #                         tied to that key to see if it is populated
 #
 
-def readxls2list_findheader(xlsfile, req_cols, xlatdict=None, optiondict=None, col_aref=None, debug=False):
+def readxls2list_findheader(xlsfile: str, req_cols: list[str], xlatdict: dict | None=None, optiondict: dict | None=None, col_aref: list[str] | None=None, debug: bool=False) -> list[dict]:
     if xlatdict is None:
         xlatdict = {}
     if optiondict is None:
@@ -1523,7 +1526,7 @@ def readxls2list_findheader(xlsfile, req_cols, xlatdict=None, optiondict=None, c
                                      debug=debug)
 
 
-def excelDict2list_findheader(excel_dict, req_cols, xlatdict=None, optiondict=None, col_aref=None, debug=False):
+def excelDict2list_findheader(excel_dict: dict, req_cols: list[str], xlatdict: dict | None=None, optiondict: dict | None=None, col_aref: list[str] | None=None, debug: bool=False) -> list[dict]:
     if xlatdict is None:
         xlatdict = {}
     if optiondict is None:
@@ -1685,9 +1688,9 @@ def excelDict2list_findheader(excel_dict, req_cols, xlatdict=None, optiondict=No
 
 # read in the XLS and create a dictionary to the records
 # based on one or more key fields
-def readxls2dict_findheader(xlsfile, dictkeys, req_cols=None, xlatdict=None, optiondict=None,
-                            col_aref=None, debug=False,
-                            dupkeyfail=False):
+def readxls2dict_findheader(xlsfile: str, dictkeys: list[str], req_cols: list[str] | None=None, xlatdict: dict | None=None, optiondict: dict | None=None,
+                            col_aref: list[str] | None=None, debug: bool=False,
+                            dupkeyfail: bool=False) -> dict:
     if xlatdict is None:
         xlatdict = {}
     if optiondict is None:
@@ -1765,7 +1768,7 @@ def readxls2dict_findheader(xlsfile, dictkeys, req_cols=None, xlatdict=None, opt
 # -------- WRITE FILES -------------------------
 
 # write out a dict of (dict or aref) to an XLS/XLSX based on the filename passed in
-def writedict2xls(xlsfile, data, col_aref=None, optiondict={}, debug=False):
+def writedict2xls(xlsfile: str, data: dict, col_aref: list[str] | None=None, optiondict: dict | None=None, debug: bool=False):
     # convert dict to array and then call writelist2xls
     if not data:
         data2 = None
@@ -1773,11 +1776,11 @@ def writedict2xls(xlsfile, data, col_aref=None, optiondict={}, debug=False):
         data2 = [data[key] for key in sorted(data.keys())]
 
     # call the other library
-    return writelist2xls(xlsfile, data2, col_aref=None, optiondict={}, debug=debug)
+    return writelist2xls(xlsfile, data2, col_aref=None, optiondict=None, debug=debug)
 
 
 # write out a list of (dict or aref) to an XLS/XLSX based on the filename passed in
-def writelist2xls(xlsfile, data, col_aref=None, optiondict=None, debug=False):
+def writelist2xls(xlsfile: str, data: list[dict], col_aref: list[str] | None=None, optiondict: dict | None=None, debug: bool=False):
     """
     optiondict:
     sheet_name - defines the sheet_name you are creating in this xlsx
@@ -2015,7 +2018,7 @@ def writelist2xls(xlsfile, data, col_aref=None, optiondict=None, debug=False):
 
 
 # write out a XLSX object in memory
-def writexls(excel_dict, xlsfile, xlsm=False, debug=False):
+def writexls(excel_dict: dict, xlsfile: str, xlsm: bool=False, debug: bool=False):
     # check to see that we can do this
     if not excel_dict['xlsxfiletype']:
         print('kvxls:writexls:feature supported only for XLSX files')

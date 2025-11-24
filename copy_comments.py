@@ -400,9 +400,9 @@ Example col_width:
 
 
 def validate_inputs(optiondict):
-    '''
+    """
     test inputs and set defaults
-    '''
+    """
 
     debug = False
     debug2 = False
@@ -557,13 +557,13 @@ def validate_inputs(optiondict):
     return True
     
 def load_records(optiondict, srctype='src', disp_msg=False):
-    '''
+    """
     pass in the type of config variables we want to load from - then load and return that list of records
 
     we require srctype+'_dir' and srctype+'_fname' to be populated but not the other vars
-    
+
     srctype can be:  src|dst
-    '''
+    """
     # set the value if not set
     if srctype+'_ws' not in optiondict:
         optiondict[srctype+'_ws'] = None
@@ -595,9 +595,9 @@ def load_records(optiondict, srctype='src', disp_msg=False):
     return loaded_data
 
 def read_src_file_format(optiondict):
-    '''
+    """
     This reads in the src file and gets the format from it and stores it in optiondict
-    '''
+    """
     # set the variable
     if 'disp_msg' not in optiondict:
         optiondict['disp_msg'] = True
@@ -621,9 +621,9 @@ def read_src_file_format(optiondict):
 
                 
 def validate_missing_columns(loaded_data, optiondict, fld):
-    '''
+    """
     Validate that the data has the columns required based on the list of columns defined by 'fld'
-    '''
+    """
     # check to see if key is even there - if not we are not missing anything
     if fld not in optiondict:
         return []
@@ -632,24 +632,24 @@ def validate_missing_columns(loaded_data, optiondict, fld):
     return [x for x in optiondict[fld] if x not in loaded_data[0]]
 
 def create_flds_in_records(loaded_data, fields):
-    '''
+    """
     force the creation of a field if it does not exist in all records
-    '''
+    """
     for rec in loaded_data:
         for fld in fields:
             if fld not in rec:
                 rec[fld] = ''
 
 def convert_hyperlink_values(loaded_data, optiondict, hyperlink_fld='hyperlink_fields'):
-    '''
+    """
     Take a list of fields and convert them to hyperlink fields
-    '''
+    """
     kvutil.convert_hyperlink_field_values(loaded_data, optiondict, hyperlink_fld)
     
 def src_to_dst_actions(src_data, dst_data, optiondict):
-    '''
+    """
     take the action defined in option dict
-    '''
+    """
     # set up keys with None if they don't exist
     for fld in ['copy_fields', 'internal_copy_fields', 'internal_compare_fields']:
         if fld not in optiondict:
@@ -726,9 +726,9 @@ def src_to_dst_actions(src_data, dst_data, optiondict):
 
 
 def removed_records(src_data, dst_data, optiondict):
-    '''
+    """
     find the records in src_data that are not in dst_data
-    '''
+    """
     if 'key_fields' not in optiondict:
         raise Exception('key_fields not defined in optiondict')
     if not optiondict['key_fields']:
@@ -742,10 +742,10 @@ def removed_records(src_data, dst_data, optiondict):
     return rmv_data, dst_lookup
 
 def added_records(src_data, dst_data, src_lookup, optiondict):
-    '''
+    """
     find the records in dst_data that are not in src_data
     but pass in the dictionary for src_lookup
-    '''
+    """
     if 'key_fields' not in optiondict:
         raise Exception('key_fields not defined in optiondict')
     if not optiondict['key_fields']:
@@ -758,10 +758,10 @@ def added_records(src_data, dst_data, src_lookup, optiondict):
     return add_data
 
 def generate_out_output_file_not_formatted(dst_data, optiondict, updated_recs):
-    '''
+    """
     generate the output file is we create a new file
     or recreate the destination file if records were updated
-    '''
+    """
     # output what we came up with
     if 'out_fname' in optiondict and optiondict['out_fname']:
         full_filename = os.path.join(optiondict['out_dir'], optiondict['out_fname'])
@@ -775,9 +775,9 @@ def generate_out_output_file_not_formatted(dst_data, optiondict, updated_recs):
             print('dst_write:', full_filename)
 
 def generate_rmv_output_file_not_formatted(rmv_data, optiondict):
-    '''
+    """
     generate the remove file if defined and we have remove file records
-    '''
+    """
     # output what we came up with
     if 'rmv_fname' in optiondict and optiondict['rmv_fname'] and rmv_data:
         full_filename = os.path.join(optiondict['rmv_dir'], optiondict['rmv_fname'])
@@ -789,9 +789,9 @@ def generate_rmv_output_file_not_formatted(rmv_data, optiondict):
             print('Created file: ' + full_filename)
 
 def generate_add_output_file_not_formatted(add_data, optiondict):
-    '''
+    """
     generate the add file if defined and we have remove file records
-    '''
+    """
     # output what we came up with
     if 'add_fname' in optiondict and optiondict['add_fname'] and add_data:
         full_filename = os.path.join(optiondict['add_dir'], optiondict['add_fname'])
@@ -804,9 +804,9 @@ def generate_add_output_file_not_formatted(add_data, optiondict):
 
 
 def format_output(optiondict):
-    '''
+    """
     Format the output file based on flags passed in
-    '''
+    """
     
     # if they want it formatted
     if 'format_output' not in optiondict:
@@ -849,9 +849,9 @@ def format_output(optiondict):
     kv_excel.format_xlsx_with_filter_and_freeze(excel_filename, col_width=optiondict['col_width'], disp_msg=disp_msg)
 
 def format_cell(optiondict):
-    '''
+    """
     Copy over cell based formatting
-    '''
+    """
     
     # if they want to copy over formatting
     if 'format_cell' not in optiondict or not optiondict['format_cell']:
@@ -931,10 +931,10 @@ def format_cell(optiondict):
     kvxls.writexls(excel_dict_out, excel_filename)
     
 def generate_out_output_file_formatted(dst_data, optiondict, updated_recs):
-    '''
+    """
     generate the output file is we create a new file
     or recreate the destination file if records were updated
-    '''
+    """
     generate_out_output_file_not_formatted(dst_data, optiondict, updated_recs)
     format_output(optiondict)
     format_cell(optiondict)

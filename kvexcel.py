@@ -1,7 +1,7 @@
-'''
+"""
 @author:   Ken Venner
 @contact:  ken@venerllc.com
-@version:  1.01
+@version:  1.02
 
 Library of tools used to read excel files with the native desktop application excel
 
@@ -10,16 +10,14 @@ update_excel_cells - open xlsx, and update list of row/col/value/optionally-shee
 pip install pywin32
 
 
-'''
+"""
 
-
-import os
 import time
 from pathlib import Path
 import ctypes
 import win32com.client as win32
 
-def normalize_excel_path(path):
+def normalize_excel_path(path: str) -> str:
     r"""
     Normalize paths returned by Excel COM to match local filesystem paths.
     Handles forward slashes, accidental https:\ prefixes, and duplicate backslashes.
@@ -32,7 +30,7 @@ def normalize_excel_path(path):
     s = "\\".join(part for part in s.split("\\") if part)
     return s.lower()  # Windows paths are case-insensitive
 
-def is_same_workbook(path1, path2):
+def is_same_workbook(path1: str, path2: str) -> bool:
     """
     Robust comparison of Excel workbook paths.
     Compares normalized, lower-cased paths to avoid issues with OneDrive and Excel COM.
@@ -41,10 +39,10 @@ def is_same_workbook(path1, path2):
         p1 = normalize_excel_path(path1)
         p2 = normalize_excel_path(path2)
         return p1.endswith(p2) or p2.endswith(p1)
-    except Exception:
+    except Exception as e:
         return False
 
-def ensure_onedrive_file_local(filename, timeout=5):
+def ensure_onedrive_file_local(filename: str, timeout=5):
     """
     Ensure a OneDrive file is locally available.
     Handles files in OneDrive folders properly.
@@ -76,7 +74,7 @@ def ensure_onedrive_file_local(filename, timeout=5):
                 attrs = ctypes.windll.kernel32.GetFileAttributesW(str(fpath))
                 if not (attrs & 0x1000):  # FILE_ATTRIBUTE_OFFLINE
                     return fpath
-            except Exception:
+            except Exception as e:
                 pass
         if time.time() - start > timeout:
             raise FileNotFoundError(f"File not available locally: {fpath}")
@@ -88,10 +86,10 @@ def bring_excel_to_front(excel):
         hwnd = excel.Application.Hwnd
         ctypes.windll.user32.ShowWindow(hwnd, 5)  # SW_SHOW
         ctypes.windll.user32.SetForegroundWindow(hwnd)
-    except Exception:
+    except Exception as e:
         pass
 
-def update_excel_cells(filename, updates, visible=True, disp_msg=True):
+def update_excel_cells(filename: str, updates: list[dict], visible: bool=True, disp_msg: bool=True):
     """
     Update Excel cells. Auto-close workbook if opened by this script.
     updates = [{'sheet':'Sheet1', 'row':1,'col':1,'value':'X'}, ...]
@@ -105,7 +103,7 @@ def update_excel_cells(filename, updates, visible=True, disp_msg=True):
         excel = win32.GetActiveObject("Excel.Application")
         if disp_msg:
             print("Attached to existing Excel instance.")
-    except Exception:
+    except Exception as e:
         excel = win32.Dispatch("Excel.Application")
         if disp_msg:
             print("Started new Excel instance.")

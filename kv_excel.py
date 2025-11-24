@@ -1,10 +1,10 @@
-'''
+"""
 @author:   Ken Venner
 @contact:  ken@venerllc.com
 @version:  1.06
 
-Library of tools to work directly with excel files
-'''
+Library of tools to work directly with Excel files
+"""
 
 import openpyxl
 from openpyxl.utils import get_column_letter
@@ -15,10 +15,10 @@ import os
 AppVersion = '1.06'
 
 def open_xlsx_get_ws_wb( xls_filename, ws_sheetname = None, disp_msg=False ):
-    '''
+    """
     Pass in a filename
-    Open an xlsx document to the specified sheet name or the active sheetname
-    '''
+    Open a xlsx document to the specified sheet name or the active sheetname
+    """
     wb = openpyxl.load_workbook( xls_filename )
     if ws_sheetname:
         ws = wb[ws_sheetname]
@@ -27,10 +27,10 @@ def open_xlsx_get_ws_wb( xls_filename, ws_sheetname = None, disp_msg=False ):
     return ws, wb
 
 def get_existing_column_width( xls_filename, ws_sheetname = None, disp_msg=False ):
-    '''
+    """
     Pass in a filename
     Extract the column widths from a define xlsx filename
-    '''
+    """
     col_width = {}
     if not os.path.exists( xls_filename ):
         return col_width
@@ -41,10 +41,10 @@ def get_existing_column_width( xls_filename, ws_sheetname = None, disp_msg=False
 
 # convert this into a class and then apply to that object you opened
 def apply_col_width_ws_obj( ws, col_width, disp_msg=True ):
-    '''
+    """
     Pass in a worksheet object and a column width dictionary
     Format the worksheet object to have column widths as defined in the dictionary
-    '''
+    """
     if list(ws.column_dimensions):
         # print('column_dimensions')
         for k, cd in ws.column_dimensions.items():
@@ -66,24 +66,24 @@ def apply_col_width_ws_obj( ws, col_width, disp_msg=True ):
                     print('Skipped column: ', k)
             
 def apply_filter_all_columns( ws ):
-    '''
+    """
     Pass in a worksheet option
     Enble the filter all columns feature with row 1 as the header
-    '''
+    """
     ws.auto_filter.ref = ws.dimensions
 
 def apply_row_freeze( ws, cell='A2'):
-    '''
+    """
     Pass in a worksheet object, and optoinally a position
     Cause this worksheet to freeze to the top row of the row/col passed in
-    '''
+    """
     ws.freeze_panes = cell
 
 def apply_row_bold( ws, row=1):
-    '''
+    """
     Pass in a worksheet object, and optoinally a position
     Cause this worksheet to apply the bold font to the row defined
-    '''
+    """
     # https://www.javatpoint.com/python-openpyxl#IteratebyColumn
     for row in ws.iter_rows(min_row=row, max_row=row):
         for cell in row:
@@ -92,10 +92,10 @@ def apply_row_bold( ws, row=1):
 
 
 def autofit_column_width( ws ):
-    '''
+    """
     Pass in a work sheet object
-    Calculate the column widths to auto fit the column to the data
-    '''
+    Calculate the column widths to auto-fit the column to the data
+    """
     # https://gist.github.com/summerofgeorge/96dac94293b60c70d11d7cd7e852ffd6
     for column in ws.columns:
         max_length = 0
@@ -111,14 +111,14 @@ def autofit_column_width( ws ):
 
 
 def format_xlsx_with_filter_and_freeze( xls_filename, ws_sheetname=None, col_width=None, disp_msg=True ):
-    '''
+    """
     Take in a xlsx filename
     Open this file
     If col_width is not None - then format columns to the defined with, if None, autofit the column width
     Filter
     Freeze
     Save back to the original filename
-    '''
+    """
     if not os.path.exists( xls_filename ):
         raise Exception('File does not exist: ' + xls_filename)
     ws, wb = open_xlsx_get_ws_wb(xls_filename, disp_msg=disp_msg)
@@ -146,7 +146,7 @@ if __name__ == '__main__':
     # get the master file column widths
     col_width = get_existing_column_width(src_dir+src_fname)
 
-    # get the to be worked on excel workbook and worksheet
+    # get the to be worked on Excel workbook and worksheet
     ws, wb = open_xlsx_get_ws_wb(dst_dir+dst_fname)
 
     # save for the other test
