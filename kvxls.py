@@ -1,7 +1,7 @@
 """
 @author:   Ken Venner
 @contact:  ken@venerllc.com
-@version:  1.34
+@version:  1.35
 
 Library of tools used to process XLS/XLSX files
 """
@@ -25,7 +25,7 @@ import logging
 logger = logging.getLogger(__name__)
 
 # global variables
-AppVersion = '1.34'
+AppVersion = '1.35'
 
 # ----- OPTIONS ---------------------------------------
 # debug
@@ -403,12 +403,13 @@ def create_multi_key_lookup_excel(excel_dict: dict, fldlist: list[Any], copy_fie
 
 # read in the XLS and create a dictionary to the records
 # assumes the first line of the XLS file is the header/defintion of the XLS
-def readxls2list(xlsfile: str, sheetname: str | None=None, save_row: bool=False, debug: bool=False, optiondict: None | dict=None) -> list[dict]:
+def readxls2list(xlsfile: str | os.PathLike, sheetname: str | None=None, save_row: bool=False, debug: bool=False, optiondict: None | dict=None) -> list[dict]:
     if optiondict is None:
         optiondict = {'col_header': True, 'save_row': save_row}
     else:
         optiondict['col_header'] = True
         optiondict['save_row'] = save_row
+    # set the option if it is populated
     if sheetname:
         optiondict['sheetname'] = sheetname
     return readxls2list_findheader(xlsfile, [], optiondict=optiondict, debug=debug)
@@ -423,6 +424,7 @@ def readxls2dict(xlsfile: str, dictkeys : list[str], sheetname: str | None=None,
     else:
         optiondict['col_header'] = True
         optiondict['save_row'] = save_row
+    # set sheetname if populated
     if sheetname:
         optiondict['sheetname'] = sheetname
     return readxls2dict_findheader(xlsfile, dictkeys, [], optiondict=optiondict, debug=debug, dupkeyfail=dupkeyfail)
@@ -1142,12 +1144,14 @@ def readxls2excel_dict_findheader(xlsfile: str, req_cols: list[str], xlatdict: d
 # that then create the dictionary/list of that xls and then close out that XLS.
 #    data_only - when set to FALSE - will allow you to read macro enable file and update directly
 #                and save the updated file
-def chgsheet_findheader(excel_dict: dict, req_cols: list[str], xlatdict: dict | None=None, optiondict: dict | None=None,
+def chgsheet_findheader(excel_dict: dict, req_cols: list[str] | None, xlatdict: dict | None=None, optiondict: dict | None=None,
                         col_aref: list[str] | None=None, data_only: bool=True, debug: bool=False) -> dict:
     if xlatdict is None:
         xlatdict = {}
     if optiondict is None:
         optiondict = {}
+    if req_cols is None:
+        req_cols = []
 
     # type check
     if col_aref is not None and type(col_aref) is not list:
@@ -1489,11 +1493,13 @@ def chgsheet_findheader(excel_dict: dict, req_cols: list[str], xlatdict: dict | 
 #                         tied to that key to see if it is populated
 #
 
-def readxls2list_findheader(xlsfile: str, req_cols: list[str], xlatdict: dict | None=None, optiondict: dict | None=None, col_aref: list[str] | None=None, debug: bool=False) -> list[dict]:
+def readxls2list_findheader(xlsfile: str | os.PathLike, req_cols: list[str] | None, xlatdict: dict | None=None, optiondict: dict | None=None, col_aref: list[str] | None=None, debug: bool=False) -> list[dict]:
     if xlatdict is None:
         xlatdict = {}
     if optiondict is None:
         optiondict = {}
+    if req_cols is None:
+        req_cols = []
 
     # local variables
     # results = []

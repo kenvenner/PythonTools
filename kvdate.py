@@ -1,13 +1,13 @@
-'''
+"""
 @author:   Ken Venner
 @contact:  ken@venerllc.com
-@version:  1.07
+@version:  1.09
 
 Library of tools for date time processing used in general by KV
 
 Update:  2024-06-06;kv - added try/except on datetime_from_str
 
-'''
+"""
 
 from __future__ import print_function
 
@@ -24,8 +24,8 @@ import logging
 logger = logging.getLogger(__name__)
 
 # set the module version number
-AppVersion = '1.07'
-__version__ = '1.07'
+AppVersion = '1.09'
+__version__ = '1.09'
 
 
 def current_timezone_string():
@@ -130,7 +130,7 @@ def datetime_from_str(value, skipblank=False, disp_msg=True):
 #
 #     2025-02-03T21:37:55Z
 #
-def datetimezone_from_str(value, skipblank=False):
+def datetimezone_from_str(value, skipblank=False, disp_msg: bool=False):
     import re
     datefmtscleanup = (
         (re.compile(r'(.*[+-])(\d{2}):(\d{2})$'), 'remove-colon-2'),
@@ -171,7 +171,7 @@ def valid_tz_string(tzstr):
     return False
 
 
-def show_timezones(sublist=None, debug=False):
+def show_timezones(sublist: str=None, debug: bool=False):
     # get the full list
     sorted_zonenames = sorted(list(get_zonefile_instance().zones))
     sections = set([x.split('/')[0] for x in sorted_zonenames if '/' in x])
