@@ -1,7 +1,7 @@
 """
 @author:   Ken Venner
 @contact:  ken@venerllc.com
-@version:  1.09
+@version:  1.11
 
 Library of tools for date time processing used in general by KV
 
@@ -24,8 +24,8 @@ import logging
 logger = logging.getLogger(__name__)
 
 # set the module version number
-AppVersion = '1.09'
-__version__ = '1.09'
+AppVersion = '1.11'
+__version__ = '1.11'
 
 
 def current_timezone_string():
@@ -68,6 +68,8 @@ def datetime2utcdatetime(dt, default_tz=None, no_tz=False):
 #  YYYY-MM-DD HH:MM
 #  YYYY-MM-DD
 #  YYYYMMDD
+#  DD-MMM-YYYY HH:MM
+#  DD-MMM-YYYY
 #
 # and allow a Z to be on the end of this string that we will strip out
 #
@@ -84,6 +86,10 @@ def datetime_from_str(value, skipblank=False, disp_msg=True):
         (re.compile(r'\d{4}-\d{1,2}-\d{1,2}\s\d{1,2}:\d{1,2}$'), '%Y-%m-%d %H:%M'),
         (re.compile(r'\d{4}-\d{1,2}-\d{1,2}$'), '%Y-%m-%d'),
         (re.compile(r'^\d{8}$'), '%Y%m%d'),
+        (re.compile(r'\d{1,2}-.{3}-\d{4}\s\d{2}:\d{2}'), '%d-%b-%Y %H:%M'),
+        (re.compile(r'\d{1,2}-.{3}-\d{4}'), '%d-%b-%Y'),
+        (re.compile(r'\d{1,2}-.{3}-\d{2}\s\d{2}:\d{2}'), '%d-%b-%y %H:%M'),
+        (re.compile(r'\d{1,2}-.{3}-\d{2}'), '%d-%b-%y'),
     )
 
     if skipblank and not value:

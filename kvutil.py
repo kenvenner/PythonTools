@@ -1,7 +1,7 @@
 """
 @author:   Ken Venner
 @contact:  ken@venerllc.com
-@version:  1.96
+@version:  1.97
 
 Library of tools used in general by KV
 """
@@ -36,8 +36,8 @@ debug_file= False
 logger = logging.getLogger(__name__)
 
 # set the module version number
-AppVersion = '1.96'
-__version__ = '1.96'
+AppVersion = '1.97'
+__version__ = '1.97'
 HELP_KEYS = ('help', 'helpall',)
 HELP_VALUE_TABLE = ('tbl', 'table', 'helptbl', 'fmt',)
 
@@ -53,6 +53,10 @@ def strtobool(val: str) -> bool | int:
 
     https://note.nkmk.me/en/python-bool-true-false-usage/
     """
+    # if we are not dealing with a string - we have no work to do here
+    if type(val) != str:
+        return val
+    # convert this string to it boolean equivalent
     val = val.lower()
     if val in ('y', 'yes', 't', 'true', 'on', '1'):
         return 1
@@ -116,7 +120,7 @@ def strtobool(val: str) -> bool | int:
 #
 #  if <value> in list ('tbl','table','helptbl','fmt'), then the output is mark down table
 #
-def kv_parse_command_line(optiondictconfig: dict, raise_error: bool=False, keymapdict: dict | None=None, cmdlineargs: list | None=None, skipcmdlineargs: bool=False, disp_msg: bool=True, debug: bool=False) -> dict:
+def kv_parse_command_line(optiondictconfig: dict, raise_error: bool=False, keymapdict: dict | None=None, cmdlineargs: list | None=None, skipcmdlineargs: bool=False, disp_msg: bool=False, debug: bool=False) -> dict:
     # set the value when not set
     if not cmdlineargs:
         cmdlineargs = {}
@@ -201,6 +205,12 @@ def kv_parse_command_line(optiondictconfig: dict, raise_error: bool=False, keyma
         'log_file': {
             'value': None,
             'description': 'defines the name of the log file',
+        },
+        'all': {
+            'type': 'bool',
+        },
+        'notall': {
+            'type': 'bool',
         },
     }
 
@@ -303,6 +313,79 @@ def kv_parse_command_line(optiondictconfig: dict, raise_error: bool=False, keyma
             # no files read in - remove from here also
             del cmdlineargs['conf_json']
 
+    # we have optiondictconfig, confargs, and cmdlineargs as the three ways we get values
+    # lets look for "all" and "notall" in the backwards sequence and set the value
+    all_notall = {
+        'all': False,
+        'notall': False,
+    }
+    setat = None
+    if disp_msg:
+        print('cmdlineargs:', cmdlineargs)
+        print('confargs:', confargs)
+        print('optiondictconfig:', optiondictconfig)
+    for idx, cfg in enumerate([cmdlineargs, confargs, optiondictconfig]):
+        for val in all_notall.keys():
+            if disp_msg:
+                print('val:', val, 'idx:', idx, 'cfg:', cfg)
+            # if the object is set and set true here - we capture that
+            if val in cfg and cfg[val]:
+                if disp_msg:
+                    print('found: ', val, ' in ', idx)
+                # struture is different for first two dicts and last dict
+                if idx<2 or ('value' in cfg[val] and cfg[val]['value']):
+                    all_notall[val] = cfg[val] if idx<2 else cfg[val]['value']
+                    # make sure we are getting out a boolean value
+                    all_notall[val] = bool(strtobool(all_notall[val]))
+                    setat = idx
+                    if disp_msg:
+                        print('really found it at: ', idx)
+        # test to see if we setat - if we did we are done
+        if setat is not None:
+            if disp_msg:
+                print('break here')
+            break
+    # debugging display
+    if disp_msg:
+        print('all_notall:', all_notall)
+        print('setat:', setat)
+        print('setat is not none:',  setat is not None )
+        print('is something set: ', (all_notall['all'] or all_notall['notall']))
+    # test to see if we set both at this level
+    if all_notall['all'] and all_notall['notall']:
+        raise ValueError('cannot set both [all] and [notall] to true - terminating')
+    # only take action if we set an action to take (one of them must be true)
+    if setat is not None and (all_notall['all'] or all_notall['notall']):
+        # display if asked
+        if disp_msg:
+            logger.info('all/notall set at level:%s', setat)
+        # calculate the values to be skipped
+        skipped_keys = [x for x, v in  defaultdictconfig.items() if v.get('type') == 'bool']
+        if disp_msg:
+            print('skipped_keys:', skipped_keys)
+        # we have them set, so now go through all booleans that are not configured as 'notall' and set them appropriately
+        for k, v in optiondictconfig.items():
+            # skip the settings that are not changed - pull in all the bool from defaultdictconfig
+            if k in skipped_keys:
+                continue
+            # looking at the optiondictconfig settings if the values of this setting are:
+            # 1) type is bool and
+            # 2) we have not set the 'notall' flag on and
+            # the value of optiondict is not None right now
+            # then change the vlaue of this setting to match the all/notall setting
+            if v.get('type') == 'bool' and not v.get('notall', False) and optiondict[k] is not None:
+                if disp_msg:
+                    print('setting the option based on flag: ', k)
+                if all_notall['all']:
+                    optiondict[k] = True
+                elif  all_notall['notall']:
+                    optiondict[k] = False
+    elif disp_msg:
+        print('no changes implement - no flag set')
+
+
+                
+        
     # now that we have loaded and flattened out all file based settings
     # move these settings to the final proper destination
     for key, value in confargs.items():
@@ -444,7 +527,7 @@ def kv_parse_command_line(optiondictconfig: dict, raise_error: bool=False, keyma
     # all processing ONLY runs when all is in option dict, and it is enabled
     # and there is at least one entry in optiondictconfig that as an 'notall' attribute and it is tru
     # other wise we assume processing is done outside of this routine
-    if 'all' in optiondict and optiondict['all']:
+    if False and 'all' in optiondict and optiondict['all']:
         anysetnotall = [k for k, v in optiondictconfig.items() if 'notall' in v and v['notall']]
         if anysetnotall:
             for k, v in optiondictconfig.items():

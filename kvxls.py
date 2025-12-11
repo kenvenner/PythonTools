@@ -1,7 +1,7 @@
 """
 @author:   Ken Venner
 @contact:  ken@venerllc.com
-@version:  1.35
+@version:  1.37
 
 Library of tools used to process XLS/XLSX files
 """
@@ -25,7 +25,7 @@ import logging
 logger = logging.getLogger(__name__)
 
 # global variables
-AppVersion = '1.35'
+AppVersion = '1.37'
 
 # ----- OPTIONS ---------------------------------------
 # debug
@@ -41,6 +41,8 @@ AppVersion = '1.35'
 # no_header
 # aref_result
 # save_row
+# save_row_abs
+# save_col_abs
 # start_row
 # sheetname
 # sheetrow
@@ -48,6 +50,11 @@ AppVersion = '1.35'
 
 # -- CONSTANTS -- #
 ILLEGAL_CHARACTERS_RE = r'[\000-\010]|[\013-\014]|[\016-\037]'
+
+
+FLD_XLSROW = 'XLSRow'
+FLD_XLSROW_ABS = 'XLSRowAbs'
+FLD_XLSCOL_ABS = 'XLSColAbs1'
 
 
 # ---- UTILITY FUNCTIONS ------------------------------
@@ -72,7 +79,7 @@ def xldate_to_datetime(xldate: str | int, skipblank: bool =False) -> datetime.da
 
 
 # routine extracts a row from the excel file and passes back as a list
-def _extract_excel_row_into_list(xlsxfiletype: bool, s, row: int, colstart: int, colmax: int, debug: bool=False) -> List[Any | None]:
+def _extract_excel_row_into_list(xlsxfiletype: bool, s, row: int, colstart: int, colmax: int, debug: bool=False) -> tuple[List[Any | None], int, int]:
     # debugging
     if debug:
         print('_extract_excel_row_into_list:row:', row)
@@ -80,6 +87,17 @@ def _extract_excel_row_into_list(xlsxfiletype: bool, s, row: int, colstart: int,
     logger.debug('row: %s', row)
     logger.debug('xlsxfiletype:%s', xlsxfiletype)
 
+    # capture row and first column
+    if xlsxfiletype:
+        c_row = s.cell(row=row + 1, column=colstart + 1).row
+        c_col = s.cell(row=row + 1, column=colstart + 1).column
+    else:
+        #c_row = s.cell(row, colstart).row
+        # c_col = s.cell(row, colstart).column
+        c_row = None
+        c_col = None
+
+    
     # clear the row
     rowdata = []
 
@@ -99,7 +117,7 @@ def _extract_excel_row_into_list(xlsxfiletype: bool, s, row: int, colstart: int,
         rowdata.append(c_value)
 
     # return the row
-    return rowdata
+    return rowdata, c_row, c_col
 
 
 # routine to get a cell
@@ -535,6 +553,10 @@ def readxls2list_all_sheets(xlsfile: str, req_cols: list[str], xlatdict: None | 
         # set the header if not set
         if not header_first_sheet:
             header_first_sheet = excel_dict['header']
+
+        # override this if we passed in a sheetname and this is the sheetname
+        if origsheetname and s == origsheetname:
+            header_first_sheet = excel_dict['header']
             
         # extract the data
         all_sheet_data[s] = excelDict2list_findheader(excel_dict, req_cols, xlatdict=xlatdict, optiondict=optiondict, col_aref=col_aref, debug=debug)
@@ -615,6 +637,8 @@ def readxls_excelDict(xlsfile: str, req_cols: list[str], xlatdict: dict | None=N
     no_header = False  # if true - there are no headers read - we either return
     aref_result = False  # if true - we don't return dicts, we return a list
     save_row = False  # if true - then we append/save the XLSRow with the record
+    save_row_abs = False # if true - then we append/save the absolute xlsx row number - from openpyxl
+    save_col_abs = False # if true - then we append/save the absolute xlsx column number of the first column - from openpyxl
     keep_vba = True  # if true - then load the xlsx with vba scripts on and save as xlsm
     allow_empty = False # if true - we allow a header to be read in with no data
     # row_header = None # we will set this later
@@ -646,6 +670,14 @@ def readxls_excelDict(xlsfile: str, req_cols: list[str], xlatdict: dict | None=N
         'saverow': 'save_row',
         'saverows': 'save_row',
         'save_rows': 'save_row',
+        'saverowabs': 'save_row_abs',
+        'saverowsabs': 'save_row_abs',
+        'save_rowsabs': 'save_row_abs',
+        'save_rows_abs': 'save_row_abs',
+        'savecolabs': 'save_col_abs',
+        'savecolsabs': 'save_col_abs',
+        'save_colsabs': 'save_col_abs',
+        'save_cols_abs': 'save_col_abs',
         'sheet_name': 'sheetname',
     }
 
@@ -660,6 +692,8 @@ def readxls_excelDict(xlsfile: str, req_cols: list[str], xlatdict: dict | None=N
     if 'start_row' in optiondict: start_row = optiondict[
                                                   'start_row'] - 1  # because we are not ZERO based in the users mind
     if 'save_row' in optiondict: save_row = optiondict['save_row']
+    if 'save_row_abs' in optiondict: save_row_abs = optiondict['save_row_abs']
+    if 'save_col_abs' in optiondict: save_col_abs = optiondict['save_col_abs']
     if 'max_rows' in optiondict: max_rows = optiondict['max_rows']
     if 'keep_vba' in optiondict: keep_vba = optiondict['keep_vba']
 
@@ -673,6 +707,7 @@ def readxls_excelDict(xlsfile: str, req_cols: list[str], xlatdict: dict | None=N
         print('no_header:', no_header)
         print('start_row:', start_row)
         print('save_row:', save_row)
+        print('save_row_abs:', save_row_abs)
         print('allow_empty:', allow_empty)
         print('optiondict:', optiondict)
     logger.debug('req_cols:%s', req_cols)
@@ -682,6 +717,7 @@ def readxls_excelDict(xlsfile: str, req_cols: list[str], xlatdict: dict | None=N
     logger.debug('no_header:%s', no_header)
     logger.debug('start_row:%s', start_row)
     logger.debug('save_row:%s', save_row)
+    logger.debug('save_row_abs:%s', save_row_abs)
     logger.debug('allow_empty:%s', allow_empty)
     logger.debug('optiondict:%s', optiondict)
 
@@ -822,6 +858,8 @@ def readxls_findheader(xlsfile: str, req_cols: list[str], xlatdict: dict | None=
     no_header = False  # if true - there are no headers read - we either return
     aref_result = False  # if true - we don't return dicts, we return a list
     save_row = False  # if true - then we append/save the XLSRow with the record
+    save_row_abs = False  # if true - then we append/save the openpxl row
+    save_col_abs = False # if true - then we append/save the absolute xlsx column number of the first column - from openpyxl
     keep_vba = True  # if true - then load the xlsx with vba scripts on and save as xlsm
     allow_empty = False # if true - we allow a header to be read in with no data
     row_header = None # we will set this later
@@ -853,6 +891,14 @@ def readxls_findheader(xlsfile: str, req_cols: list[str], xlatdict: dict | None=
         'saverow': 'save_row',
         'saverows': 'save_row',
         'save_rows': 'save_row',
+        'saverowabs': 'save_row_abs',
+        'saverowsabs': 'save_row_abs',
+        'save_rowsabs': 'save_row_abs',
+        'save_rows_abs': 'save_row_abs',
+        'savecolabs': 'save_col_abs',
+        'savecolsabs': 'save_col_abs',
+        'save_colsabs': 'save_col_abs',
+        'save_cols_abs': 'save_col_abs',
         'sheet_name': 'sheetname',
     }
 
@@ -871,6 +917,8 @@ def readxls_findheader(xlsfile: str, req_cols: list[str], xlatdict: dict | None=
     if 'start_row' in optiondict: start_row = optiondict[
                                                   'start_row'] - 1  # because we are not ZERO based in the users mind
     if 'save_row' in optiondict: save_row = optiondict['save_row']
+    if 'save_row_abs' in optiondict: save_row_abs = optiondict['save_row_abs']
+    if 'save_col_abs' in optiondict: save_col_abs = optiondict['save_col_abs']
     if 'max_rows' in optiondict: max_rows = optiondict['max_rows']
     if 'keep_vba' in optiondict: keep_vba = optiondict['keep_vba']
 
@@ -884,6 +932,8 @@ def readxls_findheader(xlsfile: str, req_cols: list[str], xlatdict: dict | None=
         print('no_header:', no_header)
         print('start_row:', start_row)
         print('save_row:', save_row)
+        print('save_row_abs:', save_row_abs)
+        print('save_col_abs:', save_col_abs)
         print('allow_empty:', allow_empty)
         print('optiondict:', optiondict)
     logger.debug('req_cols:%s', req_cols)
@@ -893,6 +943,8 @@ def readxls_findheader(xlsfile: str, req_cols: list[str], xlatdict: dict | None=
     logger.debug('no_header:%s', no_header)
     logger.debug('start_row:%s', start_row)
     logger.debug('save_row:%s', save_row)
+    logger.debug('save_row_abs:%s', save_row_abs)
+    logger.debug('save_col_abs:%s', save_col_abs)
     logger.debug('allow_empty:%s', allow_empty)
     logger.debug('optiondict:%s', optiondict)
 
@@ -1019,7 +1071,7 @@ def readxls_findheader(xlsfile: str, req_cols: list[str], xlatdict: dict | None=
         # look for the header in the file
         for row in range(start_row, sheetmaxrow):
             # read in a row of data
-            rowdata = _extract_excel_row_into_list(xlsxfiletype, s, row, sheetmincol, sheetmaxcol, debug)
+            rowdata, c_row, c_col1 = _extract_excel_row_into_list(xlsxfiletype, s, row, sheetmincol, sheetmaxcol, debug)
 
             # user may have specified that the first row read is the header
             if col_header:
@@ -1183,6 +1235,8 @@ def chgsheet_findheader(excel_dict: dict, req_cols: list[str] | None, xlatdict: 
     no_header = False  # if true - there are no headers read - we either return
     aref_result = False  # if true - we don't return dicts, we return a list
     save_row = False  # if true - then we append/save the XLSRow with the record
+    save_row_abs = False  # if true - then we append/save the XLSRow with the record
+    save_col_abs = False # if true - then we append/save the absolute xlsx column number of the first column - from openpyxl
     keep_vba = True  # if true - then load the xlsx with vba scripts on and save as xlsm
     
     start_row = 0  # if passed in - we start the search at this row (starts at 1 or greater)
@@ -1209,6 +1263,14 @@ def chgsheet_findheader(excel_dict: dict, req_cols: list[str] | None, xlatdict: 
         'saverow': 'save_row',
         'saverows': 'save_row',
         'save_rows': 'save_row',
+        'saverowabs': 'save_row_abs',
+        'saverowsabs': 'save_row_abs',
+        'save_rowsabs': 'save_row_abs',
+        'save_rows_abs': 'save_row_abs',
+        'savecolabs': 'save_col_abs',
+        'savecolsabs': 'save_col_abs',
+        'save_colsabs': 'save_col_abs',
+        'save_cols_abs': 'save_col_abs',
         'sheet_name': 'sheetname',
     }
 
@@ -1226,6 +1288,8 @@ def chgsheet_findheader(excel_dict: dict, req_cols: list[str] | None, xlatdict: 
     if 'start_row' in optiondict: start_row = optiondict[
                                                   'start_row'] - 1  # because we are not ZERO based in the users mind
     if 'save_row' in optiondict: save_row = optiondict['save_row']
+    if 'save_row_abs' in optiondict: save_row_abs = optiondict['save_row_abs']
+    if 'save_col_abs' in optiondict: save_col_abs = optiondict['save_col_abs']
     if 'max_rows' in optiondict: max_rows = optiondict['max_rows']
     if 'keep_vba' in optiondict: keep_vba = optiondict['keep_vba']
 
@@ -1240,6 +1304,8 @@ def chgsheet_findheader(excel_dict: dict, req_cols: list[str] | None, xlatdict: 
         print('no_header:', no_header)
         print('start_row:', start_row)
         print('save_row:', save_row)
+        print('save_row_abs:', save_row_abs)
+        print('save_col_abs:', save_col_abs)
         print('optiondict:', optiondict)
     logger.debug('req_cols:%s', req_cols)
     logger.debug('col_aref%s', col_aref)
@@ -1248,6 +1314,9 @@ def chgsheet_findheader(excel_dict: dict, req_cols: list[str] | None, xlatdict: 
     logger.debug('no_header:%s', no_header)
     logger.debug('start_row:%s', start_row)
     logger.debug('save_row:%s', save_row)
+    logger.debug('save_row_abs:%s', save_row_abs)
+    logger.debug('save_row_abs:%s', save_row_abs)
+    logger.debug('save_col_abs:%s', save_col_abs)
     logger.debug('optiondict:%s', optiondict)
 
     # check to see if we are actually changing anyting - if not return back what was sent in
@@ -1355,7 +1424,7 @@ def chgsheet_findheader(excel_dict: dict, req_cols: list[str] | None, xlatdict: 
         # look for the header in the file
         for row in range(start_row, sheetmaxrow):
             # read in a row of data
-            rowdata = _extract_excel_row_into_list(xlsxfiletype, s, row, sheetmincol, sheetmaxcol, debug)
+            rowdata, c_row, c_col1 = _extract_excel_row_into_list(xlsxfiletype, s, row, sheetmincol, sheetmaxcol, debug)
 
             # user may have specified that the first row read is the header
             if col_header:
@@ -1487,6 +1556,8 @@ def chgsheet_findheader(excel_dict: dict, req_cols: list[str] | None, xlatdict: 
 #
 #   dateflds - array of fields in xls that convert to a date
 #   save_row - flag defines if we should save the row number
+#   save_row_abs - flag defines if we should save the row number
+#   save_col_abs - flag defines if we should save the row number
 #
 #   required_fields_populated - checking logic to assure that all required fields have data with optional
 #     required_fld_swap - a dict that says if key is not populated - check the value 
@@ -1520,6 +1591,8 @@ def readxls2list_findheader(xlsfile: str | os.PathLike, req_cols: list[str] | No
     # no_header = False  # if true - there are no headers read - we either return
     # aref_result = False  # if true - we don't return dicts, we return a list
     # save_row = False  # if true - then we append/save the XLSRow with the record
+    # save_row_abs = False  # if true - then we append/save the XLSRow with the record
+    # save_col_abs = False  # if true - then we append/save the XLSRow with the record
 
     # start_row = 0  # if passed in - we start the search at this row (starts at 1 or greater)
 
@@ -1557,6 +1630,8 @@ def excelDict2list_findheader(excel_dict: dict, req_cols: list[str], xlatdict: d
     no_header = False  # if true - there are no headers read - we either return
     aref_result = False  # if true - we don't return dicts, we return a list
     save_row = False  # if true - then we append/save the XLSRow with the record
+    save_row_abs = False  # if true - then we append/save the XLSRow with the record
+    save_col_abs = False # if true - then we append/save the absolute xlsx column number of the first column - from openpyxl
 
     start_row = 0  # if passed in - we start the search at this row (starts at 1 or greater)
 
@@ -1567,6 +1642,8 @@ def excelDict2list_findheader(excel_dict: dict, req_cols: list[str], xlatdict: d
     if 'start_row' in optiondict: start_row = optiondict[
                                                   'start_row'] - 1  # because we are not ZERO based in the users mind
     if 'save_row' in optiondict: save_row = optiondict['save_row']
+    if 'save_row_abs' in optiondict: save_row_abs = optiondict['save_row_abs']
+    if 'save_col_abs' in optiondict: save_col_abs = optiondict['save_col_abs']
 
     # debugging
     if debug:
@@ -1575,12 +1652,16 @@ def excelDict2list_findheader(excel_dict: dict, req_cols: list[str], xlatdict: d
         print('no_header:', no_header)
         print('start_row:', start_row)
         print('save_row:', save_row)
+        print('save_row_abs:', save_row_abs)
+        print('save_col_abs:', save_col_abs)
         print('optiondict:', optiondict)
     logger.debug('col_header:%s', col_header)
     logger.debug('aref_result:%s', aref_result)
     logger.debug('no_header:%s', no_header)
     logger.debug('start_row:%s', start_row)
     logger.debug('save_row:%s', save_row)
+    logger.debug('save_row_abs:%s', save_row_abs)
+    logger.debug('save_col_abs:%s', save_col_abs)
     logger.debug('optiondict:%s', optiondict)
 
     # expand out all the values that came from excel_dict
@@ -1622,7 +1703,7 @@ def excelDict2list_findheader(excel_dict: dict, req_cols: list[str], xlatdict: d
 
     for row in range(row_data_start, sheetmaxrow):
         # read in a row of data
-        rowdata = _extract_excel_row_into_list(xlsxfiletype, s, row, sheetmincol, sheetmaxcol, debug)
+        rowdata, c_row, c_col1 = _extract_excel_row_into_list(xlsxfiletype, s, row, sheetmincol, sheetmaxcol, debug)
 
         # break on blank row
         if 'break_blank_row' in optiondict and optiondict['break_blank_row']:
@@ -1653,6 +1734,18 @@ def excelDict2list_findheader(excel_dict: dict, req_cols: list[str], xlatdict: d
                 if debug: print('append row to record')
                 logger.debug('append row to record')
 
+            # optionally add the XLSRow attribute to this dictionary (not here right now
+            if save_row_abs:
+                rowdict.append(c_row)
+                if debug: print('append row to record')
+                logger.debug('append row to record')
+
+            # optionally add the XLSRow attribute to this dictionary (not here right now
+            if save_col_abs:
+                rowdict.append(c_col1)
+                if debug: print('append col1 to record')
+                logger.debug('append col1 to record')
+
         else:
             if debug:
                 print('saving as dict')
@@ -1665,9 +1758,21 @@ def excelDict2list_findheader(excel_dict: dict, req_cols: list[str], xlatdict: d
 
             # optionally add the XLSRow attribute to this dictionary (not here right now
             if save_row:
-                rowdict['XLSRow'] = row + 1
+                rowdict[FLD_XLSROW] = row + 1
                 if debug: print('add column XLSRow with row to record')
                 logger.debug('add column XLSRow with row to record')
+
+            # optionally add the XLSRow attribute to this dictionary (not here right now
+            if save_row_abs:
+                rowdict[FLD_XLSROW_ABS] = c_row
+                if debug: print('add column XLSRowAbs with row to record')
+                logger.debug('add column XLSRowAbs with row to record')
+
+            # optionally add the XLSRow attribute to this dictionary (not here right now
+            if save_col_abs:
+                rowdict[FLD_XLSCOL_ABS] = c_col1
+                if debug: print('add column XLSCol1 with row to record')
+                logger.debug('add column XLSCol1 with row to record')
 
             # do field manipulations here - date - but only on XLS not XLSX files
             if not xlsxfiletype:

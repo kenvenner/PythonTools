@@ -1,7 +1,7 @@
 """
 @author:   Ken Venner
 @contact:  ken@venerllc.com
-@version:  1.02
+@version:  1.03
 
 Library of tools used to read excel files with the native desktop application excel
 
@@ -89,10 +89,17 @@ def bring_excel_to_front(excel):
     except Exception as e:
         pass
 
-def update_excel_cells(filename: str, updates: list[dict], visible: bool=True, disp_msg: bool=True):
+def update_excel_cells(filename: str, updates: list[dict], visible: bool=True, leave_open: bool=False, disp_msg: bool=True):
     """
     Update Excel cells. Auto-close workbook if opened by this script.
     updates = [{'sheet':'Sheet1', 'row':1,'col':1,'value':'X'}, ...]
+
+    filename - name/path to the excel file to be worked in
+    updates - list of dict changes as defined above
+    visible - bool, when true we make the chnages visible that are taking place
+    leave_open - bool, when true, we do NOT close this file after we are doing processing
+                       when false, and we open the file with this script - then close the file when done
+    disp_msg - bool, when true, we print to console messagers we are progress
     """
     if disp_msg:
         print(f"DEBUG: filename received = {filename}")
@@ -157,7 +164,7 @@ def update_excel_cells(filename: str, updates: list[dict], visible: bool=True, d
         raise
 
     # Close if we opened it
-    if _opened_by_script:
+    if _opened_by_script and not leave_open:
         workbook.Close(SaveChanges=True)
         if disp_msg:
             print(f"Workbook closed: {abs_path}")

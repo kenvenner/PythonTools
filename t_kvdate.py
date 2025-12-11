@@ -93,6 +93,8 @@ class TestKvdateFilenames(unittest.TestCase):
         self.assertEqual(kvdate.datetime_from_str('01-01-2019'), datetime.datetime(2019, 1, 1) )
         self.assertEqual(kvdate.datetime_from_str('2019-01-01'), datetime.datetime(2019, 1, 1) )
         self.assertEqual(kvdate.datetime_from_str('20190101'), datetime.datetime(2019, 1, 1) )
+        self.assertEqual(kvdate.datetime_from_str('01-Jan-2019'), datetime.datetime(2019, 1, 1) )
+        self.assertEqual(kvdate.datetime_from_str('01-Jan-19'), datetime.datetime(2019, 1, 1) )
 
     def test_datetime_from_str_p02_notzero_padded(self):
         self.assertEqual(kvdate.datetime_from_str('1/1/19'), datetime.datetime(2019, 1, 1) )
@@ -100,6 +102,8 @@ class TestKvdateFilenames(unittest.TestCase):
         self.assertEqual(kvdate.datetime_from_str('1-1-19'), datetime.datetime(2019, 1, 1) )
         self.assertEqual(kvdate.datetime_from_str('1-1-2019'), datetime.datetime(2019, 1, 1) )
         self.assertEqual(kvdate.datetime_from_str('2019-1-1'), datetime.datetime(2019, 1, 1) )
+        self.assertEqual(kvdate.datetime_from_str('1-Jan-2019'), datetime.datetime(2019, 1, 1) )
+        self.assertEqual(kvdate.datetime_from_str('1-Jan-19'), datetime.datetime(2019, 1, 1) )
 
     def test_datetime_from_str_p03_blank_stripblank(self):
         self.assertEqual(kvdate.datetime_from_str('', True),'' )
@@ -109,6 +113,10 @@ class TestKvdateFilenames(unittest.TestCase):
         self.assertEqual(kvdate.datetime_from_str('2021-12-31 00:00:00'), datetime.datetime(2021, 12, 31))
         self.assertEqual(kvdate.datetime_from_str('12/31/2021'), datetime.datetime(2021, 12, 31))
         self.assertEqual(kvdate.datetime_from_str('2021-12-31T00:00:00Z'), datetime.datetime(2021, 12, 31))
+        self.assertEqual(kvdate.datetime_from_str('31-Dec-2021 00:00'), datetime.datetime(2021, 12, 31, 0, 0))
+        self.assertEqual(kvdate.datetime_from_str('31-Dec-2021 01:01'), datetime.datetime(2021, 12, 31, 1, 1))
+        self.assertEqual(kvdate.datetime_from_str('31-Dec-21 00:00'), datetime.datetime(2021, 12, 31, 0, 0))
+        self.assertEqual(kvdate.datetime_from_str('31-Dec-21 01:01'), datetime.datetime(2021, 12, 31, 1, 1))
     
     def test_datetime_from_str_f01_invalid_date(self):
         with self.assertRaises(Exception) as context:

@@ -391,8 +391,59 @@ class TestKVxls(unittest.TestCase):
         self.assertEqual( list(results[0].keys()), ['Company', 'Wine', 'Vintage_Wine', 'Vintage', 'Date', 'Type', 'LastSeen', 'XLSRow'])
         self.assertTrue( 'XLSRow' in results[0].keys() )
         self.assertEqual( len(results), len(records) )
+    def test_readxls2list_p03_xls_save_row_abs(self):
+        logger.debug('STARTUP')
+        optiondict={'save_row_abs': True}
+        results = kvxls.readxls2list( filenamexls, save_row=True, optiondict=optiondict, debug=False )
+        self.assertEqual( list(results[0].keys()), ['Company', 'Wine', 'Vintage_Wine', 'Vintage', 'Date', 'Type', 'LastSeen', 'XLSRow', 'XLSRowAbs'])
+        self.assertTrue( 'XLSRow' in results[0].keys() )
+        self.assertTrue( 'XLSRowAbs' in results[0].keys() )
+        self.assertEqual( len(results), len(records) )
+    def test_readxls2list_p03_xlsx_save_row_abs(self):
+        logger.debug('STARTUP')
+        optiondict={'save_row_abs': True}
+        results = kvxls.readxls2list( filenamexlsx, save_row=True, optiondict=optiondict, debug=False )
+        self.assertEqual( list(results[0].keys()), ['Company', 'Wine', 'Vintage_Wine', 'Vintage', 'Date', 'Type', 'LastSeen', 'XLSRow', 'XLSRowAbs'])
+        self.assertTrue( 'XLSRow' in results[0].keys() )
+        self.assertTrue( 'XLSRowAbs' in results[0].keys() )
+        self.assertEqual( len(results), len(records) )
+    def test_readxls2list_p05_xls_save_col_abs(self):
+        logger.debug('STARTUP')
+        optiondict={'save_col_abs': True}
+        results = kvxls.readxls2list( filenamexls, save_row=True, optiondict=optiondict, debug=False )
+        self.assertEqual( list(results[0].keys()), ['Company', 'Wine', 'Vintage_Wine', 'Vintage', 'Date', 'Type', 'LastSeen', 'XLSRow', 'XLSColAbs1'])
+        self.assertTrue( 'XLSRow' in results[0].keys() )
+        self.assertTrue( 'XLSColAbs1' in results[0].keys() )
+        self.assertEqual( len(results), len(records) )
+    def test_readxls2list_p06_xlsx_save_col_abs(self):
+        logger.debug('STARTUP')
+        optiondict={'save_col_abs': True}
+        results = kvxls.readxls2list( filenamexlsx, save_row=True, optiondict=optiondict, debug=False )
+        self.assertEqual( list(results[0].keys()), ['Company', 'Wine', 'Vintage_Wine', 'Vintage', 'Date', 'Type', 'LastSeen', 'XLSRow', 'XLSColAbs1'])
+        self.assertTrue( 'XLSRow' in results[0].keys() )
+        self.assertTrue( 'XLSColAbs1' in results[0].keys() )
+        self.assertEqual( len(results), len(records) )
+    def test_readxls2list_p07_xls_save_row_and_col_abs(self):
+        logger.debug('STARTUP')
+        optiondict={'save_col_abs': True, 'save_row_abs': True}
+        results = kvxls.readxls2list( filenamexls, save_row=True, optiondict=optiondict, debug=False )
+        self.assertEqual( list(results[0].keys()), ['Company', 'Wine', 'Vintage_Wine', 'Vintage', 'Date', 'Type', 'LastSeen', 'XLSRow', 'XLSRowAbs', 'XLSColAbs1'])
+        self.assertTrue( 'XLSRow' in results[0].keys() )
+        self.assertTrue( 'XLSRowAbs' in results[0].keys() )
+        self.assertTrue( 'XLSColAbs1' in results[0].keys() )
+        self.assertEqual( len(results), len(records) )
+    def test_readxls2list_p08_xlsx_save_row_and_col_abs(self):
+        logger.debug('STARTUP')
+        optiondict={'save_col_abs': True, 'save_row_abs': True}
+        results = kvxls.readxls2list( filenamexlsx, save_row=True, optiondict=optiondict, debug=False )
+        self.assertEqual( list(results[0].keys()), ['Company', 'Wine', 'Vintage_Wine', 'Vintage', 'Date', 'Type', 'LastSeen', 'XLSRow', 'XLSRowAbs', 'XLSColAbs1'])
+        self.assertTrue( 'XLSRow' in results[0].keys() )
+        self.assertTrue( 'XLSRowAbs' in results[0].keys() )
+        self.assertTrue( 'XLSColAbs1' in results[0].keys() )
+        self.assertEqual( len(results), len(records) )
 
-    # sheet_name
+        
+    # sheet_name and save_row
     def test_readxls2list_p01_xls_sheet_name_save_row(self):
         logger.debug('STARTUP')
         results = kvxls.readxls2list( filenamexls4, sheetname=optiondict42['sheet_name'], save_row=True, debug=False )
@@ -405,8 +456,26 @@ class TestKVxls(unittest.TestCase):
         self.assertEqual( list(results[0].keys()), ['StringField', 'DateField', 'IntField', 'NumberField', 'XLSRow'])
         self.assertTrue( 'XLSRow' in results[0].keys() )
         self.assertEqual( len(results), len(records2) )
+    def test_readxls2list_p03_xls_sheet_name_save_row_and_abs(self):
+        logger.debug('STARTUP')
+        optiondict={'save_col_abs': True, 'save_row_abs': True}
+        results = kvxls.readxls2list( filenamexls4, sheetname=optiondict42['sheet_name'], save_row=True, optiondict=optiondict, debug=False )
+        self.assertEqual( list(results[0].keys()), ['StringField', 'DateField', 'IntField', 'NumberField', 'XLSRow', 'XLSRowAbs', 'XLSColAbs1'])
+        self.assertTrue( 'XLSRow' in results[0].keys() )
+        self.assertTrue( 'XLSRowAbs' in results[0].keys() )
+        self.assertTrue( 'XLSColAbs1' in results[0].keys() )
+        self.assertEqual( len(results), len(records2) )
+    def test_readxls2list_p04_xlsx_sheet_name_save_row_and_abs(self):
+        logger.debug('STARTUP')
+        optiondict={'save_col_abs': True, 'save_row_abs': True}
+        results = kvxls.readxls2list( filenamexlsx4, sheetname=optiondict42['sheet_name'], save_row=True, optiondict=optiondict, debug=False )
+        self.assertEqual( list(results[0].keys()), ['StringField', 'DateField', 'IntField', 'NumberField', 'XLSRow', 'XLSRowAbs', 'XLSColAbs1'])
+        self.assertTrue( 'XLSRow' in results[0].keys() )
+        self.assertTrue( 'XLSRowAbs' in results[0].keys() )
+        self.assertTrue( 'XLSColAbs1' in results[0].keys() )
+        self.assertEqual( len(results), len(records2) )
 
-    # sheet_name
+    # set start_row
     def test_readxls2list_p01_xls_start_row(self):
         logger.debug('STARTUP')
         kvxls.writelist2xls( filenamexls3, records, optiondict={'start_row': 3}, debug=False)
@@ -423,6 +492,30 @@ class TestKVxls(unittest.TestCase):
         self.assertTrue( 'XLSRow' in results2[0].keys() )
         self.assertEqual( len(results2), len(records) )
         kvutil.remove_filename( filenamexlsx3, kvutil.functionName() )
+    # set start_row with abs row/column
+    def test_readxls2list_p03_xls_start_row_and_abs(self):
+        logger.debug('STARTUP')
+        optiondict={'save_row': True, 'save_col_abs': True, 'save_row_abs': True}
+        kvxls.writelist2xls( filenamexls3, records, optiondict={'start_row': 3}, debug=False)
+        results2 = kvxls.readxls2list_findheader( filenamexls3, req_cols=req_cols, optiondict=optiondict, debug=False )
+        self.assertEqual( list(results2[0].keys()), ['Company', 'Wine', 'Vintage_Wine', 'Vintage', 'Date', 'Type', 'LastSeen', 'XLSRow', 'XLSRowAbs', 'XLSColAbs1'])
+        self.assertTrue( 'XLSRow' in results2[0].keys() )
+        self.assertTrue( 'XLSRowAbs' in results2[0].keys() )
+        self.assertTrue( 'XLSColAbs1' in results2[0].keys() )
+        self.assertEqual( len(results2), len(records) )
+        kvutil.remove_filename(filenamexls3, kvutil.functionName())
+    def test_readxls2list_p04_xlsx_start_row_and_abs(self):
+        logger.debug('STARTUP')
+        optiondict={'save_row': True, 'save_col_abs': True, 'save_row_abs': True, 'start_row': 3}
+        kvxls.writelist2xls( filenamexlsx3, records, optiondict={'start_row': 3}, debug=False)
+        results2 = kvxls.readxls2list_findheader( filenamexlsx3, req_cols=req_cols, optiondict=optiondict, debug=False )
+        self.assertEqual( list(results2[0].keys()), ['Company', 'Wine', 'Vintage_Wine', 'Vintage', 'Date', 'Type', 'LastSeen', 'XLSRow', 'XLSRowAbs', 'XLSColAbs1'])
+        self.assertTrue( 'XLSRow' in results2[0].keys() )
+        self.assertTrue( 'XLSRowAbs' in results2[0].keys() )
+        self.assertTrue( 'XLSColAbs1' in results2[0].keys() )
+        self.assertEqual( len(results2), len(records) )
+        kvutil.remove_filename( filenamexlsx3, kvutil.functionName() )
+        
 
 
     ########################################

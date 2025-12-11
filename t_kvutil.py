@@ -315,7 +315,7 @@ class TestKVUtilFilenames(unittest.TestCase):
         self.assertEqual(kvutil.kv_parse_command_line( optiondictconfig, keymapdict=keymapdict ), {'test1': 15} )
 
     # all
-    def test_kv_parse_command_line_p40_keymapdict_config_set_type_int(self):
+    def test_kv_parse_command_line_p40_all_false_config(self):
         optiondictconfig = { 'test1' : { 'value' : False, 'type' : 'bool' }, 'test2': {'type': 'bool', 'notall': True}, 'all': {'value': False, 'type': 'bool'}}
         if debug_file:
             print('\n\ntest_kv_parse_command_line_p30_skipcmdlineargs_config_set_type_int')
@@ -323,8 +323,9 @@ class TestKVUtilFilenames(unittest.TestCase):
             print(kvutil.kv_parse_command_line( optiondictconfig, skipcmdlineargs=True ))
         clear_argv()
         #set_argv(1,'test2=False') # push value onto command line (string)
-        self.assertEqual(kvutil.kv_parse_command_line( optiondictconfig ), {'test1': False, 'test2': None, 'all': False} )
-    def test_kv_parse_command_line_p41_keymapdict_config_set_type_int(self):
+        # print('40'+'-'*40)
+        self.assertEqual(kvutil.kv_parse_command_line( optiondictconfig, disp_msg=False ), {'test1': False, 'test2': None, 'all': False} )
+    def test_kv_parse_command_line_p41_notall_true__and_all_false_cmdline_set(self):
         optiondictconfig = { 'test1' : { 'value' : False, 'type' : 'bool' }, 'test2': {'type': 'bool', 'notall': True}, 'all': {'value': False, 'type': 'bool'}}
         if debug_file:
             print('\n\ntest_kv_parse_command_line_p30_skipcmdlineargs_config_set_type_int')
@@ -332,8 +333,19 @@ class TestKVUtilFilenames(unittest.TestCase):
             print(kvutil.kv_parse_command_line( optiondictconfig, skipcmdlineargs=True ))
         clear_argv()
         set_argv(1,'test1=True') # push value onto command line (string)
+        # print('41'+'-'*40)
         self.assertEqual(kvutil.kv_parse_command_line( optiondictconfig ), {'test1': True, 'test2': None, 'all': False} )
-    def test_kv_parse_command_line_p42_keymapdict_config_set_type_int(self):
+    def test_kv_parse_command_line_p42_notall_true_cmdline(self):
+        optiondictconfig = { 'test1' : { 'value' : True, 'type' : 'bool' }, 'test2': {'type': 'bool', 'notall': True}, 'all': {'value': False, 'type': 'bool'}}
+        if debug_file:
+            print('\n\ntest_kv_parse_command_line_p30_skipcmdlineargs_config_set_type_int')
+            print('cfg:', optiondictconfig)
+            print(kvutil.kv_parse_command_line( optiondictconfig, skipcmdlineargs=True, disp_msg=False ))
+        # print('42'+'-'*40)
+        clear_argv()
+        set_argv(1,'notall=True') # push value onto command line (string)
+        self.assertEqual(kvutil.kv_parse_command_line( optiondictconfig, disp_msg=False ), {'test1': False, 'test2': None, 'all': False, 'notall': True} )
+    def test_kv_parse_command_line_p43_all_true_cmdline(self):
         optiondictconfig = { 'test1' : { 'value' : False, 'type' : 'bool' }, 'test2': {'type': 'bool', 'notall': True}, 'all': {'value': False, 'type': 'bool'}}
         if debug_file:
             print('\n\ntest_kv_parse_command_line_p30_skipcmdlineargs_config_set_type_int')
@@ -341,9 +353,40 @@ class TestKVUtilFilenames(unittest.TestCase):
             print(kvutil.kv_parse_command_line( optiondictconfig, skipcmdlineargs=True ))
         clear_argv()
         set_argv(1,'all=True') # push value onto command line (string)
-        self.assertEqual(kvutil.kv_parse_command_line( optiondictconfig ), {'test1': True, 'test2': None, 'all': True} )
+        #print('43'+'-'*40)
+        self.assertEqual(kvutil.kv_parse_command_line( optiondictconfig, disp_msg=False ), {'test1': True, 'test2': None, 'all': True} )
+    def test_kv_parse_command_line_p44_all_true_cmdline_fld_set_cmdline(self):
+        optiondictconfig = { 'test1' : { 'value' : False, 'type' : 'bool' }, 'test2': {'type': 'bool', 'notall': True}, 'all': {'value': False, 'type': 'bool'}}
+        if debug_file:
+            print('\n\ntest_kv_parse_command_line_p30_skipcmdlineargs_config_set_type_int')
+            print('cfg:', optiondictconfig)
+            print(kvutil.kv_parse_command_line( optiondictconfig, skipcmdlineargs=True ))
+        clear_argv()
+        set_argv(1,'all=True') # push value onto command line (string)
+        set_argv(2,'test1=False') # push value onto command line (string)
+        #print('44'+'-'*40)
+        self.assertEqual(kvutil.kv_parse_command_line( optiondictconfig, disp_msg=False ), {'test1': False, 'test2': None, 'all': True} )
+    def test_kv_parse_command_line_p45_all_true_dict_no_cmdline(self):
+        optiondictconfig = { 'test1' : { 'value' : False, 'type' : 'bool' }, 'test2': {'type': 'bool', 'notall': True}, 'all': {'value': True, 'type': 'bool'}}
+        if debug_file:
+            print('\n\ntest_kv_parse_command_line_p30_skipcmdlineargs_config_set_type_int')
+            print('cfg:', optiondictconfig)
+            print(kvutil.kv_parse_command_line( optiondictconfig, skipcmdlineargs=True ))
+        clear_argv()
+        # set_argv(1,'all=True') # push value onto command line (string)
+        #print('45'+'-'*40)
+        self.assertEqual(kvutil.kv_parse_command_line( optiondictconfig, disp_msg=False ), {'test1': True, 'test2': None, 'all': True} )
+    def test_kv_parse_command_line_p46_all_true_dict_cmdline_false(self):
+        optiondictconfig = { 'test1' : { 'value' : False, 'type' : 'bool' }, 'test2': {'type': 'bool', 'notall': True}, 'all': {'value': True, 'type': 'bool'}}
+        if debug_file:
+            print('\n\ntest_kv_parse_command_line_p30_skipcmdlineargs_config_set_type_int')
+            print('cfg:', optiondictconfig)
+            print(kvutil.kv_parse_command_line( optiondictconfig, skipcmdlineargs=True ))
+        clear_argv()
+        set_argv(1,'all=False') # push value onto command line (string)
+        #print('46'+'-'*40)
+        self.assertEqual(kvutil.kv_parse_command_line( optiondictconfig, disp_msg=False ), {'test1': False, 'test2': None, 'all': False} )
 
-        
     # additional tests to add
     # passing cc_cfg
     # passing cc_args
