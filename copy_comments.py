@@ -32,6 +32,9 @@
 
     ### READING IN THE CURRENT SRC FILE FORMAT ###
     # how to cause the format of the file to be read in and generate an output json used to drive formats
+    # 1) Create the starting json configuration file to load this data
+    #    desc, src_dir, dst_dir, src_fname, dst_fname, copy_fields, key_fields
+    # 2) on the command line set the following
     fmt_dir - format output directory
     fmt_fname - format output filename
     src_width - set to true
@@ -39,7 +42,7 @@
     format_output - set to true
 
     # Command Line:
-    # python copy_comments.py fmt_dir="." fmt_fname=ken.json format_output=1 no_fmt=1 src_width=1 conf_json=<json_file>
+    # python copy_comments.py fmt_dir="." fmt_fname=ken.json format_output=1 no_fmt=1 src_width=1 disp_msg=1 conf_json=<json_file>
 
     # flags to set if you want to capture and output the src_width format data
     src_width = True
@@ -68,6 +71,8 @@
             'dst': <dst_fieldname>, 
          }
     col_width - a dictionary that is column letter and column width numberic
+    col_hidden - a  list of column header letters that are defined as hidden columns
+    format_auto - boolean when true - we allow automatic column width calcs
     format_output - boolean when true we format the out_fname, with col_width if passed in or calc col_width on our own
     format_cell - boolean when true we copy the formatting of cells based on match key from src to out_fname
     src_width - when true, and format_output is true, we calculate col_width by reading the values from src_fname
@@ -79,7 +84,7 @@
 
 @author:   Ken Venner
 @contact:  ken.venner@sierrspace.com
-@version:  1.33
+@version:  1.34
 
     Created:   2024-05-20;kv
     Version:   2025-07-12;kv - lots of changes and now callable as a librarry
@@ -103,8 +108,8 @@ import os
 
 # ----------------------------------------
 
-AppVersion = '1.33'
-__version__ = '1.33'
+AppVersion = '1.34'
+__version__ = '1.34'
 
 
 # ----------------------------------------
@@ -114,7 +119,7 @@ __version__ = '1.33'
 
 optiondictconfig = {
     'AppVersion' : {
-        'value': '1.33',
+        'value': '1.34',
     },
     'debug' : {
         'value' : False,
@@ -130,6 +135,10 @@ optiondictconfig = {
         'value' : False,
         'type' : 'bool',
         'description': 'cause processing print statement when creating add or rmv file',
+    },
+    'create_json' : {
+        'value' : '',
+        'description': 'pass in the filename of XLSX you want to create a json for and this will set flags and output the json',
     },
     'default_fname' : {
         'value' : 'dst_fname',
@@ -310,6 +319,16 @@ optiondictconfig = {
         'type' : dict,
         'description' : 'dictionary defines the width for each column',
     },
+    'col_hidden' : {
+        'value': None,
+        'type' : list,
+        'description' : 'list defines the column headers that are hidden',
+    },
+    'format_auto' : {
+        'value' : False,
+        'type' : 'bool',
+        'description': 'when true we allow for automatic calculation of column widths',
+    },
     'format_output' : {
         'value' : True,
         'type' : 'bool',
@@ -400,8 +419,62 @@ Example col_width:
     'Y': 23.453125,
     'Z': 39.26953125
 }
+
+Example of col_hidden:
+['P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X']
+
 '''
 
+def update_optiondict4json_create(optiondict: dict) -> None:
+    """
+    when this is set - and has a XLSX filename in it - then set all the proper flags to generate the output json
+    """
+
+    # test that the input we got is an xlsx and exists
+    if not os.path.exists(optiondict['create_json']):
+        raise FileNotFoundError
+
+    # split up the filename
+    fdir, fname = os.path.split(optiondict['create_json'])
+    fname_only, fext = os.path.splitext(fname)
+    # fdir += '\\'
+    
+    # check the extension
+    if fext.upper() != '.XLSX':
+        raise ValueError(f'Not XLSX file extension - provided extension was [{fext}]')
+    
+    # default directory for the output file
+    if not optiondict.get('fmt_dir'):
+        optiondict['fmt_dir'] = "./"
+
+    # if we did not proivde the filename for the output file - it is the input file with .JSON on it
+    if not optiondict.get('fmt_fname'):
+        optiondict['fmt_fname']=fname_only + '.json'
+
+    # set the source and dst dir/fname
+    for fld in ['src', 'dst']:
+        if not optiondict.get(fld+'_dir'):
+            optiondict[fld+'_dir'] = fdir
+        if not optiondict.get(fld+'_fname'):
+            optiondict[fld+'_fname'] = fname
+
+    # copy over src_ws to dst_ws
+    if optiondict.get('src_ws') and not optiondict.get('dst_ws'):
+        optiondict['dst_ws'] = optiondict['src_ws']
+        
+    # set default_fname
+    if not optiondict.get('default_fname'):
+        optiondict['default_fname'] = 'dst_fname'
+
+    # Now set the flags
+    for fld in ['src_width', 'no_fmt', 'format_output']:
+        optiondict[fld] = True
+
+    # debugging
+    if False:
+        print('Optiondict generated for create_json:')
+        pprint.pprint(optiondict)
+    
 
 def validate_inputs(optiondict: dict) -> bool | None:
     """
@@ -418,6 +491,10 @@ def validate_inputs(optiondict: dict) -> bool | None:
     if 'disp_msg' not in optiondict:
         optiondict['disp_msg'] = False
 
+    # if we set create_json - update the optiondict config to make all the required settings to generate an output configuratoin json
+    if optiondict.get('create_json'):
+        update_optiondict4json_create(optiondict)
+        
     # if src_dir not set - set it to the currnet working directory
     if not optiondict.get('src_dir'):
         optiondict['src_dir'] = './'
@@ -494,6 +571,14 @@ def validate_inputs(optiondict: dict) -> bool | None:
     if optiondict['dst_fname_glob']:
         optiondict['dst_fname'] = os.path.basename(kvutil.filename_maxmin(optiondict['dst_dir']+optiondict['dst_fname_glob'], optiondict['dst_fname_glob_rev']))
 
+
+    # format/output options
+    if 'src_width' in optiondict and optiondict['src_width'] and (optiondict.get('col_width') or optiondict.get('col_hidden')):
+        # output messages
+        if optiondict['disp_msg']:
+            print('You should not have src_width true and values in col_width or col_hidden')
+        optiondict['error_msg'] = 'Must define the fields that make the business keys in:  key_fields''You should not have src_width true and values in col_width or col_hidden'
+        return False
 
     # key fields comparison - if no key return False - maybe change to raise Exception()
     if 'key_fields' not in optiondict:
@@ -671,15 +756,22 @@ def load_records(optiondict: dict, srctype: str='src', disp_msg: bool=False) -> 
                 print('copy_comments:load_records:file does not exist: '+str(full_filename))
             return []
 
+    # look up the header because we defined the required columns
+    loaded_optiondict = {'sheetname': optiondict[srctype+'_ws'], 'save_row': True}
+
+    # debuggging
+    if False:
+        print('loaded_optiondict:srctype:', srctype)
+        pprint.pprint(loaded_optiondict)
+        
     # load the file
     if srctype+'_reqcols' in optiondict and optiondict[srctype+'_reqcols']:
-        # look up the header because we defined the required columns
-        loaded_optiondict = {'sheetname': optiondict[srctype+'_ws'], 'save_row': True}
         loaded_data = kvxls.readxls2list_findheader(full_filename, optiondict[srctype+'_reqcols'], optiondict=loaded_optiondict)
     else:
         # load with the assumption that the first row is the header
-        loaded_data = kvxls.readxls2list(full_filename, optiondict[srctype+'_ws'])
+        loaded_data = kvxls.readxls2list(full_filename, optiondict[srctype+'_ws'], optiondict=loaded_optiondict)
 
+    # debugging
     if False:
         print(full_filename)
         print(len(loaded_data))
@@ -701,12 +793,20 @@ def read_src_file_format(optiondict: dict) -> None:
     if 'src_width' in optiondict and optiondict['src_width']:
         # output messages
         if optiondict['disp_msg']:
+            print('full_filename:', full_filename)
             print('Getting col_width formatting from src_fname')
-        optiondict['col_width'] = kv_excel.get_existing_column_width(full_filename, disp_msg=optiondict['disp_msg'])
+        optiondict['col_width'] = kv_excel.get_existing_column_width(full_filename, ws_sheetname=optiondict.get('src_ws', None), disp_msg=optiondict['disp_msg'])
+        # get hidden
+        # output messages
+        if optiondict['disp_msg']:
+            print('Getting col_hidden formatting from src_fname')
+        optiondict['col_hidden'] = kv_excel.get_existing_column_hidden(full_filename, ws_sheetname=optiondict.get('src_ws', None), disp_msg=optiondict['disp_msg'])
         # display this if they are looking for it
         if optiondict.get('src_width_disp', False):
             print('Source file col width:')
             pprint.pprint(optiondict['col_width'])
+            print('Source file col hidden:')
+            pprint.pprint(optiondict['col_hidden'])
             # if src_width, and src_width_disp and no_fmt - we are done processing here.
             if optiondict.get('no_fmt', False):
                 print('src_width, src_width_disp and no_fmt set - exitting')
@@ -939,6 +1039,7 @@ def generate_add_output_file_not_formatted(add_data: list[dict], optiondict: dic
 def format_output(optiondict):
     """
     Format the output file based on flags passed in
+    or when the 'fmt_fname' is set - then save the configuratoin out to a json file
     """
     
     # if they want it formatted
@@ -954,14 +1055,60 @@ def format_output(optiondict):
             print('\nFormatting output file')
         else:
             disp_msg = False
-            
+
+    # debugging
+    if False:
+        print('format_output: optiondict')
+        pprint.pprint(optiondict)
+    
+    # special output json - if exists and populated
+    if optiondict.get('create_json'):
+        # split up the input filename
+        fdir, fname = os.path.split(optiondict['create_json'])
+
+        # create the output json standard configuration
+        output = {
+            'descr': 'put a description here',
+            'src_dir': fdir,
+            'src_fname': fname,
+            'dst_dir': fdir,
+            'dst_fname': fname,
+            'copy_fields': [],
+            'key_fields': [] if not optiondict.get('key_fields') else optiondict['key_fields'],
+            'hyperlink_fields': [],
+            'format_output': True,
+            'format_cell': False,
+            'src_width': False,
+            'col_width': optiondict['col_width'],
+            'col_hidden': optiondict['col_hidden'],
+        }
+        # add in sheets if they are set
+        if optiondict.get('src_ws'):
+            output['src_ws'] = optiondict['src_ws']
+            output['dst_ws'] = optiondict['src_ws']
+
+        # output this 
+        full_filename = os.path.join(optiondict['fmt_dir'], optiondict['fmt_fname'])
+        kvutil.dump_dict_to_json_file(full_filename,output)
+        # output messages
+        if 'disp_msg' in optiondict and optiondict['disp_msg']:
+            print('Saved format json to:' + str(full_filename))
+        # if no_fmt is enabled we are done - and we are generating the output format file
+        if optiondict.get('no_fmt', False):
+            print('no_fmt set - generated output format - ending program')
+            sys.exit()
+        
     # if we set fmt_fname then save this col width data
     if 'fmt_fname' in optiondict and optiondict['fmt_fname']:
         full_filename = os.path.join(optiondict['fmt_dir'], optiondict['fmt_fname'])
-        kvutil.dump_dict_to_json_file(full_filename, {"col_width": optiondict['col_width']})
+        kvutil.dump_dict_to_json_file(full_filename,
+                                      {
+                                          "col_width": optiondict['col_width'],
+                                          "col_hidden": optiondict['col_hidden'],
+                                      })
         # output messages
         if 'disp_msg' in optiondict and optiondict['disp_msg']:
-            print('Saved col_width to:' + str(full_filename))
+            print('Saved col_width + col_hidden to:' + str(full_filename))
         # if no_fmt is enabled we are done - and we are generating the output format file
         if optiondict.get('no_fmt', False):
             print('no_fmt set - generated output format - ending program')
@@ -980,11 +1127,23 @@ def format_output(optiondict):
             print('reformat_out:', excel_filename)
             print('col_width we reformat with:')
             pprint.pprint(optiondict['col_width'])
+            print('col_hidden we reformat with:')
+            pprint.pprint(optiondict['col_hidden'])
     # if there is no work to do  - then do not format the output file
-    if optiondict['no_fmt'] or 'col_width' not in optiondict or not optiondict['col_width']:
+    if optiondict['no_fmt']:
+        if disp_msg:
+            print('no formatting applied - no_fmt enabled')
         return
+    # if there is no work to do  - then do not format the output file
+    if not (optiondict.get('col_width') or optiondict.get('col_hidden') or optiondict.get('format_auto')):
+        if disp_msg:
+            print('no formatting applied - no formatting specified in col_width, col_hidden, format_auto')
+        return
+    # messaging
+    if optiondict.get('format_auto') and disp_msg and not optiondict.get('col_width'):
+        print('format_auto enabled and no col_width defined')
     # format this file with what is defined in col_width
-    kv_excel.format_xlsx_with_filter_and_freeze(excel_filename, col_width=optiondict['col_width'], disp_msg=disp_msg)
+    kv_excel.format_xlsx_with_filter_and_freeze(excel_filename, col_width=optiondict['col_width'], col_hidden=optiondict['col_hidden'], disp_msg=disp_msg)
 
 def format_cell(optiondict):
     """
@@ -1099,8 +1258,9 @@ if __name__ == "__main__":
         sys.exit(1)
 
     # debugging
+    #print('read in')
     #pprint.pprint(optiondict)
-    #sys.exit()
+    # sys.exit()
 
     # check for file existenace
     if optiondict['ignore_missing_src']:
@@ -1131,9 +1291,29 @@ if __name__ == "__main__":
             print('Found no records in: ', os.path.join(optiondict['src_dir'], optiondict['src_fname']))
         sys.exit(1)
 
+    # set the key fields if not set
+    if optiondict.get('create_json') and not optiondict.get('key_fields'):
+        if 'XLSRow' in src_data[0].keys():
+            optiondict['key_fields'] = ['XLSRow']
+        elif 'XLSRowAbs' in src_data[0].keys():
+            optiondict['key_fields'] = ['XLSRowAbs']
+        else:
+            optiondict['key_fields'] = [list(src_data[0].keys())[0]]
+
+    # debugging
+    if False and optiondict.get('create_json'):
+        print('Option Dict with the Key Fields set')
+        pprint.pprint(optiondict)
+
+        
     # read in format for src file if we want it
     read_src_file_format(optiondict)
 
+    # Debugging
+    if False:
+        print('heading out of read_src_file_format')
+        pprint.pprint(optiondict)
+    
     # check that we have the key fields in the src_data
     missing_cols = validate_missing_columns(src_data, optiondict, 'key_fields')
     if missing_cols:
@@ -1141,6 +1321,8 @@ if __name__ == "__main__":
         if optiondict['disp_msg']:
             print('You are MOST LIKELY reading in the wrong src sheet as we can not find column(s): ',
                   '|'.join(missing_cols) )
+            print('Columns we have found are: ',
+                  '|'.join(src_data[0].keys()) )
         sys.exit(1)        
 
     # check that we have the copy_fields columns
@@ -1250,6 +1432,10 @@ if __name__ == "__main__":
     generate_rmv_output_file_not_formatted(rmv_data, optiondict)
     generate_add_output_file_not_formatted(add_data, optiondict)
 
+    if False:
+        print('heading into format_output')
+        pprint.pprint(optiondict)
+    
     # format the output file
     format_output(optiondict)
 

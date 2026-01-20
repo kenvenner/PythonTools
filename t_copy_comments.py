@@ -12,6 +12,22 @@ import time
 import copy
 import os
 
+"""
+Updated test as of 2026-01-19
+
+new parameters
+col_hidden
+format_auto
+create_json
+
+
+
+input test
++    if 'src_width' in optiondict and optiondict['src_width'] and (optiondict.get('col_width') or optiondict.get('col_hidden')):
+
+calculation of a key with create_json is enabled and no keys are provided
+
+"""
 
 # logging
 import kvlogger
@@ -56,8 +72,149 @@ base_optiondict = {
 
 # Testing class
 class TestCopyComment(unittest.TestCase):
-        
 
+    def test_update_optiondict4json_create_p01_only_create_json(self):
+        # set a value to just get a value set
+        optiondict = {
+            'create_json': 'test_file.xlsx',
+        }
+        # create the file
+        with open(optiondict['create_json'], 'w') as f:
+            f.write('')
+        # set the command line
+        copy_comments.update_optiondict4json_create(optiondict)
+        # remove the file
+        kvutil.filename_remove(optiondict['create_json'])
+        # answer
+        answer = {
+            'create_json': 'test_file.xlsx',
+            'default_fname': 'dst_fname',
+            'fmt_dir': './',
+            'fmt_fname': 'test_file.json',
+            'src_dir': '',
+            'src_fname': 'test_file.xlsx',
+            'dst_dir': '',
+            'dst_fname': 'test_file.xlsx',
+            'src_width': True,
+            'no_fmt': True,
+            'format_output': True
+        }
+        self.assertEqual(optiondict, answer)
+    def test_update_optiondict4json_create_p02_fmt_dir(self):
+        # set a value to just get a value set
+        optiondict = {
+            'create_json': 'test_file.xlsx',
+            'fmt_dir': 'batch'
+        }
+        # create the file
+        with open(optiondict['create_json'], 'w') as f:
+            f.write('')
+        # set the command line
+        copy_comments.update_optiondict4json_create(optiondict)
+        # remove the file
+        kvutil.filename_remove(optiondict['create_json'])
+        # answer
+        answer = {
+            'create_json': 'test_file.xlsx',
+            'default_fname': 'dst_fname',
+            'fmt_dir': 'batch',
+            'fmt_fname': 'test_file.json',
+            'src_dir': '',
+            'src_fname': 'test_file.xlsx',
+            'dst_dir': '',
+            'dst_fname': 'test_file.xlsx',
+            'src_width': True,
+            'no_fmt': True,
+            'format_output': True
+        }
+        self.assertEqual(optiondict, answer)
+    def test_update_optiondict4json_create_p03_fmt_fname(self):
+        # set a value to just get a value set
+        optiondict = {
+            'create_json': 'test_file.xlsx',
+            'fmt_fname': 'batch.json'
+        }
+        # create the file
+        with open(optiondict['create_json'], 'w') as f:
+            f.write('')
+        # set the command line
+        copy_comments.update_optiondict4json_create(optiondict)
+        # remove the file
+        kvutil.filename_remove(optiondict['create_json'])
+        # answer
+        answer = {
+            'create_json': 'test_file.xlsx',
+            'default_fname': 'dst_fname',
+            'fmt_dir': './',
+            'fmt_fname': 'batch.json',
+            'src_dir': '',
+            'src_fname': 'test_file.xlsx',
+            'dst_dir': '',
+            'dst_fname': 'test_file.xlsx',
+            'src_width': True,
+            'no_fmt': True,
+            'format_output': True
+        }
+        self.assertEqual(optiondict, answer)
+    def test_update_optiondict4json_create_p04_dst_dir(self):
+        # set a value to just get a value set
+        optiondict = {
+            'create_json': 'test_file.xlsx',
+            'dst_dir': 'batch',
+        }
+        # create the file
+        with open(optiondict['create_json'], 'w') as f:
+            f.write('')
+        # set the command line
+        copy_comments.update_optiondict4json_create(optiondict)
+        # remove the file
+        kvutil.filename_remove(optiondict['create_json'])
+        # answer
+        answer = {
+            'create_json': 'test_file.xlsx',
+            'default_fname': 'dst_fname',
+            'fmt_dir': './',
+            'fmt_fname': 'test_file.json',
+            'src_dir': '',
+            'src_fname': 'test_file.xlsx',
+            'dst_dir': 'batch',
+            'dst_fname': 'test_file.xlsx',
+            'src_width': True,
+            'no_fmt': True,
+            'format_output': True
+        }
+        self.assertEqual(optiondict, answer)
+    def test_update_optiondict4json_create_p05_other_settings(self):
+        # set a value to just get a value set
+        optiondict = {
+            'create_json': 'test_file.xlsx',
+            'src_width': False,
+            'no_fmt': False,
+            'format_output': False,
+        }
+        # create the file
+        with open(optiondict['create_json'], 'w') as f:
+            f.write('')
+        # set the command line
+        copy_comments.update_optiondict4json_create(optiondict)
+        # remove the file
+        kvutil.filename_remove(optiondict['create_json'])
+        # answer
+        answer = {
+            'create_json': 'test_file.xlsx',
+            'default_fname': 'dst_fname',
+            'fmt_dir': './',
+            'fmt_fname': 'test_file.json',
+            'src_dir': '',
+            'src_fname': 'test_file.xlsx',
+            'dst_dir': '',
+            'dst_fname': 'test_file.xlsx',
+            'src_width': True,
+            'no_fmt': True,
+            'format_output': True
+        }
+        self.assertEqual(optiondict, answer)
+        
     def test_validate_inputs_p01_disp_msg_set_true(self):
         # get the defaults
         t_kvutil.set_argv(1,'test=test')

@@ -2,6 +2,22 @@ import unittest
 from unittest.mock import patch, MagicMock
 import kvexcel
 
+"""
+Test to add 2026-01-19
+
+def get_existing_column_hidden( xls_filename, ws_sheetname = None, disp_msg=False ):
+
+def apply_col_hidden_ws_obj( ws, col_hidden, disp_msg=True ):
+
+changed
+-def format_xlsx_with_filter_and_freeze( xls_filename, ws_sheetname=None, col_width=None, disp_msg=True ):
++def format_xlsx_with_filter_and_freeze( xls_filename, ws_sheetname=None, col_width=None, col_hidden=None, disp_msg=True ):
+
+Possibly enhance thjis so we don't need to reopen the file between calls - we save the file nad chekc for sameness?
+
+
+"""
+
 
 class TestUpdateExcelCells(unittest.TestCase):
     """Unit tests for kvexcel.update_excel_cells and related utilities."""

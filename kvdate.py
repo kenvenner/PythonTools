@@ -1,7 +1,7 @@
 """
 @author:   Ken Venner
 @contact:  ken@venerllc.com
-@version:  1.11
+@version:  1.12
 
 Library of tools for date time processing used in general by KV
 
@@ -24,8 +24,8 @@ import logging
 logger = logging.getLogger(__name__)
 
 # set the module version number
-AppVersion = '1.11'
-__version__ = '1.11'
+AppVersion = '1.12'
+__version__ = '1.12'
 
 
 def current_timezone_string():
@@ -70,6 +70,8 @@ def datetime2utcdatetime(dt, default_tz=None, no_tz=False):
 #  YYYYMMDD
 #  DD-MMM-YYYY HH:MM
 #  DD-MMM-YYYY
+#  MM/DD/YYYY  HH:MM:SS AM/PM - 12/10/2025  11:31:00 PM
+#
 #
 # and allow a Z to be on the end of this string that we will strip out
 #
@@ -90,6 +92,7 @@ def datetime_from_str(value, skipblank=False, disp_msg=True):
         (re.compile(r'\d{1,2}-.{3}-\d{4}'), '%d-%b-%Y'),
         (re.compile(r'\d{1,2}-.{3}-\d{2}\s\d{2}:\d{2}'), '%d-%b-%y %H:%M'),
         (re.compile(r'\d{1,2}-.{3}-\d{2}'), '%d-%b-%y'),
+        (re.compile(r'\d{1,2}/\d{1,2}/\d{4}\s\s\d{2}:\d{2}:\d{2} [A|P]M'), '%m/%d/%Y  %I:%M:%S %p'),
     )
 
     if skipblank and not value:
@@ -98,11 +101,15 @@ def datetime_from_str(value, skipblank=False, disp_msg=True):
     # if we passed in datetime we are done already
     if type(value) is datetime.datetime:
         return value
+
+    # we only convert strings so we return the value when it is not a string
+    if type(value) != str:
+        return value
     
     orig_value = value
     
     # strip the Z on the end before processing
-    if value[-1].upper() == 'Z':
+    if value and value[-1].upper() == 'Z':
         value = value[:-1]
 
     # print('value:', value)

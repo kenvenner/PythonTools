@@ -5,6 +5,12 @@ import datetime
 import pprint
 from openpyxl.styles import PatternFill
 
+"""
+test to add 
+
+"""
+
+
 import os
 
 # logging
@@ -363,7 +369,70 @@ class TestKVxls(unittest.TestCase):
         multi_key_dict = kvxls.create_multi_key_lookup_excel(excel_dict, ['Company', 'Wine', 'Vintage'])
         self.assertTrue(multi_key_dict, records_multi_key)
         
-            
+
+    ########################################
+    # the function name: def calc_col_mapping(rec: dict) -> tuple[str, dict]:
+    def test_calc_col_mapping_p01_pass(self):
+        logger.debug('STARTUP')
+        results = kvxls.readxls2list( filenamexlsx, optiondict={'save_col_abs': True}, debug=False )
+        col_map_str, col_map = kvxls.calc_col_mapping(results[0])
+        col_map_answer = '{"Company": 1, "Wine": 2, "Vintage_Wine": 3, "Vintage": 4, "Date": 5, "Type": 6, "LastSeen": 7, "XLSColAbs1": 8}'
+        self.assertEqual( col_map_str, col_map_answer)
+    def test_calc_col_mapping_f01_abs_col_not_used(self):
+        logger.debug('STARTUP')
+        results = kvxls.readxls2list( filenamexlsx, debug=False )
+        with self.assertRaises(Exception) as context:
+            col_map_str, col_map = kvxls.calc_col_mapping(results[0])
+
+    
+    ########################################
+    # the function name: def set_col_mapping(rec) -> None:
+    def test_set_col_mapping_p01_pass(self):
+        logger.debug('STARTUP')
+        results = kvxls.readxls2list( filenamexlsx, optiondict={'save_col_abs': True}, debug=False )
+        kvxls.set_col_mapping(results[0])
+        col_map_answer = '{"Company": 1, "Wine": 2, "Vintage_Wine": 3, "Vintage": 4, "Date": 5, "Type": 6, "LastSeen": 7, "XLSColAbs1": 8}'
+        self.assertEqual( results[0][kvxls.FLD_XLSNEW_COLMAP], col_map_answer)
+    def test_set_col_mapping_f01_abs_col_not_used(self):
+        logger.debug('STARTUP')
+        results = kvxls.readxls2list( filenamexlsx, debug=False )
+        with self.assertRaises(Exception) as context:
+            kvxls.set_col_mapping(results[0])
+
+    
+    ########################################
+    # the function name: def set_col_mapping_list(records: list[dict]) -> None:
+    def test_set_col_mapping__list_p01_pass(self):
+        logger.debug('STARTUP')
+        results = kvxls.readxls2list( filenamexlsx, optiondict={'save_col_abs': True}, debug=False )
+        kvxls.set_col_mapping_list(results)
+        col_map_answer = '{"Company": 1, "Wine": 2, "Vintage_Wine": 3, "Vintage": 4, "Date": 5, "Type": 6, "LastSeen": 7, "XLSColAbs1": 8}'
+        self.assertEqual( results[0][kvxls.FLD_XLSNEW_COLMAP], col_map_answer)
+        self.assertEqual( results[-1][kvxls.FLD_XLSNEW_COLMAP], col_map_answer)
+    def test_set_col_mapping_list_f01_abs_col_not_used(self):
+        logger.debug('STARTUP')
+        results = kvxls.readxls2list( filenamexlsx, debug=False )
+        with self.assertRaises(Exception) as context:
+            kvxls.set_col_mapping_list(results)
+
+
+    ########################################
+    # the function name: def extract_col_mapping(rec: dict) -> tuple[dict, str]:
+    def test_extract_col_mapping_p01_pass(self):
+        logger.debug('STARTUP')
+        results = kvxls.readxls2list( filenamexlsx, optiondict={'save_col_abs': True}, debug=False )
+        kvxls.set_col_mapping(results[0])
+        col_mapping, col_mapping_str = kvxls.extract_col_mapping(results[0])
+        col_map_answer = '{"Company": 1, "Wine": 2, "Vintage_Wine": 3, "Vintage": 4, "Date": 5, "Type": 6, "LastSeen": 7, "XLSColAbs1": 8}'
+        self.assertEqual( col_mapping_str, col_map_answer)
+    def test_extract_col_mapping_f01_abs_col_not_used(self):
+        logger.debug('STARTUP')
+        results = kvxls.readxls2list( filenamexlsx, debug=False )
+        with self.assertRaises(Exception) as context:
+            kvxls.extract_col_mapping(results[0])
+
+    
+    
     ########################################
     # the function name: def readxls2list(xlsfile, sheetname=None, save_row=False, debug=False, optiondict=None):
     def test_readxls2list_p01_xls_pass(self):

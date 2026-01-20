@@ -7,6 +7,11 @@ import datetime
 import json
 import dateutil
 
+"""
+Test to add 
+
+"""
+
 
 # logging
 import kvlogger
@@ -117,7 +122,17 @@ class TestKvdateFilenames(unittest.TestCase):
         self.assertEqual(kvdate.datetime_from_str('31-Dec-2021 01:01'), datetime.datetime(2021, 12, 31, 1, 1))
         self.assertEqual(kvdate.datetime_from_str('31-Dec-21 00:00'), datetime.datetime(2021, 12, 31, 0, 0))
         self.assertEqual(kvdate.datetime_from_str('31-Dec-21 01:01'), datetime.datetime(2021, 12, 31, 1, 1))
-    
+
+    def test_datetime_from_str_p05_date_and_time(self):
+        self.assertEqual(kvdate.datetime_from_str('12/10/2025  11:31:00 PM'), datetime.datetime(2025, 12, 10, 23, 31))
+        self.assertEqual(kvdate.datetime_from_str('12/10/2025  11:31:00 AM'), datetime.datetime(2025, 12, 10, 11, 31))
+        #self.assertEqual(kvdate.datetime_from_str('12/10/2025 11:31:00 PM'), datetime.datetime(2025, 12, 10, 23, 31))
+        #self.assertEqual(kvdate.datetime_from_str('12/10/2025 11:31:00 AM'), datetime.datetime(2025, 12, 10, 11, 31))
+        
+    def test_datetime_from_str_p06_pass_datetime(self):
+        self.assertEqual(kvdate.datetime_from_str(datetime.datetime(2025, 12, 10, 23, 31)), datetime.datetime(2025, 12, 10, 23, 31))
+        #self.assertEqual(kvdate.datetime_from_str('12/10/2025 11:31:00 AM'), datetime.datetime(2025, 12, 10, 11, 31))
+        
     def test_datetime_from_str_f01_invalid_date(self):
         with self.assertRaises(Exception) as context:
             kvdate.datetime_from_str('20/1/19')
