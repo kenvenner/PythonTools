@@ -72,6 +72,7 @@
          }
     col_width - a dictionary that is column letter and column width numberic
     col_hidden - a  list of column header letters that are defined as hidden columns
+    col_format - a dicitinoary with column letter and column format_name to apply to that column
     format_auto - boolean when true - we allow automatic column width calcs
     format_output - boolean when true we format the out_fname, with col_width if passed in or calc col_width on our own
     format_cell - boolean when true we copy the formatting of cells based on match key from src to out_fname
@@ -84,7 +85,7 @@
 
 @author:   Ken Venner
 @contact:  ken.venner@sierrspace.com
-@version:  1.34
+@version:  1.38
 
     Created:   2024-05-20;kv
     Version:   2025-07-12;kv - lots of changes and now callable as a librarry
@@ -108,8 +109,8 @@ import os
 
 # ----------------------------------------
 
-AppVersion = '1.34'
-__version__ = '1.34'
+AppVersion = '1.38'
+__version__ = '1.38'
 
 
 # ----------------------------------------
@@ -119,12 +120,17 @@ __version__ = '1.34'
 
 optiondictconfig = {
     'AppVersion' : {
-        'value': '1.34',
+        'value': '1.38',
     },
     'debug' : {
         'value' : False,
         'type' : 'bool',
         'description': 'causes debugging print statements to execute',
+    },
+    'disp_fmt' : {
+        'value' : False,
+        'type' : 'bool',
+        'description': 'when true, and we are formatting a file - show what was displayed',
     },
     'disp_msg' : {
         'value' : True,
@@ -317,12 +323,17 @@ optiondictconfig = {
     'col_width' : {
         'value': None,
         'type' : dict,
-        'description' : 'dictionary defines the width for each column',
+        'description' : 'dictionary defines the width for each column letter',
+    },
+    'col_format' : {
+        'value': None,
+        'type' : dict,
+        'description' : 'dictionary defines the format for each column letter',
     },
     'col_hidden' : {
         'value': None,
         'type' : list,
-        'description' : 'list defines the column headers that are hidden',
+        'description' : 'list defines the column letters that are hidden',
     },
     'format_auto' : {
         'value' : False,
@@ -353,6 +364,11 @@ optiondictconfig = {
         'value' : False,
         'type' : 'bool',
         'description': 'when enabled this force the copy fields into the dst file',
+    },
+    'get_col_fmt': {
+        'value': None,
+        'type': 'liststr',
+        'description': 'comma separated list of column letters that we should extract the column format from',
     },
     'dump_recs' : {
         'value' : False,
@@ -782,9 +798,10 @@ def read_src_file_format(optiondict: dict) -> None:
     """
     This reads in the src file and gets the format from it and stores it in optiondict
     """
+
+    # set if we want to display
+    disp_msg = optiondict.get('disp_msg', True)
     # set the variable - not sure why we have this here - may need to remove
-    if 'disp_msg' not in optiondict:
-        optiondict['disp_msg'] = True
 
     # get full filename
     full_filename = os.path.join(optiondict['src_dir'], optiondict['src_fname'])
@@ -792,19 +809,39 @@ def read_src_file_format(optiondict: dict) -> None:
     # check if we should load the col_width from the src_fname
     if 'src_width' in optiondict and optiondict['src_width']:
         # output messages
-        if optiondict['disp_msg']:
+        if disp_msg:
             print('full_filename:', full_filename)
+
+        # open once the xlsx
+        ws, wb = kv_excel.open_xlsx_get_ws_wb( full_filename, ws_sheetname=optiondict.get('src_ws', None), disp_msg=disp_msg )
+
+        # COL_WIDTH
+        if disp_msg:
             print('Getting col_width formatting from src_fname')
-        optiondict['col_width'] = kv_excel.get_existing_column_width(full_filename, ws_sheetname=optiondict.get('src_ws', None), disp_msg=optiondict['disp_msg'])
-        # get hidden
+        optiondict['col_width'] = kv_excel.get_existing_column_width_ws(ws, disp_msg=disp_msg)
+
+        # COL_HIDDEN
         # output messages
-        if optiondict['disp_msg']:
+        if disp_msg:
             print('Getting col_hidden formatting from src_fname')
-        optiondict['col_hidden'] = kv_excel.get_existing_column_hidden(full_filename, ws_sheetname=optiondict.get('src_ws', None), disp_msg=optiondict['disp_msg'])
+        optiondict['col_hidden'] = kv_excel.get_existing_column_hidden_ws(ws, disp_msg=disp_msg)
+
+        # COL_FORMAT
+        # output messages
+        if optiondict['get_col_fmt']:
+            if disp_msg:
+                print('Getting col_format formatting from src_fname for columns: '+','.join(optiondict['get_col_fmt']))
+            optiondict['col_format'] = kv_excel.get_existing_column_format_ws(ws, columns=optiondict['get_col_fmt'], disp_msg=disp_msg)
+
+        # rationalize the values - remove from width those that are not hiddne
+        optiondict['col_width'] = {k:v for k, v in optiondict['col_width'].items() if k not in optiondict['col_hidden']}
+        
         # display this if they are looking for it
         if optiondict.get('src_width_disp', False):
             print('Source file col width:')
             pprint.pprint(optiondict['col_width'])
+            print('Source file col format:')
+            pprint.pprint(optiondict['col_format'])
             print('Source file col hidden:')
             pprint.pprint(optiondict['col_hidden'])
             # if src_width, and src_width_disp and no_fmt - we are done processing here.
@@ -1043,18 +1080,15 @@ def format_output(optiondict):
     """
     
     # if they want it formatted
-    if 'format_output' not in optiondict:
-        return
-    if not optiondict['format_output']:
+    if not optiondict.get('format_output', False):
         return
 
-    disp_msg = True
-    # output messages
-    if 'disp_msg' in optiondict:
-        if optiondict['disp_msg']:
-            print('\nFormatting output file')
-        else:
-            disp_msg = False
+    # capture the disp_msg setting - default to true
+    disp_msg = optiondict.get('disp_msg', True)
+
+    # display the message
+    if disp_msg:
+        print('\nFormatting output file')
 
     # debugging
     if False:
@@ -1073,12 +1107,17 @@ def format_output(optiondict):
             'src_fname': fname,
             'dst_dir': fdir,
             'dst_fname': fname,
+            'ignore_src': True,
+            'ignore_dst': True,
             'copy_fields': [],
             'key_fields': [] if not optiondict.get('key_fields') else optiondict['key_fields'],
             'hyperlink_fields': [],
+            'disp_msg': False,
+            'disp_fmt': True,
             'format_output': True,
             'format_cell': False,
             'src_width': False,
+            'col_format': optiondict['col_format'],
             'col_width': optiondict['col_width'],
             'col_hidden': optiondict['col_hidden'],
         }
@@ -1091,7 +1130,7 @@ def format_output(optiondict):
         full_filename = os.path.join(optiondict['fmt_dir'], optiondict['fmt_fname'])
         kvutil.dump_dict_to_json_file(full_filename,output)
         # output messages
-        if 'disp_msg' in optiondict and optiondict['disp_msg']:
+        if disp_msg:
             print('Saved format json to:' + str(full_filename))
         # if no_fmt is enabled we are done - and we are generating the output format file
         if optiondict.get('no_fmt', False):
@@ -1103,11 +1142,12 @@ def format_output(optiondict):
         full_filename = os.path.join(optiondict['fmt_dir'], optiondict['fmt_fname'])
         kvutil.dump_dict_to_json_file(full_filename,
                                       {
+                                          "col_format": optiondict['col_format'],
                                           "col_width": optiondict['col_width'],
                                           "col_hidden": optiondict['col_hidden'],
                                       })
         # output messages
-        if 'disp_msg' in optiondict and optiondict['disp_msg']:
+        if disp_msg:
             print('Saved col_width + col_hidden to:' + str(full_filename))
         # if no_fmt is enabled we are done - and we are generating the output format file
         if optiondict.get('no_fmt', False):
@@ -1115,7 +1155,7 @@ def format_output(optiondict):
             sys.exit()
     #
     # output messages
-    if 'disp_msg' in optiondict and optiondict['disp_msg']:
+    if disp_msg:
         print('Performing output formatting')
     if 'out_fname' in optiondict and optiondict['out_fname']:
         excel_filename = os.path.join(optiondict['out_dir'],optiondict['out_fname'])
@@ -1125,6 +1165,8 @@ def format_output(optiondict):
         # output messages
         if optiondict['disp_msg']:
             print('reformat_out:', excel_filename)
+            print('col_format we reformat with:')
+            pprint.pprint(optiondict['col_format'])
             print('col_width we reformat with:')
             pprint.pprint(optiondict['col_width'])
             print('col_hidden we reformat with:')
@@ -1135,16 +1177,21 @@ def format_output(optiondict):
             print('no formatting applied - no_fmt enabled')
         return
     # if there is no work to do  - then do not format the output file
-    if not (optiondict.get('col_width') or optiondict.get('col_hidden') or optiondict.get('format_auto')):
+    if not (optiondict.get('col_width') or optiondict.get('col_hidden') or optiondict.get('format_auto') or optiondict['col_format']):
         if disp_msg:
-            print('no formatting applied - no formatting specified in col_width, col_hidden, format_auto')
+            print('no formatting applied - no formatting specified in col_width, col_hidden, format_auto, col_format')
         return
     # messaging
     if optiondict.get('format_auto') and disp_msg and not optiondict.get('col_width'):
         print('format_auto enabled and no col_width defined')
     # format this file with what is defined in col_width
-    kv_excel.format_xlsx_with_filter_and_freeze(excel_filename, col_width=optiondict['col_width'], col_hidden=optiondict['col_hidden'], disp_msg=disp_msg)
+    kv_excel.format_xlsx_with_filter_and_freeze(excel_filename, col_width=optiondict['col_width'], col_hidden=optiondict['col_hidden'], col_format=optiondict.get('col_format', None), disp_msg=disp_msg)
 
+    # Display messaging that the file was reformatted
+    if optiondict.get('disp_fmt'):
+        print('Applied formatting from: ' + ','.join(optiondict['conf_json']) + ' to file:')
+        print(excel_filename)
+        
 def format_cell(optiondict):
     """
     Copy over cell based formatting
@@ -1258,9 +1305,10 @@ if __name__ == "__main__":
         sys.exit(1)
 
     # debugging
-    #print('read in')
-    #pprint.pprint(optiondict)
-    # sys.exit()
+    if False:
+        print('read in')
+        pprint.pprint(optiondict)
+        # sys.exit()
 
     # check for file existenace
     if optiondict['ignore_missing_src']:
@@ -1432,6 +1480,7 @@ if __name__ == "__main__":
     generate_rmv_output_file_not_formatted(rmv_data, optiondict)
     generate_add_output_file_not_formatted(add_data, optiondict)
 
+    # debugging
     if False:
         print('heading into format_output')
         pprint.pprint(optiondict)

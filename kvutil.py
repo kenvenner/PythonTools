@@ -1,7 +1,7 @@
 """
 @author:   Ken Venner
 @contact:  ken@venerllc.com
-@version:  1.97
+@version:  1.98
 
 Library of tools used in general by KV
 """
@@ -36,8 +36,8 @@ debug_file= False
 logger = logging.getLogger(__name__)
 
 # set the module version number
-AppVersion = '1.97'
-__version__ = '1.97'
+AppVersion = '1.98'
+__version__ = '1.98'
 HELP_KEYS = ('help', 'helpall',)
 HELP_VALUE_TABLE = ('tbl', 'table', 'helptbl', 'fmt',)
 
@@ -1829,4 +1829,37 @@ def extract_unmatched_data(src_data: list[dict], dst_lookup: dict, key_fields: l
     # return the number of records that matched
     return unmatched_recs
 
+def disp_dict_on_key_idx(disp_dict: dict, idx: int, disp_dict_name:str|None = None):
+    """
+    display the dict record based on an idx (numberic value) on a key
+    """
+    try:
+        # get the list of keys and then pick the "idx" value of it
+        thekey = list([x for x in disp_dict.keys()])[idx]
+        # if they provided the name to display - display it
+        if disp_dict_name:
+            print(disp_dict_name)
+        # show them the value of they key
+        print(f'{idx}:{thekey}')
+        # display the dict fully
+        pprint.pprint(disp_dict[thekey])
+    except Exception as e:
+        print('ERROR: ', e)
+        
+def disp_dict_on_key_value(disp_dict: dict, thekey: any, disp_dict_name:str|None = None):
+    """
+    display the dict record based on the value of a key
+    """
+    try:
+        # if they provided the name to display - display it
+        if disp_dict_name:
+            print(disp_dict_name)
+        # show them the value of they key
+        print(f'{thekey}')
+        # display the dict fully
+        pprint.pprint(disp_dict[thekey])
+    except Exception as e:
+        print('ERROR: ', e)
+
+    
 # eof

@@ -1,7 +1,7 @@
 """
 @author:   Ken Venner
 @contact:  ken@venerllc.com
-@version:  1.08
+@version:  1.09
 
 Library of tools to work directly with Excel files
 """
@@ -12,7 +12,7 @@ from openpyxl.styles import Font
 import os
 
 # global variables
-AppVersion = '1.08'
+AppVersion = '1.09'
 
 def open_xlsx_get_ws_wb( xls_filename, ws_sheetname = None, disp_msg=False ):
     """
@@ -31,22 +31,55 @@ def get_existing_column_width( xls_filename, ws_sheetname = None, disp_msg=False
     Pass in a filename
     Extract the column widths from a define xlsx filename
     """
-    col_width = {}
     if not os.path.exists( xls_filename ):
         if disp_msg:
             print('get_existing_column_width:file did not exist for:', xls_filename)
         return col_width
     ws, wb = open_xlsx_get_ws_wb( xls_filename, ws_sheetname, disp_msg=disp_msg )
+    col_width = get_existing_col_width_ws(ws, disp_msg=disp_msg)
+    return col_width
+
+
+def get_existing_column_width_ws( ws, disp_msg=False ):
+    """
+    Pass in a ws
+    Extract the column widths from a define xlsx filename
+    """
+    col_width = {}
     for k, cd in ws.column_dimensions.items():
         col_width[k] = cd.width
     return col_width
+
+def get_existing_column_format( xls_filename, ws_sheetname = None, columns=None, disp_msg=False ):
+    """
+    Pass in a filename
+    Extract the column widths from a define xlsx filename
+    """
+    if not os.path.exists( xls_filename ):
+        if disp_msg:
+            print('get_existing_column_width:file did not exist for:', xls_filename)
+        return col_format
+    ws, wb = open_xlsx_get_ws_wb( xls_filename, ws_sheetname, disp_msg=disp_msg )
+    col_format = get_existing_col_format_ws(ws, columns=columns, disp_msg=disp_msg)
+    return col_format
+    
+def get_existing_column_format_ws( ws, columns=None, disp_msg=False ):
+    """
+    Pass in a ws
+    Extract the column widths from a define xlsx filename
+    """
+    col_format = {}
+    # get each column and pull teh format for the row 2 cell in that column because row 1 is the header
+    for col in columns:
+        cell = ws[col + '2']
+        col_format[col] = cell.number_format
+    return col_format
 
 def get_existing_column_hidden( xls_filename, ws_sheetname = None, disp_msg=False ):
     """
     Pass in a filename
     Extract the column widths from a define xlsx filename
     """
-    col_hidden = []
     if not os.path.exists( xls_filename ):
         if disp_msg:
             print('get_existing_column_hidden:file did not exist for:', xls_filename)
@@ -54,6 +87,15 @@ def get_existing_column_hidden( xls_filename, ws_sheetname = None, disp_msg=Fals
 
     # open file 
     ws, wb = open_xlsx_get_ws_wb( xls_filename, ws_sheetname, disp_msg=disp_msg )
+    col_hidden = get_existing_column_hidden_ws( ws, disp_msg=disp_msg)
+    return col_hidden
+
+def get_existing_column_hidden_ws( ws, disp_msg=False ):
+    """
+    Pass in a ws
+    Extract the column widths from a define xlsx filename
+    """
+    col_hidden = []
 
     # Determine the maximum column number in the sheet
     max_col = ws.max_column
@@ -110,6 +152,18 @@ def apply_col_width_ws_obj( ws, col_width, disp_msg=True ):
                     print('Skipped column: ', k)
             
 # convert this into a class and then apply to that object you opened
+def apply_col_format_ws_obj( ws, col_format, disp_msg=True ):
+    """
+    Pass in a worksheet object and a column format dictionary
+    Format the worksheet object to have column widths as defined in the dictionary
+    """
+
+    for col, fmt in col_format.items():
+        for cell in ws[col]:
+            if cell.row > 1:
+                cell.number_format = fmt
+            
+# convert this into a class and then apply to that object you opened
 def apply_col_hidden_ws_obj( ws, col_hidden, disp_msg=True ):
     """
     Pass in a worksheet object and a column width dictionary
@@ -118,7 +172,6 @@ def apply_col_hidden_ws_obj( ws, col_hidden, disp_msg=True ):
     for col in col_hidden:
         ws.column_dimensions[col].hidden = True
         
-            
 def apply_filter_all_columns( ws ):
     """
     Pass in a worksheet option
@@ -164,12 +217,13 @@ def autofit_column_width( ws ):
         ws.column_dimensions[column_letter].width = adjusted_width
 
 
-def format_xlsx_with_filter_and_freeze( xls_filename, ws_sheetname=None, col_width=None, col_hidden=None, disp_msg=True ):
+def format_xlsx_with_filter_and_freeze( xls_filename, ws_sheetname=None, col_width=None, col_hidden=None, col_format=None, disp_msg=True ):
     """
     Take in a xlsx filename
     Open this file
     If col_width is not None - then format columns to the defined with, if None, autofit the column width
     if col_hidden is not None - then hide the columns defined in this list
+    if col_format is no None - then update the format for the columns with the formation value
     Filter
     Freeze
     Save back to the original filename
@@ -177,6 +231,10 @@ def format_xlsx_with_filter_and_freeze( xls_filename, ws_sheetname=None, col_wid
     if not os.path.exists( xls_filename ):
         raise Exception('File does not exist: ' + xls_filename)
     ws, wb = open_xlsx_get_ws_wb(xls_filename, disp_msg=disp_msg)
+    
+    #import time
+    #starttime = time.time()
+    
     if col_width:
         if disp_msg:
             print('Applying defined col_width')
@@ -185,8 +243,20 @@ def format_xlsx_with_filter_and_freeze( xls_filename, ws_sheetname=None, col_wid
         if disp_msg:
             print('Autofit col_width')
         autofit_column_width(ws)
+        
+    #print('col_width:', time.time()-starttime)
+    #starttime=time.time()
+
     if col_hidden:
         apply_col_hidden_ws_obj(ws, col_hidden, disp_msg=disp_msg)
+
+        #print('col_hidden:', time.time()-starttime)
+        #starttime=time.time()
+    if col_format:
+        apply_col_format_ws_obj( ws, col_format, disp_msg=disp_msg )        
+
+        #print('col_format:', time.time()-starttime)
+        #starttime=time.time()
     apply_filter_all_columns(ws)
     apply_row_freeze(ws)
     # save out the filename
