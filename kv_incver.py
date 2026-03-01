@@ -1,9 +1,10 @@
-__version__ = '1.11'
+__version__ = '1.12'
+BuildVersion = '1'
 
 """
 @author:   Ken Venner
 @contact:  ken@venerllc.com
-@version:  1.11
+@version:  1.12
 
 Tooling that creates a new major/minor version on a file
 
@@ -53,7 +54,7 @@ sys.excepthook = handle_exception
 # application variables
 optiondictconfig = {
     'AppVersion': {
-        'value': '1.11',
+        'value': '1.12',
         'description': 'defines the version number for the app',
     },
     'input_folder': {
@@ -86,6 +87,11 @@ optiondictconfig = {
         'type': 'bool',
         'description': 'flag when set drives a major version upgrade vs minor version upgrade',
     },
+    'buildonly': {
+        'value': False,
+        'type': 'bool',
+        'description': 'flag when set drives a build version only update',
+    },
     'test': {
         'value': False,
         'type': 'bool',
@@ -99,16 +105,17 @@ optiondictconfig = {
 }
 
 # -- CONSTANTS -- #
-rePgmVerLine = re.compile('__version__\s* =\s* \'(\d+)\.(\d+)')
-reVerLine = re.compile('@version:\s+(\d+)\.(\d+)')
-reAppVerLine = re.compile('AppVersion\s+=\s+\'(\d+)\.(\d+)\'')
+rePgmVerLine = re.compile(r'__version__\s* =\s* \'(\d+)\.(\d+)')
+reVerLine = re.compile(r'@version:\s+(\d+)\.(\d+)')
+reAppVerLine = re.compile(r'AppVersion\s+=\s+\'(\d+)\.(\d+)\'')
+reBuildVerLine = re.compile(r'(BuildVersion\s*=\s*\'(\d+)\')')
 
-reOptVerLine = re.compile('AppVersion\'\s*:\s*{')
-reOptValueLine = re.compile('^\s+\'value\'\s*:\s*\'(\d+)\.(\d+)\'')
+reOptVerLine = re.compile(r'AppVersion\'\s*:\s*{')
+reOptValueLine = re.compile(r'^\s+\'value\'\s*:\s*\'(\d+)\.(\d+)\'')
 
 reSearchList = [rePgmVerLine, reVerLine, reAppVerLine]
 
-reGitModified = re.compile('\s+modified:\s+(.*)')
+reGitModified = re.compile(r'\s+modified:\s+(.*)')
 
 fmtVersion2d = '{}.{:02d}'
 fmtVersion3d = '{}.{:03d}'
@@ -117,10 +124,65 @@ fmtVerLine = '@version:  {}\n'
 fmtAppVerLine = 'AppVersion = \'{}\'\n'
 fmtPgmVerLine = '__version__ = \'{}\'\n'
 
+fmtBuildVerLine = 'BuildVersion = \'{}\''
+
 fmtSearchList = [fmtPgmVerLine, fmtVerLine, fmtAppVerLine]
 
+'''
+line='BuildVersion=\'3\'   ## comments'
+bld_version_found=False
+new_bld_version=''
+'''
+def build_version_update(line, bld_version_found, new_bld_version) -> tuple[str, bool, str, str]:
+    """
+    check the  line to see if a bld version updates is needed and cause the update
 
-def update_file_version(filename, major_update=False, test=False, debug=False):
+    inputs:
+        line - str - the line in the file
+        bld_version_found - bool - have we previously found a bld_version line
+        new_bld_version - str - the bld version set by the last record we got
+
+    returns
+        line - the same or new line with build version updated
+        bld_version_found - bool - flag if this line is a bld versoin update line
+        bld_version_old - int - the found value on this record for the bld version
+        bld_version_new - int - the found value on this record for the bld version
+        new_bld_version - str - the new value for bld version
+
+    """
+
+    # create the new here  the rest are passed in
+    bld_version_old = None
+    bld_version_new = None
+    
+    if not line:
+        return line, bld_version_found, bld_version_old, bld_version_new, new_bld_version
+
+    # search the line
+    m = reBuildVerLine.search(line)
+
+    # not a build line
+    if not m:
+        return line, bld_version_found, bld_version_old, bld_version_new, new_bld_version
+
+    # capture the bld_version from this line
+    bld_version_old = int(m.group(2))
+
+    # check to see if we already saw and set the build version
+    if not bld_version_found:
+        # previously set and changed
+        bld_version_found = True
+        bld_version_new = bld_version_old+1
+        new_bld_version = fmtBuildVerLine.format(str(bld_version_new))
+        line=line.replace(m.group(1), new_bld_version)
+    else:
+        line=line.replace(m.group(1), new_bld_version)
+        bld_version_new = int(new_bld_version.split(' ')[2].replace("'",""))
+        
+    # return what we found
+    return line, bld_version_found, bld_version_old, bld_version_new, new_bld_version
+    
+def update_file_version(filename, major_update=False, buildonly=False, test=False, debug=False):
     file_tmp = kvutil.filename_create(filename, filename_ext='tmp')
     file_bak = kvutil.filename_create(filename, filename_ext='bak')
 
@@ -130,11 +192,18 @@ def update_file_version(filename, major_update=False, test=False, debug=False):
         print('update_file_version:file_bak:', file_bak)
         print('update_file_version:file_tmp:', file_tmp)
         print('update_file_version:major_update:', major_update)
+        print('update_file_version:buildonly:', buildonly)
         print('update_file_version:test:', test)
 
     app_ver = ''
     new_app_ver = ''
+    bld_ver = ''
+    new_bld_ver = ''
+    
+    bld_version = ''
+    new_bld_version = ''
     version_found = False
+    bld_version_found = False
     opt_ver_found = False
 
     version_changed = False
@@ -144,6 +213,24 @@ def update_file_version(filename, major_update=False, test=False, debug=False):
             filelines = fpIn.readlines()
 
         for line in filelines:
+            # cpature if this is a build update
+            if buildonly:
+                # process this line for build version update
+                line, bld_version_found, bld_version_old, bld_version_new, new_bld_version = build_version_update(line, bld_version_found, new_bld_version)
+
+                # capture a version change
+                if not version_changed and bld_version_found:
+                    version_changed = True
+                    version_found = True
+
+                    bld_ver = str(bld_version_old)
+                    new_bld_ver = str(bld_version_new)
+                    
+                # output this line
+                fpOut.write(line)
+                continue
+            
+            # do the major/minor version update
             if version_found:
                 if opt_ver_found:
                     # clear the flag no matter what
@@ -238,9 +325,9 @@ def update_file_version(filename, major_update=False, test=False, debug=False):
                 kvutil.remove_filename(file_bak)
             os.rename(filename, file_bak)
             os.rename(file_tmp, filename)
-        return app_ver, new_app_ver, filename, file_bak
+        return app_ver, new_app_ver, filename, file_bak, bld_ver, new_bld_ver
     else:
-        return app_ver, None, None, None
+        return app_ver, None, None, None, None, None
 
 
 def git_modified_files_in_folder(folder_path='', debug=False):
@@ -328,6 +415,8 @@ if __name__ == '__main__':
                         help="Perform a major version update")
     parser.add_argument("--minor_update", "--minor", "--minor_ver", action="store_true", dest="minor_update",
                         help="Perform a minor version update")
+    parser.add_argument("--buildonly", "--build", "--compile", action="store_true", dest="buildonly",
+                        help="Perform a build version only update")
     parser.add_argument("--conf",
                         help="configuration file")
     parser.add_argument("--test", action="store_true",
@@ -336,20 +425,24 @@ if __name__ == '__main__':
                         help="Run in debug mode")
     parser.add_argument("--disp_vargs", action="store_true",
                         help="Display command line options")
-    parser.add_argument('-v', '--version', action='version', version='%(prog)s ' + __version__)
+    parser.add_argument('-v', '--version', action='version', version='%(prog)s ' + __version__ + '.' + BuildVersion)
 
+    # elimniate AttrDict so now need to deal with a dict
     vargs = kvargs.prep_parse_and_merge_settings(parser, args_default)
 
     # display the settings
-    if vargs.disp_vargs:
+    if vargs.get('disp_vargs'):
         print('vargs:')
         pp.pprint(vargs)
 
-    if vargs.major_update and vargs.minor_update:
+    if vargs.get('major_update') and vargs.get('minor_update'):
         print("Set only one true:  minor_update, major_update")
         sys.exit(1)
-    elif not vargs.major_update and not vargs.minor_update:
-        vargs.minor_update = True
+    elif vargs.get('buildonly'):
+        vargs['minor_update'] = False
+        vargs['major_update'] = False
+    elif not vargs.get('major_update') and not vargs.get('minor_update'):
+        vargs['minor_update'] = True
 
     # get the list of files to be processed
     filelist = kvutil.filename_list(vargs['input_file'], vargs['input_list'], vargs['input_glob'], glob_filename=True)
@@ -366,13 +459,14 @@ if __name__ == '__main__':
                 print('File does not exist - skipped:', chk_file)
                 continue
             
-            appVer, newAppVer, filename, file_bak = update_file_version(chk_file,
+            appVer, newAppVer, filename, file_bak, bldVer, newBldVer = update_file_version(chk_file,
                                                                         major_update=vargs['major_update'],
+                                                                        buildonly=vargs['buildonly'],
                                                                         test=vargs['test'],
                                                                         debug=vargs['debug'])
             logger.info(
-                'version changed in git for:%s:outputs are appVer:%s, newAppVer:%s, filename:%s, file_bak:%s',
-                chk_file, appVer, newAppVer, filename, file_bak)
+                'version changed in git for:%s:outputs are appVer:%s, newAppVer:%s, filename:%s, file_bak:%s, bldVer:%s, newBldVer:%s',
+                chk_file, appVer, newAppVer, filename, file_bak, bldVer, newBldVer)
 
     else:
         logger.info('folder to be processed:%s', vargs['input_folder'])
