@@ -4,12 +4,20 @@
 @version:  1.40
 
 Library of tools used to process XLS/XLSX files
+
+
+Installation:
+pip install openpyxl
+
+Copy over other files
+kvdate.py
+kvmatch.py
+
+
 """
 
 import openpyxl  # xlsx (read/write)
-import xlrd  # xls (read)
-import xlwt  # xls (write)
-from xlutils.copy import copy as xl_copy # xls(read copy over tool to enalve write)/ pip install xlutils
+
 import os  # determine if a file exists
 import pprint
 import json
@@ -948,10 +956,10 @@ def readxls_excelDict(xlsfile: str, req_cols: list[str], xlatdict: dict | None=N
             wb = openpyxl.load_workbook(xlsfile, read_only=False, keep_vba=keep_vba)
         sheet_names = wb.sheetnames
     else:
-        # XLS file
-        wb = xlrd.open_workbook(xlsfile)
-        sheet_names = wb.sheet_names()
-
+        logger.error('feature not supported on xls file - only XLSX')
+        print('kvxls:readxls_excelDict not supported on xls file - only XLSX')
+        raise
+    
     # debugging
     if debug: print('sheet_names:', sheet_names)
     logger.debug('sheet_names:%s', sheet_names)
@@ -1199,9 +1207,9 @@ def readxls_findheader(xlsfile: str, req_cols: list[str], xlatdict: dict | None=
             wb = openpyxl.load_workbook(xlsfile, read_only=False, keep_vba=keep_vba)
         sheet_names = wb.sheetnames
     else:
-        # XLS file
-        wb = xlrd.open_workbook(xlsfile)
-        sheet_names = wb.sheet_names()
+        logger.error('feature not supported on xls file - only XLSX')
+        print('kvxls:readxls_findheader not supported on xls file - only XLSX')
+        raise
 
     # debugging
     if debug: print('sheet_names:', sheet_names)
@@ -2275,73 +2283,9 @@ def writelist2xls(xlsfile: str, data: list[dict], col_aref: list[str] | None=Non
             ws.title = sheet_name
 
     else:
-        # XLS file - create the output work book we want to create
-        if replace_sheet and sheet_name and os.path.exists(xlsfile):
-            if debug:
-                print('read in the file with xlrd')
-
-            # we are performing a replace/insert of a sheet in an existing workbook
-            # read in the origianl file
-            wbin = xlrd.open_workbook(xlsfile, formatting_info=True)
-            
-            # get list of sheets
-            sheetsin = wbin.sheet_names()
-            # debugging
-            if debug:
-                print('xlsfile:', xlsfile)
-                print('sheetsin:', sheetsin)
-                if sheet_name in sheetsin:
-                    print('need to remove:', sheet_name)
-
-            # copy over
-            wb = xl_copy(wbin)
-            if debug:
-                print('Copy read in data to write out work book')
-
-            # special processing if the new sheetname already exists
-            if sheet_name in sheetsin:
-                # get the list of sheets in this output
-                wb_sheets = wb._Workbook__worksheets
-
-                # remove sheet if it exists already
-                for sheet in wb_sheets:
-                    # capture the sheet we need to remove
-                    if sheet_name == sheet.name:
-                        wb_sheets.remove(sheet)
-                        if debug:
-                            print('xwlt sheet removed:', sheet_name)
-
-                # take this final list
-                wb._Workbook__worksheets = wb_sheets
-                if debug:
-                    print('copied the remaining wb_sheets to replace wb')
-                    for sheet in wb._Workbook__worksheets:
-                        print('sheet.name:', sheet.name)
-
-                # save this strippped file
-                wb.save(xlsfile)
-                if debug:
-                    print('saved out file:', xlsfile)
-
-                # read in and copy
-                wbin = xlrd.open_workbook(xlsfile, formatting_info=True)
-                wb = xl_copy(wbin)
-                wb_sheets = wb._Workbook__worksheets
-
-                if debug:
-                    print('Sheets from saved and reloaded file')
-                    for sheet in wb._Workbook__worksheets:
-                        print('sheet.name:', sheet.name)
-            elif debug:
-                print('Sheet does not exist - so no special processing takes place:', sheet_name)
-
-        else:
-            if debug:
-                print('new work book with xlwt')
-            wb = xlwt.Workbook()  # None # xlrd.open_workbook(xlsfile)
-
-        # now add the sheet
-        ws = wb.add_sheet(sheet_name, cell_overwrite_ok=True)
+        logger.error('feature not supported on xls file - only XLSX')
+        print('kvxls: writelist2xls not supported on xls file - only XLSX')
+        raise
 
     # set the output row
     xlsrow = 0

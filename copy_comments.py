@@ -85,7 +85,7 @@
 
 @author:   Ken Venner
 @contact:  ken.venner@sierrspace.com
-@version:  1.38
+@version:  1.39
 
     Created:   2024-05-20;kv
     Version:   2025-07-12;kv - lots of changes and now callable as a librarry
@@ -109,8 +109,8 @@ import os
 
 # ----------------------------------------
 
-AppVersion = '1.38'
-__version__ = '1.38'
+AppVersion = '1.39'
+__version__ = '1.39'
 
 
 # ----------------------------------------
@@ -120,7 +120,7 @@ __version__ = '1.38'
 
 optiondictconfig = {
     'AppVersion' : {
-        'value': '1.38',
+        'value': '1.39',
     },
     'debug' : {
         'value' : False,
@@ -1107,8 +1107,8 @@ def format_output(optiondict):
             'src_fname': fname,
             'dst_dir': fdir,
             'dst_fname': fname,
-            'ignore_src': True,
-            'ignore_dst': True,
+            'ignore_missing_src': True,
+            'ignore_missing_dst': True,
             'copy_fields': [],
             'key_fields': [] if not optiondict.get('key_fields') else optiondict['key_fields'],
             'hyperlink_fields': [],

@@ -105,35 +105,61 @@ optiondictconfig = {
 }
 
 # -- CONSTANTS -- #
-rePgmVerLine = re.compile(r'__version__\s* =\s* \'(\d+)\.(\d+)')
-reVerLine = re.compile(r'@version:\s+(\d+)\.(\d+)')
-reAppVerLine = re.compile(r'AppVersion\s+=\s+\'(\d+)\.(\d+)\'')
+rePgmVerLine = re.compile(r'(__version__\s*=\s*\'((\d+)\.(\d+))\')')
+reAtVerLine = re.compile(r'(\@version\s*:\s*((\d+)\.(\d+)))')
+reAtQuoteVerLine = re.compile(r'(\@version\s*:\s*\'((\d+)\.(\d+))\')')
+reAppVerLine = re.compile(r'(AppVersion\s*=\s*\'((\d+)\.(\d+))\')')
 reBuildVerLine = re.compile(r'(BuildVersion\s*=\s*\'(\d+)\')')
 
 reOptVerLine = re.compile(r'AppVersion\'\s*:\s*{')
-reOptValueLine = re.compile(r'^\s+\'value\'\s*:\s*\'(\d+)\.(\d+)\'')
+reOptValueLine = re.compile(r'^\s+(\'value\'\s*:\s*\'((\d+)\.(\d+))\')')
 
-reSearchList = [rePgmVerLine, reVerLine, reAppVerLine]
+reSearchList = [rePgmVerLine, reAtVerLine, reAppVerLine]
 
 reGitModified = re.compile(r'\s+modified:\s+(.*)')
 
 fmtVersion2d = '{}.{:02d}'
 fmtVersion3d = '{}.{:03d}'
-fmtOptValue = "        'value': '{}',\n"
-fmtVerLine = '@version:  {}\n'
-fmtAppVerLine = 'AppVersion = \'{}\'\n'
-fmtPgmVerLine = '__version__ = \'{}\'\n'
+fmtOptValue = "'value': '{}'"
+fmtAtVerLine = '@version: {}'
+fmtAtQuoteVerLine = '@version: \'{}\''
+fmtAppVerLine = 'AppVersion = \'{}\''
+fmtPgmVerLine = '__version__ = \'{}\''
 
 fmtBuildVerLine = 'BuildVersion = \'{}\''
 
-fmtSearchList = [fmtPgmVerLine, fmtVerLine, fmtAppVerLine]
+fmtSearchList = [fmtPgmVerLine, fmtAtVerLine, fmtAppVerLine]
+
+SEARCH4VERSION = [
+    (reAppVerLine, fmtAppVerLine, 'AppVerLine'),
+    (rePgmVerLine, fmtPgmVerLine, 'PgmVerLine'),
+    (reAtVerLine, fmtAtVerLine, 'AtVerLine'),
+    (reAtQuoteVerLine, fmtAtQuoteVerLine, 'AtQuoteVerLine')
+]
+
+
+def debug_print(msg, new_app_ver, new_version, m, line, version_changed, opt_ver_found):
+    """
+    Display the variables of interest
+    """
+    print(msg)
+    print(f'{new_app_ver=}')
+    print(f'{new_version=}')
+    print(f'{m.group(0)=}')
+    print(f'{m.group(1)=}')
+    print(f'{m.group(2)=}')
+    print(f'{m.group(3)=}')
+    print(f'{m.group(4)=}')
+    print(f'{line=}')
+    print(f'{version_changed=}')
+    print(f'{opt_ver_found=}')
 
 '''
 line='BuildVersion=\'3\'   ## comments'
 bld_version_found=False
 new_bld_version=''
 '''
-def build_version_update(line, bld_version_found, new_bld_version) -> tuple[str, bool, str, str]:
+def build_version_update(line: str, bld_version_found: bool, new_bld_version: str) -> tuple[str, bool, str, str]:
     """
     check the  line to see if a bld version updates is needed and cause the update
 
@@ -181,11 +207,249 @@ def build_version_update(line, bld_version_found, new_bld_version) -> tuple[str,
         
     # return what we found
     return line, bld_version_found, bld_version_old, bld_version_new, new_bld_version
+
+def calc_new_app_ver(m, major_update: bool, debug: bool=False) -> str:
+    """
+    Take in the re results that has groups 
+    extract out the major and minor versoins
+    increment them and return back the versoin string
+
+    inputs:
+        m - restuls of an re search where group 3 is the major versoin and group 4 is the minor versoin
+        major_update - bool - when true we are incrementing ht emajor version and setting minor to 1
+
+    returns 
+        new_app_ver - str of the major  and minor versoins concatenated
+    """
+
+    # first time we are finding a version so grap it and increment it
+    if major_update:
+        major_version = int(m.group(3))+1
+        minor_version = 1
+    else:
+        major_version = int(m.group(3))
+        minor_version = int(m.group(4))+1
+    if minor_version > 99:
+        new_app_ver = fmtVersion3d.format(major_version, minor_version)
+    else:
+        new_app_ver = fmtVersion2d.format(major_version, minor_version)
+
+    if debug:
+        print('calc_new_app_ver')
+        print(f'{major_update=}')
+        print(f'{major_version=}')
+        print(f'{minor_version=}')
+        print(f'{new_app_ver=}')
+        
+    return new_app_ver
+
+
+def major_minor_version_update(line: str, new_app_ver: str, version_found: bool, opt_ver_found: bool, major_update: bool=False, debug: bool=False ) -> tuple[str, bool, bool, str, bool]:
+    """
+    take in a line and the inputs and return back the same line or a new line with a versoin change
+
+    inputs:
+        line - str - the line we are processing
+        new_app_ver - str - the new application version string if we already set it or blank
+        version_found - bool - flag telling us if we have found a version # for this file and reuse the set version number or we need to calculate a new version number
+        major_update - bool - if we are calculating a version number - is it a minor versoin change or a major version change
+        debug - bool - display print messages so we can track along
+
+    returns:
+        line - str - the original or updated line
+        version_found - bool - did we find a version object on this line to update
+        opt_ver_found - bool - did this line have a optiondictconfig that defines a version number
+        new_app_ver - str - exiting or new app version that we are setting
+        version_changed - bool - was this line changed
+
+    """
+    version_changed = False
+
+    if debug:
+        print('\n'+'-'*40)
+        print(f'{line=}')
+        print(f'{new_app_ver=}')
+        print(f'{version_found=}')
+        print(f'{opt_ver_found=}')
+        print(f'{major_update=}')
+        print('-'*20)
+        
+    # we already found a version change record
+    if opt_ver_found:
+        # prior line was an option versoin of this - need to find the value
+        if debug:
+            print('opt_ver_found...')
+                
+        # this next line of interest should be the value line to test for it
+        if reOptValueLine.search(line):
+            # clear the flag because we found the value tied to this key
+            opt_ver_found = False
+                
+            m = reOptValueLine.search(line)
+
+            # create the new_app_ver if it is not already set
+            if not version_found:
+                new_app_ver = calc_new_app_ver(m, major_update, debug=debug)
+                version_found = True
+                
+            # optiondict set with version and need to update it
+            version_changed = True
+            new_version=fmtOptValue.format(new_app_ver)
+            line=line.replace(m.group(1), new_version)
+
+            # this is a version line in the header called AppVersion='value.value'
+            if debug:
+                debug_print('OptValueLine', new_app_ver, new_version, m, line, version_changed, opt_ver_found)
+                       
+        # now return
+        return line, version_found, opt_ver_found, new_app_ver, version_changed
+
+    # ----------------------------------------
+        
+    # not working through values for a dictionary - first check for optiondictconfig setting to set opt_ver_found
+    if reOptVerLine.search(line):
+        # found the key in the dictionary 
+        m = reOptVerLine.search(line)
+        # this is a version line in the optiondict dict with key called AppVersion
+        opt_ver_found = True
+        # this is a version line in the header called AppVersion='value.value'
+        if debug:
+            print('OptVerLine - found and now looking for the value tied to this variable')
+            print(f'{line=}')
+            print(f'{version_changed=}')
+            print(f'{opt_ver_found=}')
+            
+        # now return
+        return line, version_found, opt_ver_found, new_app_ver, version_changed
+                
+    # ----------------------------------------
+
+    # now just see if this line has any other version type information
+            
+    # look for a matching string for version settings
+    for (reval, fmtval, name) in SEARCH4VERSION:
+        if debug:
+            print('checking: '+name)
+                
+        m =  reval.search(line)
+        if m:
+            # we found a match
+            if not version_found:
+                # calculate a new version
+                new_app_ver = calc_new_app_ver(m, major_update, debug=debug)
+                # and set the flag
+                version_found = True
+            elif debug:
+                print('version_found...')
+
+            # create the new version from what we were passed or what we calculated
+            version_changed = True
+            new_version = fmtval.format(new_app_ver)
+            line=line.replace(m.group(1), new_version)
+            
+            if debug:
+                debug_print(name, new_app_ver, new_version, m, line, version_changed, opt_ver_found)
+                
+            break    
+
+    # now return
+    return line, version_found, opt_ver_found, new_app_ver, version_changed
+
+    #### DEAD CODE BELOW #####
     
-def update_file_version(filename, major_update=False, buildonly=False, test=False, debug=False):
+    # version line
+    if reAppVerLine.search(line):
+        m = reAppVerLine.search(line)
+
+        version_changed = True
+        new_version=fmtAppVerLine.format(new_app_ver)
+        line=line.replace(m.group(1), new_app_ver)
+        # line=line.replace(m.group(1), new_version)
+        
+        if debug:
+            debug_print('AppVerLine', new_app_ver, new_version, m, line, version_changed, opt_ver_found)
+            
+        # now return
+        return line, version_found, opt_ver_found, new_app_ver, version_changed
+        
+    elif rePgmVerLine.search(line):
+        m = rePgmVerLine.search(line)
+        # this is the __version__ = 'value.value' versoin number
+        version_changed = True
+        new_version = fmtPgmVerLine.format(new_app_ver)
+        #line=line.replace(m.group(1), new_app_ver)
+        line=line.replace(m.group(1), new_version)
+        if debug:
+            debug_print('PgmVerLine', new_app_ver, new_version, m, line, version_changed, opt_ver_found)
+                
+
+        # now return
+        return line, version_found, opt_ver_found, new_app_ver, version_changed
+
+    elif reAtVerLine.search(line):
+        m = reAtVerLine.search(line)
+        # this is the @AppVersion = 'value.value' version
+        version_changed = True
+        new_version = fmtAtVerLine.format(new_app_ver)
+        #line=line.replace(m.group(1), new_app_ver)
+        line=line.replace(m.group(1), new_version)
+            
+        if debug:
+            debug_print('AtVerLine', new_app_ver, new_version, m, line, version_changed, opt_ver_found)
+                
+
+        # now return
+        return line, version_found, opt_ver_found, new_app_ver, version_changed
+
+    elif reAtQuoteVerLine.search(line):
+        m = reAtQuoteVerLine.search(line)
+        # this is the @AppVersion = 'value.value' version
+        version_changed = True
+        new_version = fmtAtQuoteVerLine.format(new_app_ver)
+        #line=line.replace(m.group(1), new_app_ver)
+        line=line.replace(m.group(1), new_version)
+        
+        if debug:
+            debug_print('AtQuoteVerLine', new_app_ver, new_version, m, line, version_changed, opt_ver_found)
+
+        # now return
+        return line, version_found, opt_ver_found, new_app_ver, version_changed
+    
+    elif debug:
+        print('no matches')
+            
+    # now return
+    return line, version_found, opt_ver_found, new_app_ver, version_changed
+    
+
+
+    
+def update_file_version(filename: str, major_update: bool=False, buildonly: bool=False, test: bool=False, debug: bool=False):
+    """
+    check the  line to see if a bld version updates is needed and cause the update
+
+    inputs:
+        filename: str
+        major_update: bool=False
+        buildonly: bool=False
+        test: bool=False
+        debug: bool=False
+
+    returns
+        app_ver
+        new_app_ver
+        filename
+        file_bak
+        bld_ver
+        new_bld_ver
+
+    """
+
+    # calculate the filenames we need
     file_tmp = kvutil.filename_create(filename, filename_ext='tmp')
     file_bak = kvutil.filename_create(filename, filename_ext='bak')
 
+    # debugging
     if debug:
         print('update_file_version:start')
         print('update_file_version:filename:', filename)
@@ -195,6 +459,7 @@ def update_file_version(filename, major_update=False, buildonly=False, test=Fals
         print('update_file_version:buildonly:', buildonly)
         print('update_file_version:test:', test)
 
+    # set up variables
     app_ver = ''
     new_app_ver = ''
     bld_ver = ''
@@ -207,13 +472,17 @@ def update_file_version(filename, major_update=False, buildonly=False, test=Fals
     opt_ver_found = False
 
     version_changed = False
-
+    
+    # open file output file and then input file and process
     with open(file_tmp, 'w') as fpOut:
+        # input file opened to read lines - we are reading in all lines into a list
+        # TODO:  make this a recursive call so we don't load up memory
         with open(filename, 'r') as fpIn:
             filelines = fpIn.readlines()
 
+        # for each line we got
         for line in filelines:
-            # cpature if this is a build update
+            # capture if this is a build update - and we ONLY Process for build changes not major/minor changes
             if buildonly:
                 # process this line for build version update
                 line, bld_version_found, bld_version_old, bld_version_new, new_bld_version = build_version_update(line, bld_version_found, new_bld_version)
@@ -228,87 +497,17 @@ def update_file_version(filename, major_update=False, buildonly=False, test=Fals
                     
                 # output this line
                 fpOut.write(line)
+
+                # get next line 
                 continue
-            
-            # do the major/minor version update
-            if version_found:
-                if opt_ver_found:
-                    # clear the flag no matter what
-                    opt_ver_found = False
-                    # this next line should be the value line to test for it
-                    if reOptValueLine.search(line):
-                        version_changed = True
-                        fpOut.write(fmtOptValue.format(new_app_ver))
-                        continue
 
-                if reOptVerLine.search(line):
-                    opt_ver_found = True
-                elif reAppVerLine.search(line):
-                    if debug:
-                        print('AppVerLine')
-                        print('line:', line)
-                        print('now.:', fmtAppVerLine.format(new_app_ver))
-                    version_changed = True
-                    fpOut.write(fmtAppVerLine.format(new_app_ver))
-                    continue
-                elif rePgmVerLine.search(line):
-                    if debug:
-                        print('PgmVerLine')
-                        print('line:', line)
-                        print('now.:', fmtPgmVerLine.format(new_app_ver))
-                    version_changed = True
-                    fpOut.write(fmtPgmVerLine.format(new_app_ver))
-                    continue
-                elif reVerLine.search(line):
-                    if debug:
-                        print('VerLine')
-                        print('line:', line)
-                        print('now.:', VerLine.format(new_app_ver))
-                    version_changed = True
-                    fpOut.write(fmtVerLine.format(new_app_ver))
-                    continue
-            else:
-                # find the first version defintion and use it to set the version
-                for srch_idx, reSearchRegex in enumerate(reSearchList):
-                    m = reSearchRegex.search(line)
-                    if m:
-                        # app_ver = m.group(1)
-                        major_ver = int(m.group(1))
-                        minor_ver = int(m.group(2))
-                        app_ver = '{}.{}'.format(m.group(1), m.group(2))
+            # NOT BUILD CHANGE - this is a major/minor change
 
-                        if debug:
-                            print('matching line:', line)
-                            print('major_ver:', major_ver)
-                            print('minor_ver:', minor_ver)
+            line, version_found, opt_ver_found, new_app_ver, line_version_changed = major_minor_version_update(line, new_app_ver, version_found, opt_ver_found, major_update=major_update, debug=debug)
 
-                        if major_update:
-                            new_major_ver = major_ver + 1
-                            new_minor_ver = 1
-                        else:
-                            new_major_ver = major_ver
-                            new_minor_ver = minor_ver + 1
-
-                        if new_minor_ver < 100:
-                            new_app_ver = fmtVersion2d.format(new_major_ver, new_minor_ver)
-                        else:
-                            new_app_ver = fmtVersion3d.format(new_major_ver, new_minor_ver)
-
-                        if debug:
-                            print('major_ver-updt:', new_major_ver)
-                            print('minor_ver-updt:', new_minor_ver)
-                            print('new_app_ver:', new_app_ver)
-                            print('srch_idx:', srch_idx)
-                            print('line:', line)
-                            print('new.:', fmtSearchList[srch_idx].format(new_app_ver))
-
-                        version_found = True
-                        version_changed = True
-                        fpOut.write(fmtSearchList[srch_idx].format(new_app_ver))
-                        break
-
-                if version_found:
-                    continue
+            # capture a version change
+            if not version_changed and line_version_changed:
+                version_changed = True
 
             fpOut.write(line)
 
@@ -388,7 +587,7 @@ def version_changed_in_git_branch(filename, debug=False):
         linecnt += 1
         if debug:
             print('{:02d}:line:{}'.format(linecnt, line))
-        if reVerLine.search(line) and line.startswith('-'):
+        if reAtVerLine.search(line) and line.startswith('-'):
             return True
         if linecnt > MAXLINES_CHECKED:
             if debug:  print('Maxline met before finding field of interest')

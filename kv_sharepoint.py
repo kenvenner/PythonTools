@@ -1,7 +1,7 @@
 """
 @author:   Ken Venner
 @contact:  ken.venner@hermeus.com
-@version:  1.17
+@version:  1.18
 
 This library provides tools used when interacting with sharepoint sites and local synch links to sharepoint sites
 
@@ -20,7 +20,7 @@ import copy_comments
 
 
 # global variables
-AppVersion = '1.17'
+AppVersion = '1.18'
 
 
 # LOCAL FUNCTIONS/HELPERS
@@ -80,7 +80,7 @@ def sp_synched_dir_path(sp_path, onedrive_path=None, local_path=None, debug=Fals
         print('sp_full_path:', sp_full_path)
 
     # check for existance of this sharepoint path
-    if os.path.exists(sp_full_path):
+    if os.path.exists(sp_full_path) or not local_path:
         return sp_full_path
     else:
         return local_path
