@@ -1,5 +1,5 @@
 __version__ = '1.12'
-BuildVersion = '3'
+BuildVersion = '4'
 
 """
 @author:   Ken Venner
