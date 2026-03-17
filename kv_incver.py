@@ -159,7 +159,7 @@ line='BuildVersion=\'3\'   ## comments'
 bld_version_found=False
 new_bld_version=''
 '''
-def build_version_update(line: str, bld_version_found: bool, new_bld_version: str) -> tuple[str, bool, str, str]:
+def build_version_update(line: str, bld_version_found: bool, new_bld_version: str) -> tuple[str, bool, int|None, int|None, str]:
     """
     check the  line to see if a bld version updates is needed and cause the update
 
@@ -309,7 +309,7 @@ def major_minor_version_update(line: str, new_app_ver: str, version_found: bool,
     # not working through values for a dictionary - first check for optiondictconfig setting to set opt_ver_found
     if reOptVerLine.search(line):
         # found the key in the dictionary 
-        m = reOptVerLine.search(line)
+        # m = reOptVerLine.search(line)
         # this is a version line in the optiondict dict with key called AppVersion
         opt_ver_found = True
         # this is a version line in the header called AppVersion='value.value'

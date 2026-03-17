@@ -272,7 +272,7 @@ def setExcelCellFont(excel_dict: dict, row: int, col_name: str, \
         print('setExcelCellFont:excel_dict:', excel_dict)
         print('setExcelCellFont:row:', row)
         print('setExcelCellFont:col_name:', col_name)
-        print('setExcelCellFont:fill-type:', type(fill))
+        #print('setExcelCellFont:fill-type:', type(fill))
     logger.debug('excel_dict:%s', excel_dict)
     logger.debug('row:%s', row)
     logger.debug('col_name:%s', col_name)
