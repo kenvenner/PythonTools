@@ -126,6 +126,9 @@ class TestKvdateFilenames(unittest.TestCase):
     def test_datetime_from_str_p05_date_and_time(self):
         self.assertEqual(kvdate.datetime_from_str('12/10/2025  11:31:00 PM'), datetime.datetime(2025, 12, 10, 23, 31))
         self.assertEqual(kvdate.datetime_from_str('12/10/2025  11:31:00 AM'), datetime.datetime(2025, 12, 10, 11, 31))
+        self.assertEqual(kvdate.datetime_from_str('03/03/2025  11:31'), datetime.datetime(2025, 3, 3, 11, 31))
+        self.assertEqual(kvdate.datetime_from_str('3/3/2025  11:31'), datetime.datetime(2025, 3, 3, 11, 31))
+        self.assertEqual(kvdate.datetime_from_str('3/3/2025  1:1'), datetime.datetime(2025, 3, 3, 1, 1))
         #self.assertEqual(kvdate.datetime_from_str('12/10/2025 11:31:00 PM'), datetime.datetime(2025, 12, 10, 23, 31))
         #self.assertEqual(kvdate.datetime_from_str('12/10/2025 11:31:00 AM'), datetime.datetime(2025, 12, 10, 11, 31))
         
@@ -133,6 +136,12 @@ class TestKvdateFilenames(unittest.TestCase):
         self.assertEqual(kvdate.datetime_from_str(datetime.datetime(2025, 12, 10, 23, 31)), datetime.datetime(2025, 12, 10, 23, 31))
         #self.assertEqual(kvdate.datetime_from_str('12/10/2025 11:31:00 AM'), datetime.datetime(2025, 12, 10, 11, 31))
         
+    def test_datetime_from_str_p07_blank(self):
+        self.assertEqual(kvdate.datetime_from_str(''), '')
+
+    def test_datetime_from_str_p08_dict(self):
+        self.assertEqual(kvdate.datetime_from_str({'a':1}), {'a':1})
+
     def test_datetime_from_str_f01_invalid_date(self):
         with self.assertRaises(Exception) as context:
             kvdate.datetime_from_str('20/1/19')
@@ -141,9 +150,6 @@ class TestKvdateFilenames(unittest.TestCase):
         with self.assertRaises(Exception) as context:
             kvdate.datetime_from_str('1/1/20019')
 
-    def test_datetime_from_str_f03_blank(self):
-        with self.assertRaises(Exception) as context:
-            kvdate.datetime_from_str('')
 
     # datetimezone from string
     def test_datetimezone_from_str_p01_zero_padded_no_colon_neg_TZ(self):

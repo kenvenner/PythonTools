@@ -85,7 +85,7 @@
 
 @author:   Ken Venner
 @contact:  ken.venner@sierrspace.com
-@version:  1.39
+@version:  1.40
 
     Created:   2024-05-20;kv
     Version:   2025-07-12;kv - lots of changes and now callable as a librarry
@@ -109,8 +109,8 @@ import os
 
 # ----------------------------------------
 
-AppVersion = '1.39'
-__version__ = '1.39'
+AppVersion = '1.40'
+__version__ = '1.40'
 
 
 # ----------------------------------------
@@ -120,7 +120,7 @@ __version__ = '1.39'
 
 optiondictconfig = {
     'AppVersion' : {
-        'value': '1.39',
+        'value': '1.40',
     },
     'debug' : {
         'value' : False,
@@ -857,9 +857,10 @@ def validate_missing_columns(loaded_data: list[dict], optiondict: dict, fld: str
     # check to see if key is even there - if not we are not missing anything
     if fld not in optiondict:
         return []
-    
+
     # get the list of key_fields columns that don't have that key in the first record in this list
-    return [x for x in optiondict[fld] if x not in loaded_data[0]]
+    # if the returned object is a dict - we don't check for existance
+    return [x for x in optiondict[fld] if not isinstance(x, dict) and x not in loaded_data[0]]
 
 def create_flds_in_records(loaded_data: list[dict], fields: list) -> None:
     """

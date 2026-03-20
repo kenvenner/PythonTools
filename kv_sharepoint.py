@@ -240,12 +240,13 @@ def save_and_log_exception_rpt(excel_file_path, result, starttime, now, log_file
         # check to see if you are overwriting them
         if cc_optiondict[fld+'_dir'] != fpath:
             if local_debug:
-                print('changed dir..: ', cc_optiondict[fld+'_dir'], fpath)
+                print('fld..........: ', fld)
+                print('changed dir..: ', cc_optiondict[fld+'_dir'], ' to ', fpath)
             # overwriting the value to match the filename we are working with
             cc_optiondict[fld+'_dir'] = fpath
         if cc_optiondict[fld+'_fname'] != fname+fext:
             if local_debug:
-                print('changed fname: ', cc_optiondict[fld+'_fname'], fname+fext)
+                print('changed fname: ', cc_optiondict[fld+'_fname'], ' to ', fname+fext)
             # overwriting the value to match the filename we are working with
             cc_optiondict[fld+'_fname'] = fname+fext
 
