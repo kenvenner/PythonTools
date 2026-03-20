@@ -20,7 +20,7 @@ kvlogger.dictConfig(config)
 logger=kvlogger.getLogger(__name__)
 
 # set the module version number
-AppVersion = '1.03'
+AppVersion = '1.04'
 
 # global variables
 tst_filename='t_kvdate_tst'
@@ -65,21 +65,12 @@ def file_setup(  startfilename='t_kvdate_tst', ext_range=4):
         
 # test class
 class TestKvdateFilenames(unittest.TestCase):
-    # set up features
-    @classmethod
-    def setUpClass(cls):
-        file_setup( tst_filename, tst_ext_range )
-
-    # tear down features
-    @classmethod
-    def tearDownClass(cls):
-        file_teardown( tst_filename, tst_ext_range )
-
 
     # the function name: def current_timezone_string():
     def test_current_timezone_string_p01_pass(self):
-        pass
-        
+        self.assertTrue(isinstance(kvdate.current_timezone_string(), str))
+
+    # datetime to utcdatetime
     def test_datetime2utcdatetime_p01_datetime_2_utc(self):
         n_dt = datetime.datetime(2016,1,1,11,30)
         utc_dt = datetime.datetime(2016, 1, 1, 19, 30, tzinfo=dateutil.tz.UTC)
@@ -89,8 +80,37 @@ class TestKvdateFilenames(unittest.TestCase):
         n_dt = datetime.datetime(2016,1,1,11,30)
         tz = 'US/Eastern'
         utc_dt = datetime.datetime(2016, 1, 1, 16, 30, tzinfo=dateutil.tz.UTC)
+        # naive datetime and set the tz
         self.assertEqual(kvdate.datetime2utcdatetime(n_dt, tz), utc_dt)
-    
+        # timezone aware date that is UTC so make no changes
+        self.assertEqual(kvdate.datetime2utcdatetime(utc_dt), utc_dt)
+        # timezone aware date that is NOT UTC and not timezone passed in
+        e_dt = datetime.datetime(2016,1,1,11,30, tzinfo=dateutil.tz.gettz(tz))
+        self.assertEqual(kvdate.datetime2utcdatetime(e_dt), utc_dt)
+
+    def test_datetime2utcdatetime_p03_datetime_only(self):
+        n_dt = datetime.datetime(2016,1,1,11,30)
+        tz = 'US/Eastern'
+        utc_dt = datetime.datetime(2016, 1, 1, 16, 30, tzinfo=dateutil.tz.UTC)
+        utc_dt_notz = datetime.datetime(2016, 1, 1, 16, 30)
+        # convert and then check the date and the timezone
+        n_dt_utc = kvdate.datetime2utcdatetime(n_dt, tz)
+        # naive datetime and set the tz
+        self.assertEqual(n_dt_utc, utc_dt)
+        self.assertTrue(n_dt_utc.tzinfo)
+        # convert but this time strip tzinfo data
+        n_dt_utc = kvdate.datetime2utcdatetime(n_dt, tz, no_tz=True)
+        self.assertEqual(n_dt_utc, utc_dt_notz)
+        self.assertFalse(n_dt_utc.tzinfo)
+        
+        
+    def test_datetime2utcdatetime_f01_invalid_tz_string(self):
+        with self.assertRaises(Exception) as context:
+            n_dt = datetime.datetime(2016,1,1,11,30)
+            tz = 'Invalid-TZ-String'
+            kvdate.datetime2utcdatetime(n_dt, tz)
+
+
     # datetime from string
     def test_datetime_from_str_p01_zero_padded(self):
         self.assertEqual(kvdate.datetime_from_str('01/01/19'), datetime.datetime(2019, 1, 1) )
@@ -142,9 +162,14 @@ class TestKvdateFilenames(unittest.TestCase):
         self.assertEqual(kvdate.datetime_from_str('  ', skipblank=True), '  ')
         self.assertEqual(kvdate.datetime_from_str(0, skipblank=True), 0)
         self.assertEqual(kvdate.datetime_from_str(None, skipblank=True), None)
+        self.assertEqual(kvdate.datetime_from_str({}, skipblank=True), {})
+        self.assertEqual(kvdate.datetime_from_str([], skipblank=True), [])
 
     def test_datetime_from_str_p08_dict(self):
         self.assertEqual(kvdate.datetime_from_str({'a':1}), {'a':1})
+
+    def test_datetime_from_str_p09_list(self):
+        self.assertEqual(kvdate.datetime_from_str([1,2,3]), [1,2,3])
 
     def test_datetime_from_str_f01_invalid_date(self):
         with self.assertRaises(Exception) as context:
@@ -154,7 +179,7 @@ class TestKvdateFilenames(unittest.TestCase):
         with self.assertRaises(Exception) as context:
             kvdate.datetime_from_str('1/1/20019')
 
-    def test_datetime_from_str_f03_blank_date(self):
+    def test_datetime_from_str_f03_blank_date_not_skip_blank(self):
         with self.assertRaises(Exception) as context:
             kvdate.datetime_from_str('')
 
@@ -166,7 +191,7 @@ class TestKvdateFilenames(unittest.TestCase):
         with self.assertRaises(Exception) as context:
             kvdate.datetime_from_str({'a':1}, force_conversion=True)
 
-    def test_datetime_from_str_f06_force_conversion_dict(self):
+    def test_datetime_from_str_f06_force_conversion_list(self):
         with self.assertRaises(Exception) as context:
             kvdate.datetime_from_str([1,2,3], force_conversion=True)
 
@@ -223,6 +248,10 @@ class TestKvdateFilenames(unittest.TestCase):
     def test_datetimezone_from_str_p09_blank_stripblank(self):
         self.assertEqual(kvdate.datetimezone_from_str('', True),'' )
 
+    def test_datetimezone_from_str_p10_datetime_with_tz(self):
+        utc_dt = datetime.datetime(2016, 1, 1, 19, 30, tzinfo=dateutil.tz.UTC)
+        self.assertEqual(kvdate.datetimezone_from_str(utc_dt),utc_dt )
+
     def test_datetimezone_from_str_f01_invalid_date(self):
         with self.assertRaises(Exception) as context:
             kvdate.datetimezone_from_str('2019-19-01 01:01:01.0101-0700')
@@ -235,6 +264,10 @@ class TestKvdateFilenames(unittest.TestCase):
         with self.assertRaises(Exception) as context:
             kvdate.datetimezone_from_str('')
 
+    def test_datetimezone_from_str_f04_datetime_notz(self):
+        with self.assertRaises(Exception) as context:
+            kvdate.datetimezone_from_str(datetime.datetime(2016,1,1,19,30))
+            
 
     # def test_valid_tz_string
     def test_valid_tz_string_p01_valid(self):
@@ -261,14 +294,6 @@ class TestKvdateFilenames(unittest.TestCase):
         self.assertEqual(kvdate.show_timezones('US'), us_tz)
 
         
-    # def test_functionName_p01_simple(self):
-    # def test_loggingAppStart_p01_something(self):
-    # def test_scriptinfo_p01_something(self):
-
-    # def test_load_json_file_to_dict()
-    # def test_dump_dict_to_json_file( optiondict, filename ):
-    
-
 if __name__ == '__main__':
     logger.info('STARTUP(v%s)%s', AppVersion, '-'*40)
     logger.info('kvdate(v%s)%s', kvdate.AppVersion, '-'*40)
