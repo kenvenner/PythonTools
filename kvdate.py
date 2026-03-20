@@ -1,7 +1,7 @@
 """
 @author:   Ken Venner
 @contact:  ken@venerllc.com
-@version:  1.14
+@version: 1.15
 
 Library of tools for date time processing used in general by KV
 
@@ -24,8 +24,8 @@ import logging
 logger = logging.getLogger(__name__)
 
 # set the module version number
-AppVersion = '1.14'
-__version__ = '1.14'
+AppVersion = '1.15'
+__version__ = '1.15'
 
 
 def current_timezone_string():
@@ -76,7 +76,7 @@ def datetime2utcdatetime(dt, default_tz=None, no_tz=False):
 #
 # and allow a Z to be on the end of this string that we will strip out
 #
-def datetime_from_str(value, skipblank=False, disp_msg=True):
+def datetime_from_str(value, skipblank=False, disp_msg=True, force_conversion=False):
     import re
     datefmts = (
         (re.compile(r'\d{1,2}/\d{1,2}/\d{2}$'), '%m/%d/%y'),
@@ -98,21 +98,25 @@ def datetime_from_str(value, skipblank=False, disp_msg=True):
         (re.compile(r'\d{1,2}/\d{1,2}/\d{4}\s+\d{1,2}:\d{1,2}$'), '%m/%d/%Y %H:%M'),
     )
 
-    if skipblank and not value:
+    # if we passed in datetime we are done already
+    if isinstance(value, datetime.datetime):
         return value
 
-    # if we passed in datetime we are done already
-    if type(value) is datetime.datetime:
-        return value
+    # if we enabled skip blank - check for empty value
+    if skipblank:
+        if not value:
+            return value
+        elif isinstance(value, str) and not value.strip():
+            return value
 
     # we only convert strings so we return the value when it is not a string
     if not isinstance(value, str):
-        return value
-    
-    # ignore values that are string and not populated
-    if not value.strip():
-        return value
-    
+        if not force_conversion:
+            return value
+        else:
+            raise Exception(u'Unable to convert to date time:[{}]'.format(value))
+        
+    # save the original value
     orig_value = value
     
     # strip the Z on the end before processing

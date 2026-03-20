@@ -84,6 +84,7 @@ class TestKvdateFilenames(unittest.TestCase):
         n_dt = datetime.datetime(2016,1,1,11,30)
         utc_dt = datetime.datetime(2016, 1, 1, 19, 30, tzinfo=dateutil.tz.UTC)
         self.assertEqual(kvdate.datetime2utcdatetime(n_dt), utc_dt)
+
     def test_datetime2utcdatetime_p02_datetime_2_utc_set_tz(self):
         n_dt = datetime.datetime(2016,1,1,11,30)
         tz = 'US/Eastern'
@@ -136,8 +137,11 @@ class TestKvdateFilenames(unittest.TestCase):
         self.assertEqual(kvdate.datetime_from_str(datetime.datetime(2025, 12, 10, 23, 31)), datetime.datetime(2025, 12, 10, 23, 31))
         #self.assertEqual(kvdate.datetime_from_str('12/10/2025 11:31:00 AM'), datetime.datetime(2025, 12, 10, 11, 31))
         
-    def test_datetime_from_str_p07_blank(self):
-        self.assertEqual(kvdate.datetime_from_str(''), '')
+    def test_datetime_from_str_p07_blank_skipblank(self):
+        self.assertEqual(kvdate.datetime_from_str('', skipblank=True), '')
+        self.assertEqual(kvdate.datetime_from_str('  ', skipblank=True), '  ')
+        self.assertEqual(kvdate.datetime_from_str(0, skipblank=True), 0)
+        self.assertEqual(kvdate.datetime_from_str(None, skipblank=True), None)
 
     def test_datetime_from_str_p08_dict(self):
         self.assertEqual(kvdate.datetime_from_str({'a':1}), {'a':1})
@@ -149,6 +153,22 @@ class TestKvdateFilenames(unittest.TestCase):
     def test_datetime_from_str_f02_no_matching_format(self):
         with self.assertRaises(Exception) as context:
             kvdate.datetime_from_str('1/1/20019')
+
+    def test_datetime_from_str_f03_blank_date(self):
+        with self.assertRaises(Exception) as context:
+            kvdate.datetime_from_str('')
+
+    def test_datetime_from_str_f04_force_conversion_int(self):
+        with self.assertRaises(Exception) as context:
+            kvdate.datetime_from_str(1, force_conversion=True)
+
+    def test_datetime_from_str_f05_force_conversion_dict(self):
+        with self.assertRaises(Exception) as context:
+            kvdate.datetime_from_str({'a':1}, force_conversion=True)
+
+    def test_datetime_from_str_f06_force_conversion_dict(self):
+        with self.assertRaises(Exception) as context:
+            kvdate.datetime_from_str([1,2,3], force_conversion=True)
 
 
     # datetimezone from string
