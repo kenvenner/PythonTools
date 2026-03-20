@@ -17,7 +17,7 @@ kvlogger.dictConfig(config)
 logger=kvlogger.getLogger(__name__)
 
 # set the module version number
-AppVersion = '1.30'
+AppVersion = '1.31'
 
 # global variables
 tst_filename='t_kvutil_tst'
@@ -76,12 +76,20 @@ class TestKVUtilFilenames(unittest.TestCase):
 
     # the function name: def strtobool(val):
     def test_strtobool_p01_true(self):
-        for v in ['y', 'yes', 't', 'true', 'on', '1']:
+        for v in ('y', 'yes', 't', 'true', 'on', '1'):
             self.assertTrue(kvutil.strtobool(v))
     def test_strtobool_p02_false(self):
-        for v in ['n', 'no', 'f', 'false', 'off', '0']:
+        for v in ('n', 'no', 'f', 'false', 'off', '0'):
             self.assertFalse(kvutil.strtobool(v))
+    def test_strtobool_p03_return_what_was_passed(self):
+        for v in (1, {'a':1}, [1,2,3], True, False, 3.4):
+            self.assertEqual(kvutil.strtobool(v), v)
 
+    def test_strtobool_f01_string_not_bool(self):
+        for v in ('ken','not', '123', 'clock'):
+            with self.assertRaises(Exception) as context:
+                kvutil.strtobool(v)
+            
     # command line parsing
     def test_kv_parse_command_line_p01_config_none(self):
         optiondictconfig = { 'test1' : { } }
