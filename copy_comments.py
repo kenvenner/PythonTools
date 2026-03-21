@@ -85,7 +85,7 @@
 
 @author:   Ken Venner
 @contact:  ken.venner@sierrspace.com
-@version: 1.41
+@version: 1.42
 
     Created:   2024-05-20;kv
     Version:   2025-07-12;kv - lots of changes and now callable as a librarry
@@ -111,8 +111,8 @@ import re
 
 # ----------------------------------------
 
-AppVersion = "1.41"
-__version__ = "1.41"
+AppVersion = "1.42"
+__version__ = "1.42"
 
 
 # ----------------------------------------
@@ -122,7 +122,7 @@ __version__ = "1.41"
 
 optiondictconfig = {
     "AppVersion": {
-        'value': '1.41',
+        'value': '1.42',
     },
     "debug": {
         "value": False,
@@ -820,7 +820,7 @@ def validate_inputs(optiondict: dict) -> bool | None:
     # testing the internal comparison settings
     if optiondict.get("internal_copy_fields"):
         # right type
-        if type(optiondict["internal_copy_fields"]) != list:
+        if not isinstance(optiondict["internal_copy_fields"], list):
             # output messages
             if optiondict["disp_msg"]:
                 print(
@@ -836,10 +836,10 @@ def validate_inputs(optiondict: dict) -> bool | None:
         # check the list entries for this
         ruleissues = ""
         for rulenum, copydict in enumerate(optiondict["internal_copy_fields"]):
-            if not "dst" in copydict:
+            if "dst" not in copydict:
                 msg = f"{rulenum} missing dst key\n"
                 ruleissues += msg
-            if not "src" in copydict:
+            if "src" not in copydict:
                 msg = f"{rulenum} missing src key\n"
                 ruleissues += msg
 
@@ -853,7 +853,7 @@ def validate_inputs(optiondict: dict) -> bool | None:
     # testing the internal comparison settings
     if optiondict.get("internal_compare_fields"):
         # right type
-        if type(optiondict["internal_compare_fields"]) != list:
+        if not isinstance(optiondict["internal_compare_fields"], list):
             # output messages
             if optiondict["disp_msg"]:
                 print(
@@ -871,10 +871,10 @@ def validate_inputs(optiondict: dict) -> bool | None:
         for rulenum, copydict in enumerate(
             optiondict["internal_compare_fields"]
         ):
-            if not "dst" in copydict:
+            if "dst" not in copydict:
                 msg = f"{rulenum} missing dst key\n"
                 ruleissues += msg
-            if not "src" in copydict:
+            if "src" not in copydict:
                 msg = f"{rulenum} missing src key\n"
                 ruleissues += msg
 
@@ -1109,9 +1109,9 @@ def src_to_dst_actions(
     src_lookup: dict - src_data converted to src_lookup
     """
     # test for key_fields exist, and a list
-    if not "key_fields" in optiondict:
+    if "key_fields" not in optiondict:
         raise ValueError("key_fields not defined in optiondict")
-    if type(optiondict["key_fields"]) != list:
+    if not isinstance(optiondict["key_fields"], list):
         raise TypeError(
             "key_fields in optiondict not defined as list but as: "
             + str(type(optiondict["key_fields"]))
