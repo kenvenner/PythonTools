@@ -1,7 +1,7 @@
 """
 @author:   Ken Venner
 @contact:  ken@venerllc.com
-@version:  1.99
+@version: 1.100
 
 Library of tools used in general by KV
 """
@@ -38,8 +38,8 @@ debug_file = False
 logger = logging.getLogger(__name__)
 
 # set the module version number
-AppVersion = "1.98"
-__version__ = "1.98"
+AppVersion = "1.100"
+__version__ = "1.100"
 HELP_KEYS = (
     "help",
     "helpall",
@@ -1934,13 +1934,32 @@ def create_multi_key_lookup(
     """
     if not src_data:
         return {}
-    if type(src_data) is not list:
+    if not isinstance(src_data, list):
         if disp_msg:
             print("src_data must be a list but is:  ", type(src_data))
-    if type(fldlist) is not list:
+        raise TypeError(f"src_data must be a list but is a: {type(src_data)}")
+    if src_data and not isinstance(src_data[0], dict):
+        if disp_msg:
+            print("src_data[0] must be a dict but is:  ", type(src_data[0]))
+        raise TypeError(
+            f"src_data must be a dict but is a: {type(src_data[0])}"
+        )
+    if not isinstance(fldlist, list):
         if disp_msg:
             print("fldlist must be type - list - but is: ", type(fldlist))
-        raise TypeError()
+        raise TypeError(f"fldlist must be a list but is a: {type(fldlist)}")
+    if not fldlist:
+        if disp_msg:
+            print("fldlist must be populated but is not")
+        raise ValueError("fldlist must be populated")
+    if copy_fields is not None:
+        if not isinstance(copy_fields, list):
+            if disp_msg:
+                print("copy_fields must be a list but is:  ", type(copy_fields))
+            raise TypeError(
+                f"copy_fields must be a list but is a: {type(copy_fields)}"
+            )
+
     # check that the fldlist keys are in the first record
     for fld in fldlist:
         if fld not in src_data[0]:
@@ -1951,13 +1970,6 @@ def create_multi_key_lookup(
                 print("This routine will fail")
     # check that the copy_fields keys are in the first record
     if copy_fields:
-        if type(copy_fields) is not list:
-            if disp_msg:
-                print(
-                    "copy_fields must be type - list - but is: ",
-                    type(copy_fields),
-                )
-            raise TypeError()
         for fld in copy_fields:
             if fld not in src_data[0]:
                 if disp_msg:
