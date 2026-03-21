@@ -122,7 +122,7 @@ __version__ = "1.42"
 
 optiondictconfig = {
     "AppVersion": {
-        'value': '1.42',
+        "value": "1.42",
     },
     "debug": {
         "value": False,
