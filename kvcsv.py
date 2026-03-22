@@ -24,6 +24,7 @@ def max_column_list(csvlist: list[dict]) -> list:
     """
     Read all records in the list of dictionaries and get the unique set of keys
     across all records.
+    This assumes that the keys in each record are not the same.
     Used to assure that we do not drop any data when creating an output file - we
     know the max columns to generate
 
@@ -80,7 +81,7 @@ def writelist2csv(
 
     # test inputs
     if not csvfile:
-        raise ValueError(f"csvfile must be populated")
+        raise ValueError("csvfile must be populated")
     if not isinstance(csvlist, list):
         raise TypeError(f"csvlist must be [list] but is: {type(csvlist)}")
     if not isinstance(csvlist[0], dict):
@@ -133,7 +134,7 @@ def writedict2csv(
 
     Inputs:
         csvfile - str - filename/path of the CSV file to generate
-        csvdictdict - dict[dict] dict with values of dict send into this file
+        csvdict - dict[dict] dict with values of dict send into this file
         csvfields - list[str] the column names to put in the header, if None we take the keys from the first record
         mode - create the file or append to the file (default: create) if you want ot append - send in "a"
         header - bool - when true, we create a header as the first row, when false we do not generate the header line
@@ -148,11 +149,9 @@ def writedict2csv(
 
     # test inputs
     if not csvfile:
-        raise ValueError(f"csvfile must be populated")
-    if not isinstance(csvlist, list):
-        raise TypeError(f"csvlist must be [list] but is: {type(csvlist)}")
-    if not isinstance(csvlist[0], dict):
-        raise TypeError(f"csvlist[0] must be [dict] but is: {type(csvlist[0])}")
+        raise ValueError("csvfile must be populated")
+    if not isinstance(csvdict, dict):
+        raise TypeError(f"csvlist must be [list] but is: {type(csvdict)}")
     if csvfields and not isinstance(csvfields, list):
         raise TypeError(f"csvfields must be [list] but is: {type(csvfields)}")
     if col_aref and not isinstance(col_aref, list):
@@ -183,6 +182,7 @@ def writedict2csv(
 
 ################################ READ #############################################
 
+## LISTS ##
 
 def readcsv2list_with_header(
     csvfile: str,
@@ -225,28 +225,106 @@ def readcsv2list_with_header(
     return results, header
 
 
-# read in the CSV and create a dictionary to the records
-# based on one or more key fields
-# assumes the first line of the CSV file is the header/defintion of the CSV
+
 def readcsv2list(csvfile, headerlc=False, encoding="windows-1252", debug=False):
+    csvfile: str,
+    headerlc: bool = False,
+    encoding: str = "windows-1252",
+    debug: bool = False,
+) -> tuple(list[dict], list[str]):
+    """
+    read in the CSV and create a dictionary to the records
+    assumes the first line of the CSV file is the header/defintion of the CSV
+
+    Inputs:
+        csvfile: str, - filename/path to the CSV file to be read in
+        headerlc: bool - when enabled, force the header values to lower case, otherwise use the string as defined in the file
+        encoding: str - string that defines character type to read in with
+        debug: bool - when enabled, display messages while processing
+
+    Returns
+        results - list[dict] list of records with dictionary of key/value settings
+    """
+
     results, header = readcsv2list_with_header(
         csvfile, headerlc, encoding, debug
     )
     return results
 
 
-# read in the CSV and create a dictionary to the records
-# based on one or more key fields
-# assumes the first line of the CSV file is the header/defintion of the CSV
+def readcsv2list_with_noheader(
+    csvfile: str,
+    header: list,
+    encoding: str = "windows-1252",
+    debug: bool = False,
+) -> tuple(list[dict], list[str]):
+    """
+    read in the CSV and create a dictionary to the records
+    no header in this file so we pass in the header defintion
+
+    Inputs:
+        csvfile: str, - filename/path to the CSV file to be read in
+        header: list of header column names
+        encoding: str - string that defines character type to read in with
+        debug: bool - when enabled, display messages while processing
+
+    Returns
+        results - list[dict] list of records with dictionary of key/value settings
+        header - list[str]  list of header values read in
+    """
+
+    # test inputs
+    if not header:
+        raise ValueErorr('header must be populated and is not')
+    if not isinstance(header, list):
+        raise ValueError(f'header must be list but is: {type(header)}')
+    
+    results = []
+    with open(csvfile, mode="r", encoding=encoding) as csv_file:
+        reader = csv.reader(csv_file)
+        for row in reader:
+            rowdict = dict(zip(header, row))
+            # create/update the dictionary
+            results.append(rowdict)
+    # return the results
+    return results, header
+
+
+## DICT ##
+
 def readcsv2dict_with_header(
-    csvfile,
-    dictkeys,
-    dupkeyfail=False,
-    noshowwarning=False,
-    headerlc=False,
-    encoding="windows-1252",
-    debug=False,
+    csvfile: str,
+    dictkeys: list,
+    dupkeyfail: bool=False,
+    noshowwarning: bool=False,
+    headerlc: bool=False,
+    encoding: str = "windows-1252",
+    debug: bool = False,
+
 ):
+    """
+    read in the CSV and create a dictionary to the records, and create a dict unique on business key
+    assumes the first line of the CSV file is the header/defintion of the CSV
+
+    Inputs:
+        csvfile: str, - filename/path to the CSV file to be read in
+        dictkeys: list of keys that make up the unqiue business key and the key to the resulting dictionary
+        dupkeyfail: bool - when true, if we find recrods that are duplicates we raise an error
+        noshowwarning: bool - when false, if we find records that are duplicates we print out a message about this
+        headerlc: bool - when enabled, force the header values to lower case, otherwise use the string as defined in the file
+        encoding: str - string that defines character type to read in with
+        debug: bool - when enabled, display messages while processing
+
+    Returns
+        results - dict of records on unique buiness key with value of a dict that is the record
+        header - list[str]  list of header values read in
+        dupcount - number of records encountered that were duplicate business keys
+    """
+    if not dictkeys:
+        raise ValueError('dictkeys must be populated and is not')
+    if not isinstance(dictkeys, list):
+        raise TypeError('dictkeys must be a list but is: {type(dictkeys)}')
+    
     results = {}
     dupkeys = []
     dupcount = 0
@@ -290,18 +368,38 @@ def readcsv2dict_with_header(
     return results, header, dupcount
 
 
-# read in the CSV and create a dictionary to the records
-# based on one or more key fields
-# assumes the first line of the CSV file is the header/defintion of the CSV
 def readcsv2dict(
-    csvfile,
-    dictkeys,
-    dupkeyfail=False,
-    noshowwarning=False,
-    headerlc=False,
-    encoding="windows-1252",
-    debug=False,
+    csvfile: str,
+    dictkeys: list,
+    dupkeyfail: bool=False,
+    noshowwarning: bool=False,
+    headerlc: bool=False,
+    encoding: str = "windows-1252",
+    debug: bool = False,
+
 ):
+    """
+    read in the CSV and create a dictionary to the records, and create a dict unique on business key
+    assumes the first line of the CSV file is the header/defintion of the CSV
+
+    Inputs:
+        csvfile: str, - filename/path to the CSV file to be read in
+        dictkeys: list of keys that make up the unqiue business key and the key to the resulting dictionary
+        dupkeyfail: bool - when true, if we find recrods that are duplicates we raise an error
+        noshowwarning: bool - when false, if we find records that are duplicates we print out a message about this
+        headerlc: bool - when enabled, force the header values to lower case, otherwise use the string as defined in the file
+        encoding: str - string that defines character type to read in with
+        debug: bool - when enabled, display messages while processing
+
+    Returns
+        results - dict of records on unique buiness key with value of a dict that is the record
+
+    """
+    if not dictkeys:
+        raise ValueError('dictkeys must be populated and is not')
+    if not isinstance(dictkeys, list):
+        raise TypeError(f'dictkeys must be a list but is: {type(dictkeys)}')
+    
     results, header, dupcnt = readcsv2dict_with_header(
         csvfile,
         dictkeys,
@@ -314,27 +412,46 @@ def readcsv2dict(
     return results
 
 
-# read in the CSV and create a dictionary to the records
-# based on one or more key fields
-# no header on this file - the header must be passed in
 def readcsv2dict_with_noheader(
-    csvfile,
-    dictkeys,
-    header,
-    dupkeyfail=False,
-    noshowwarning=False,
-    encoding="windows-1252",
-    debug=False,
+    csvfile: str,
+    dictkeys: list,
+    header: list,
+    dupkeyfail: bool=False,
+    noshowwarning: bool=False,
+    encoding: str = "windows-1252",
+    debug: bool = False,
+
 ):
+    """
+    read in the CSV and create a dictionary to the records, and create a dict unique on business key
+    no header, so we pass it in
+
+    Inputs:
+        csvfile: str, - filename/path to the CSV file to be read in
+        dictkeys: list of keys that make up the unqiue business key and the key to the resulting dictionary
+        header: list of strings defining the header for each column
+        dupkeyfail: bool - when true, if we find recrods that are duplicates we raise an error
+        noshowwarning: bool - when false, if we find records that are duplicates we print out a message about this
+        encoding: str - string that defines character type to read in with
+        debug: bool - when enabled, display messages while processing
+
+    Returns
+        results - dict of records on unique buiness key with value of a dict that is the record
+        header - list[str]  list of header values read in
+        dupcount - number of records encountered that were duplicate business keys
+
+    """
     if not dictkeys:
-        logger.error("must pass in dictkeys")
-        raise Exception("must pass in dictkeys")
+        raise ValueError('dictkeys must be populated and is not')
+    if not isinstance(dictkeys, list):
+        raise TypeError(f'dictkeys must be a list but is: {type(dictkeys)}')
     if not header:
-        logger.error("must pass in header")
-        raise Exception("must pass in header")
+        raise ValueError('header must be populated and is not')
     if not isinstance(header, list):
-        logger.error("header must be a list:%s", header)
-        raise Exception("header must be a list:%s", header)
+        raise TypeError(f'header must be a list but is: {type(header)}')
+    bad_dictkeys = [x for x in dictkeys if x not in header]
+    if bad_dictkeys:
+        raise ValueError(f'dictkeys that are not in header: {",".join(bad_dictkeys)}')
 
     results = {}
     dupkeys = []
