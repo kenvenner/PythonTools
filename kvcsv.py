@@ -40,7 +40,7 @@ def max_column_list(csvlist: list[dict]) -> list:
         raise TypeError(f"csvlist must be [list] but is: {type(csvlist)}")
     if not isinstance(csvlist[0], dict):
         raise TypeError(f"csvlist[0] must be [dict] but is: {type(csvlist[0])}")
-    
+
     fieldlist = []
     for rec in csvlist:
         for key in rec.keys():
@@ -60,7 +60,7 @@ def writelist2csv(
     header: bool = True,
     encoding: str = "windows-1252",
     maxcolumns: bool = False,
-    col_aref: list|None = None,
+    col_aref: list | None = None,
     debug: bool = False,
 ) -> None:
     """
@@ -92,7 +92,6 @@ def writelist2csv(
     if col_aref is None:
         col_aref = list()
 
-    
     # test inputs
     if not csvfile:
         raise ValueError("csvfile must be populated")
@@ -110,7 +109,7 @@ def writelist2csv(
     # calculate the header when flag is enabled
     if maxcolumns:
         csvfields = max_column_list(csvlist)
-        
+
     # check to see if we passed in col_ref
     if col_aref and not csvfields:
         # and we set the fields we wanted to output
@@ -122,7 +121,7 @@ def writelist2csv(
 
     # debugging:
     if debug:
-        print(f'{csvfields=}')
+        print(f"{csvfields=}")
 
     # open the output file and write out the dictionary
     with open(csvfile, mode=mode, newline="", encoding=encoding) as csv_file:
@@ -185,7 +184,7 @@ def writedict2csv(
     # if we are maxcolumns - then we need to calculate this
     if maxcolumns:
         csvfields = max_column_list(list(csvdict.values()))
-    
+
     # check to see if we passed in col_ref
     if col_aref and not csvfields:
         # and we set the fields we wanted to output
@@ -351,12 +350,12 @@ def readcsv2dict_with_header(
 
     # debugging
     if debug:
-        print('with_header')
-        print(f'{csvfile=}')
-        print(f'{type(csvfile)=}')
-        
-        print(f'{dictkeys=}')
-        print(f'{type(dictkeys)=}')
+        print("with_header")
+        print(f"{csvfile=}")
+        print(f"{type(csvfile)=}")
+
+        print(f"{dictkeys=}")
+        print(f"{type(dictkeys)=}")
 
     # test inputs
     if not dictkeys:
@@ -366,16 +365,12 @@ def readcsv2dict_with_header(
 
     # read the records into a list
     results_list, header = readcsv2list_with_header(
-        csvfile,
-        headerlc=headerlc,
-        encoding=encoding,
-        debug=debug
+        csvfile, headerlc=headerlc, encoding=encoding, debug=debug
     )
-    
+
     # push the keys to lower if we set that flag on
     if headerlc:
         dictkeys = [x.lower() for x in dictkeys]
-        
 
     # convert list to dict
     results = {}
@@ -408,6 +403,7 @@ def readcsv2dict_with_header(
 
     # return the results
     return results, header, dupcount
+
 
 def readcsv2dict(
     csvfile: str,
@@ -496,12 +492,8 @@ def readcsv2dict_with_noheader(
 
     # read the records into a list
     results_list, header = readcsv2list_with_noheader(
-        csvfile,
-        header=header,
-        encoding=encoding,
-        debug=debug
+        csvfile, header=header, encoding=encoding, debug=debug
     )
-    
 
     # convert list to dict
     results = {}
@@ -570,10 +562,10 @@ def readcsv2dict_with_noheader(
 def readcsv2list_findheader(
     csvfile: str,
     req_cols: list,
-    xlatdict: dict|None=None,
-    optiondict: dict|None=None,
-    col_aref: list|None=None,
-    debug: bool=False
+    xlatdict: dict | None = None,
+    optiondict: dict | None = None,
+    col_aref: list | None = None,
+    debug: bool = False,
 ):
     """
     read in the CSV and create a dictionary to the records
@@ -621,10 +613,9 @@ def readcsv2list_findheader(
         raise TypeError(f"col_aref must be list but is: {type(col_aref)}")
 
     # special tests
-    if optiondict.get('no_header') and not col_aref:
-        raise ValueError('optiondict[no_header] set and col_aref not populated')
-    
-        
+    if optiondict.get("no_header") and not col_aref:
+        raise ValueError("optiondict[no_header] set and col_aref not populated")
+
     # local variables
     results = []
     header = None
@@ -639,7 +630,6 @@ def readcsv2list_findheader(
     logger.debug("xlatdict:%s", xlatdict)
     logger.debug("optiondict:%s", optiondict)
     logger.debug("col_aref:%s", col_aref)
-
 
     # set flags
     col_header = (
@@ -801,7 +791,6 @@ def readcsv2list_findheader(
             print("col_aref:header:", header)
         logger.debug("col_aref:header:%s", header)
 
-
     # ------------------------------- RECORDS START ------------------------------
 
     # continue processing this file
@@ -860,18 +849,17 @@ def readcsv2list_findheader(
 def readcsv2dict_findheader(
     csvfile: str,
     req_cols: list,
-    dictkeys: list|None=None,
-    xlatdict: dict|None=None,
-    optiondict: dict|None=None,
-    col_aref: list|None=None,
+    dictkeys: list | None = None,
+    xlatdict: dict | None = None,
+    optiondict: dict | None = None,
+    col_aref: list | None = None,
     dupkeyfail: bool = False,
-    debug: bool=False
-
+    debug: bool = False,
 ):
     """
     read in the CSV and create a dictionary to the records, the list of fields
     passed in dictkeys defines the unique business key that the dictionary we create
-    this looks through teh records to find the row that has the values tha tmatch req_cols and 
+    this looks through teh records to find the row that has the values tha tmatch req_cols and
     this row is defined as the header row
 
     Inputs:
@@ -881,7 +869,7 @@ def readcsv2dict_findheader(
         xlatdict: dict - take one or more header column names definitons and map them to teh desired output header name
                          this dict key is the column header we might find, and the value is the header column name we want
         col_aref: list - user defined header defintion - don't use the values we find - use the ones the user passed in
-        dupkeyfail: bool - when true, if we find duplicate business keys across multiple records we will error out, 
+        dupkeyfail: bool - when true, if we find duplicate business keys across multiple records we will error out,
                            otherwise we will just ignore duplicate records based on business keys and keep only the last occurence found
         debug: bool - when enabled, display messages while processing
 
@@ -901,13 +889,13 @@ def readcsv2dict_findheader(
 
     # debugging
     if debug:
-        print('findheader')
-        print(f'{csvfile=}')
-        print(f'{type(csvfile)=}')
-        
-        print(f'{dictkeys=}')
-        print(f'{type(dictkeys)=}')
-    
+        print("findheader")
+        print(f"{csvfile=}")
+        print(f"{type(csvfile)=}")
+
+        print(f"{dictkeys=}")
+        print(f"{type(dictkeys)=}")
+
     # user did not set these values - so we must set them
     if xlatdict is None:
         xlatdict = dict()
@@ -924,7 +912,9 @@ def readcsv2dict_findheader(
 
     # check processing
     if "no_header" in optiondict and optiondict["no_header"] and not col_aref:
-        raise ValueError("invalid setting optiondict[no_header] and no col_aref")
+        raise ValueError(
+            "invalid setting optiondict[no_header] and no col_aref"
+        )
     if "aref_result" in optiondict and optiondict["aref_result"]:
         raise ValueError("invalid setting optiondict[aref_result]")
 
@@ -935,23 +925,20 @@ def readcsv2dict_findheader(
         xlatdict=xlatdict,
         optiondict=optiondict,
         col_aref=col_aref,
-        debug=debug
+        debug=debug,
     )
-
 
     # debugging
     if debug:
-        print('results from readcsvlist_findheader')
-        print(f'{type(results)=}')
+        print("results from readcsvlist_findheader")
+        print(f"{type(results)=}")
         print("dictkeys:", dictkeys)
         print("results:", results)
-
 
     # local variables
     dupkeys = []
     dictresults = {}
     dupcount = 0
-
 
     # convert to a dictionary based on keys provided
     for rowdict in results:
@@ -976,7 +963,7 @@ def readcsv2dict_findheader(
     # fail if we found dupkeys
     if dupkeys:
         print("readcsv2dict:duplicate key failure:", ",".join(dupkeys))
-        if dupkeyfails:
+        if dupkeyfail:
             raise ValueError("duplicate key failure:%s", dupkeys)
 
     if debug:
