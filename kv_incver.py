@@ -1,14 +1,3 @@
-__version__ = "1.12"
-BuildVersion = "5"
-
-"""
-@author:   Ken Venner
-@contact:  ken@venerllc.com
-@version:  1.12
-
-Tooling that creates a new major/minor version on a file
-
-"""
 import re
 import os
 import subprocess
@@ -20,11 +9,26 @@ import kvargs
 # may comment out in the future
 import pprint
 
-pp = pprint.PrettyPrinter(indent=4)
-
 # logging
 import sys
 import kvlogger
+
+"""
+@author:   Ken Venner
+@contact:  ken@venerllc.com
+@version:  1.12
+
+Tooling that creates a new major/minor version on a file
+
+"""
+
+# VERSION NUMBERS
+__version__ = "1.12"
+BuildVersion = "5"
+
+# set up the pretty printer
+pp = pprint.PrettyPrinter(indent=4)
+
 
 # pick the log file structure from list below
 # single file that is rotated
@@ -627,7 +631,7 @@ def update_file_version(
     bld_ver = ""
     new_bld_ver = ""
 
-    bld_version = ""
+    # bld_version = ""
     new_bld_version = ""
     version_found = False
     bld_version_found = False
@@ -747,7 +751,7 @@ def git_modified_files_in_folder(folder_path="", debug=False):
         m = reGitModified.search(line)
         if m:
             filename = m.group(1)
-            basename = os.path.basename(filename)
+            # basename = os.path.basename(filename)
             dirname = os.path.dirname(filename)
             if debug:
                 print("git_modified_files_in_folder:dirname:", dirname)

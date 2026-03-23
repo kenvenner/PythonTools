@@ -35,6 +35,12 @@ def max_column_list(csvlist: list[dict]) -> list:
         fieldlist - list of columns that must be created to not lose any data
     """
 
+    # test inputs
+    if not isinstance(csvlist, list):
+        raise TypeError(f"csvlist must be [list] but is: {type(csvlist)}")
+    if not isinstance(csvlist[0], dict):
+        raise TypeError(f"csvlist[0] must be [dict] but is: {type(csvlist[0])}")
+    
     fieldlist = []
     for rec in csvlist:
         for key in rec.keys():
@@ -54,7 +60,7 @@ def writelist2csv(
     header: bool = True,
     encoding: str = "windows-1252",
     maxcolumns: bool = False,
-    col_aref: list = None,
+    col_aref: list|None = None,
     debug: bool = False,
 ) -> None:
     """
@@ -71,7 +77,8 @@ def writelist2csv(
         mode - create the file or append to the file (default: create) if you want ot append - send in "a"
         header - bool - when true, we create a header as the first row, when false we do not generate the header line
         encoding - str - the character set used to generate the file
-        col_aref - list[str] - the other way to speciffy the column headers for this file
+        maxcolumns - bool - when set to true - we go through all records and find the full set of keys across all records and output using that
+        col_aref - list[str] - if you don't set csvfields, the other way to speciffy the column headers for this file
         debug - bool - wehn true, display messages while running
 
     """
@@ -79,6 +86,13 @@ def writelist2csv(
     if not csvlist:
         return
 
+    # set values if not populated
+    if csvfields is None:
+        csvfields = list()
+    if col_aref is None:
+        col_aref = list()
+
+    
     # test inputs
     if not csvfile:
         raise ValueError("csvfile must be populated")
@@ -91,8 +105,12 @@ def writelist2csv(
     if col_aref and not isinstance(col_aref, list):
         raise TypeError(f"col_aref must be [list] but is: {type(col_aref)}")
     if mode and mode not in ("a", "w"):
-        raise ValueError("mode can only be [a, w] but is: {mode}")
+        raise ValueError(f"mode can only be [a, w] but is: {mode}")
 
+    # calculate the header when flag is enabled
+    if maxcolumns:
+        csvfields = max_column_list(csvlist)
+        
     # check to see if we passed in col_ref
     if col_aref and not csvfields:
         # and we set the fields we wanted to output
@@ -101,6 +119,10 @@ def writelist2csv(
     # get the keys from the dictionary keys in the first value itself
     if not csvfields:
         csvfields = list(csvlist[0].keys())
+
+    # debugging:
+    if debug:
+        print(f'{csvfields=}')
 
     # open the output file and write out the dictionary
     with open(csvfile, mode=mode, newline="", encoding=encoding) as csv_file:
@@ -139,6 +161,7 @@ def writedict2csv(
         mode - create the file or append to the file (default: create) if you want ot append - send in "a"
         header - bool - when true, we create a header as the first row, when false we do not generate the header line
         encoding - str - the character set used to generate the file
+        maxcolumns - bool - when true, we go through all values and create the max csvfields to create
         col_aref - list[str] - the other way to speciffy the column headers for this file
         debug - bool - wehn true, display messages while running
 
@@ -151,14 +174,18 @@ def writedict2csv(
     if not csvfile:
         raise ValueError("csvfile must be populated")
     if not isinstance(csvdict, dict):
-        raise TypeError(f"csvlist must be [list] but is: {type(csvdict)}")
+        raise TypeError(f"csvdict must be [dict] but is: {type(csvdict)}")
     if csvfields and not isinstance(csvfields, list):
         raise TypeError(f"csvfields must be [list] but is: {type(csvfields)}")
     if col_aref and not isinstance(col_aref, list):
         raise TypeError(f"col_aref must be [list] but is: {type(col_aref)}")
     if mode and mode not in ("a", "w"):
-        raise ValueError("mode can only be [a, w] but is: {mode}")
+        raise ValueError(f"mode can only be [a, w] but is: {mode}")
 
+    # if we are maxcolumns - then we need to calculate this
+    if maxcolumns:
+        csvfields = max_column_list(list(csvdict.values()))
+    
     # check to see if we passed in col_ref
     if col_aref and not csvfields:
         # and we set the fields we wanted to output
@@ -184,12 +211,13 @@ def writedict2csv(
 
 ## LISTS ##
 
+
 def readcsv2list_with_header(
     csvfile: str,
     headerlc: bool = False,
     encoding: str = "windows-1252",
     debug: bool = False,
-) -> tuple(list[dict], list[str]):
+) -> tuple[list[dict], list[str]]:
     """
     read in the CSV and create a dictionary to the records
     assumes the first line of the CSV file is the header/defintion of the CSV
@@ -225,13 +253,12 @@ def readcsv2list_with_header(
     return results, header
 
 
-
-def readcsv2list(csvfile, headerlc=False, encoding="windows-1252", debug=False):
+def readcsv2list(
     csvfile: str,
     headerlc: bool = False,
     encoding: str = "windows-1252",
     debug: bool = False,
-) -> tuple(list[dict], list[str]):
+) -> tuple[list[dict], list[str]]:
     """
     read in the CSV and create a dictionary to the records
     assumes the first line of the CSV file is the header/defintion of the CSV
@@ -244,6 +271,7 @@ def readcsv2list(csvfile, headerlc=False, encoding="windows-1252", debug=False):
 
     Returns
         results - list[dict] list of records with dictionary of key/value settings
+
     """
 
     results, header = readcsv2list_with_header(
@@ -257,7 +285,7 @@ def readcsv2list_with_noheader(
     header: list,
     encoding: str = "windows-1252",
     debug: bool = False,
-) -> tuple(list[dict], list[str]):
+) -> tuple[list[dict], list[str]]:
     """
     read in the CSV and create a dictionary to the records
     no header in this file so we pass in the header defintion
@@ -275,10 +303,10 @@ def readcsv2list_with_noheader(
 
     # test inputs
     if not header:
-        raise ValueErorr('header must be populated and is not')
+        raise ValueError("header must be populated and is not")
     if not isinstance(header, list):
-        raise ValueError(f'header must be list but is: {type(header)}')
-    
+        raise ValueError(f"header must be list but is: {type(header)}")
+
     results = []
     with open(csvfile, mode="r", encoding=encoding) as csv_file:
         reader = csv.reader(csv_file)
@@ -292,15 +320,15 @@ def readcsv2list_with_noheader(
 
 ## DICT ##
 
+
 def readcsv2dict_with_header(
     csvfile: str,
     dictkeys: list,
-    dupkeyfail: bool=False,
-    noshowwarning: bool=False,
-    headerlc: bool=False,
+    dupkeyfail: bool = False,
+    noshowwarning: bool = False,
+    headerlc: bool = False,
     encoding: str = "windows-1252",
     debug: bool = False,
-
 ):
     """
     read in the CSV and create a dictionary to the records, and create a dict unique on business key
@@ -320,37 +348,48 @@ def readcsv2dict_with_header(
         header - list[str]  list of header values read in
         dupcount - number of records encountered that were duplicate business keys
     """
+
+    # debugging
+    if debug:
+        print('with_header')
+        print(f'{csvfile=}')
+        print(f'{type(csvfile)=}')
+        
+        print(f'{dictkeys=}')
+        print(f'{type(dictkeys)=}')
+
+    # test inputs
     if not dictkeys:
-        raise ValueError('dictkeys must be populated and is not')
+        raise ValueError("dictkeys must be populated and is not")
     if not isinstance(dictkeys, list):
-        raise TypeError('dictkeys must be a list but is: {type(dictkeys)}')
+        raise TypeError("dictkeys must be a list but is: {type(dictkeys)}")
+
+    # read the records into a list
+    results_list, header = readcsv2list_with_header(
+        csvfile,
+        headerlc=headerlc,
+        encoding=encoding,
+        debug=debug
+    )
     
+    # push the keys to lower if we set that flag on
+    if headerlc:
+        dictkeys = [x.lower() for x in dictkeys]
+        
+
+    # convert list to dict
     results = {}
     dupkeys = []
     dupcount = 0
-    with open(csvfile, mode="r", encoding=encoding) as csv_file:
-        reader = csv.reader(csv_file)
-        header = reader.__next__()
-        if debug:
-            print("header-before:", header)
-        logger.debug("header-before:%s", header)
-        if headerlc:
-            dictkeys = [x.lower() for x in dictkeys]
-            header = [x.lower() for x in header]
-            if debug:
-                print("header-after:", header)
-            logger.debug("header-after:%s", header)
-        for row in reader:
-            rowdict = dict(zip(header, row))
-            reckey = kvmatch.build_multifield_key(rowdict, dictkeys)
-            # do we fail if we see the same key multiple times?
-            if reckey in results:
-                dupcount += 1
-                if dupkeyfail:
-                    # capture this key
-                    dupkeys.append(reckey)
-            # create/update the dictionary
-            results[reckey] = rowdict
+    for rowdict in results_list:
+        reckey = kvmatch.build_multifield_key(rowdict, dictkeys)
+        # do we fail if we see the same key multiple times?
+        if reckey in results:
+            dupcount += 1
+            # capture this key
+            dupkeys.append(reckey)
+        # create/update the dictionary
+        results[reckey] = rowdict
     # fail if we found dupkeys
     if dupkeys:
         # log this issue
@@ -363,20 +402,21 @@ def readcsv2dict_with_header(
         # display message if the user wants this displayed
         if not noshowwarning:
             print("readcsv2dict:duplicate key failure:", ",".join(dupkeys))
-        raise ValueError("Duplicate key failure")
+        # if we want to fail on dupkey then do so
+        if dupkeyfail:
+            raise ValueError("Duplicate key failure")
+
     # return the results
     return results, header, dupcount
-
 
 def readcsv2dict(
     csvfile: str,
     dictkeys: list,
-    dupkeyfail: bool=False,
-    noshowwarning: bool=False,
-    headerlc: bool=False,
+    dupkeyfail: bool = False,
+    noshowwarning: bool = False,
+    headerlc: bool = False,
     encoding: str = "windows-1252",
     debug: bool = False,
-
 ):
     """
     read in the CSV and create a dictionary to the records, and create a dict unique on business key
@@ -396,11 +436,11 @@ def readcsv2dict(
 
     """
     if not dictkeys:
-        raise ValueError('dictkeys must be populated and is not')
+        raise ValueError("dictkeys must be populated and is not")
     if not isinstance(dictkeys, list):
-        raise TypeError(f'dictkeys must be a list but is: {type(dictkeys)}')
-    
-    results, header, dupcnt = readcsv2dict_with_header(
+        raise TypeError(f"dictkeys must be a list but is: {type(dictkeys)}")
+
+    results, header, dupcount = readcsv2dict_with_header(
         csvfile,
         dictkeys,
         dupkeyfail=dupkeyfail,
@@ -416,11 +456,10 @@ def readcsv2dict_with_noheader(
     csvfile: str,
     dictkeys: list,
     header: list,
-    dupkeyfail: bool=False,
-    noshowwarning: bool=False,
+    dupkeyfail: bool = False,
+    noshowwarning: bool = False,
     encoding: str = "windows-1252",
     debug: bool = False,
-
 ):
     """
     read in the CSV and create a dictionary to the records, and create a dict unique on business key
@@ -442,33 +481,41 @@ def readcsv2dict_with_noheader(
 
     """
     if not dictkeys:
-        raise ValueError('dictkeys must be populated and is not')
+        raise ValueError("dictkeys must be populated and is not")
     if not isinstance(dictkeys, list):
-        raise TypeError(f'dictkeys must be a list but is: {type(dictkeys)}')
+        raise TypeError(f"dictkeys must be a list but is: {type(dictkeys)}")
     if not header:
-        raise ValueError('header must be populated and is not')
+        raise ValueError("header must be populated and is not")
     if not isinstance(header, list):
-        raise TypeError(f'header must be a list but is: {type(header)}')
+        raise TypeError(f"header must be a list but is: {type(header)}")
     bad_dictkeys = [x for x in dictkeys if x not in header]
     if bad_dictkeys:
-        raise ValueError(f'dictkeys that are not in header: {",".join(bad_dictkeys)}')
+        raise ValueError(
+            f"dictkeys that are not in header: {','.join(bad_dictkeys)}"
+        )
 
+    # read the records into a list
+    results_list, header = readcsv2list_with_noheader(
+        csvfile,
+        header=header,
+        encoding=encoding,
+        debug=debug
+    )
+    
+
+    # convert list to dict
     results = {}
     dupkeys = []
     dupcount = 0
-    with open(csvfile, mode="r", encoding=encoding) as csv_file:
-        reader = csv.reader(csv_file)
-        for row in reader:
-            rowdict = dict(zip(header, row))
-            reckey = kvmatch.build_multifield_key(rowdict, dictkeys)
-            # do we fail if we see the same key multiple times?
-            if reckey in results:
-                dupcount += 1
-                if dupkeyfail:
-                    # capture this key
-                    dupkeys.append(reckey)
-            # create/update the dictionary
-            results[reckey] = rowdict
+    for rowdict in results_list:
+        reckey = kvmatch.build_multifield_key(rowdict, dictkeys)
+        # do we fail if we see the same key multiple times?
+        if reckey in results:
+            dupcount += 1
+            # capture this key
+            dupkeys.append(reckey)
+        # create/update the dictionary
+        results[reckey] = rowdict
     # fail if we found dupkeys
     if dupkeys:
         # log this issue
@@ -481,7 +528,10 @@ def readcsv2dict_with_noheader(
         # display message if the user wants this displayed
         if not noshowwarning:
             print("readcsv2dict:duplicate key failure:", ",".join(dupkeys))
-        raise ValueError("Duplicate key failure")
+        # if we want to fail on dupkey then do so
+        if dupkeyfail:
+            raise ValueError("Duplicate key failure")
+
     # return the results
     return results, header, dupcount
 
@@ -518,8 +568,63 @@ def readcsv2dict_with_noheader(
 
 
 def readcsv2list_findheader(
-    csvfile, req_cols, xlatdict={}, optiondict={}, col_aref=None, debug=False
+    csvfile: str,
+    req_cols: list,
+    xlatdict: dict|None=None,
+    optiondict: dict|None=None,
+    col_aref: list|None=None,
+    debug: bool=False
 ):
+    """
+    read in the CSV and create a dictionary to the records
+    assumes the first line of the CSV file is the header/defintion of the CSV
+
+    Inputs:
+        csvfile: str, - filename/path to the CSV file to be read in
+        req_cols: list - list of column names that tells us we have located the header record
+        xlatdict: dict - take one or more header column names definitons and map them to teh desired output header name
+                         this dict key is the column header we might find, and the value is the header column name we want
+        col_aref: list - user defined header defintion - don't use the values we find - use the ones the user passed in
+        debug: bool - when enabled, display messages while processing
+
+    Returns
+        results - list[dict] list of records with dictionary of key/value settings
+        header - list[str]  list of header values read in
+
+
+    optiondict options:
+        start_row - start the search starting at this row number in the file
+        no_header - there is no header on this file - so we must pass the header in and use it (similar to readcsv2list_with_noheader)
+        aref_result - returns each row as a list not as a dictionary
+        save_row - captures the row # in the file that this line was taken from in XLSRow key
+        col_header - bool - get header from start_row or first line if start_row is not set
+
+    """
+    # set values if not populated
+    if xlatdict is None:
+        xlatdict = dict()
+    if optiondict is None:
+        optiondict = dict()
+    if col_aref is None:
+        col_aref = list()
+
+    # test inputs
+    if not req_cols:
+        raise ValueError("req_cols must be populated and is not")
+    if not isinstance(req_cols, list):
+        raise TypeError(f"req_cols must be list but is: {type(req_cols)}")
+    if not isinstance(xlatdict, dict):
+        raise TypeError(f"xlatdict must be dict but is: {type(xlatdict)}")
+    if not isinstance(optiondict, dict):
+        raise TypeError(f"optiondict must be dict but is: {type(optiondict)}")
+    if not isinstance(col_aref, list):
+        raise TypeError(f"col_aref must be list but is: {type(col_aref)}")
+
+    # special tests
+    if optiondict.get('no_header') and not col_aref:
+        raise ValueError('optiondict[no_header] set and col_aref not populated')
+    
+        
     # local variables
     results = []
     header = None
@@ -527,21 +632,14 @@ def readcsv2list_findheader(
     # debugging
     if debug:
         print("req_cols:", req_cols)
-    if debug:
         print("xlatdict:", xlatdict)
-    if debug:
         print("optiondict:", optiondict)
-    if debug:
         print("col_aref:", col_aref)
     logger.debug("req_cols:%s", req_cols)
     logger.debug("xlatdict:%s", xlatdict)
     logger.debug("optiondict:%s", optiondict)
     logger.debug("col_aref:%s", col_aref)
 
-    # check type
-    if col_aref and not isinstance(col_aref, list):
-        logger.error("col_aref must be list:%s", col_aref)
-        raise Exception("col_aref not a list")
 
     # set flags
     col_header = (
@@ -703,6 +801,7 @@ def readcsv2list_findheader(
             print("col_aref:header:", header)
         logger.debug("col_aref:header:%s", header)
 
+
     # ------------------------------- RECORDS START ------------------------------
 
     # continue processing this file
@@ -755,51 +854,104 @@ def readcsv2list_findheader(
     # if debug: print('results:', results)
 
     # return the results
-    return results
+    return results, header
 
 
 def readcsv2dict_findheader(
-    csvfile,
-    req_cols,
-    dictkeys,
-    xlatdict={},
-    optiondict={},
-    col_aref=None,
-    debug=False,
-    dupkeyfail=False,
+    csvfile: str,
+    req_cols: list,
+    dictkeys: list|None=None,
+    xlatdict: dict|None=None,
+    optiondict: dict|None=None,
+    col_aref: list|None=None,
+    dupkeyfail: bool = False,
+    debug: bool=False
+
 ):
-    # check inputs
-    if not dictkeys:
-        raise Exception("dictkeys must be populated")
-    elif not isinstance(dictkeys, list):
-        raise Exception("dictkeys must be a list:%s", dictkeys)
+    """
+    read in the CSV and create a dictionary to the records, the list of fields
+    passed in dictkeys defines the unique business key that the dictionary we create
+    this looks through teh records to find the row that has the values tha tmatch req_cols and 
+    this row is defined as the header row
+
+    Inputs:
+        csvfile: str, - filename/path to the CSV file to be read in
+        req_cols: list - list of column names that tells us we have located the header record
+        dictkeys: list - list of columns when concatenated defines a unique business key
+        xlatdict: dict - take one or more header column names definitons and map them to teh desired output header name
+                         this dict key is the column header we might find, and the value is the header column name we want
+        col_aref: list - user defined header defintion - don't use the values we find - use the ones the user passed in
+        dupkeyfail: bool - when true, if we find duplicate business keys across multiple records we will error out, 
+                           otherwise we will just ignore duplicate records based on business keys and keep only the last occurence found
+        debug: bool - when enabled, display messages while processing
+
+    Returns
+        results - list[dict] list of records with dictionary of key/value settings
+        header - list[str]  list of header values read in
+
+
+    optiondict options:
+        start_row
+        no_header
+        aref_result
+        save_row
+        col_header
+
+    """
 
     # debugging
     if debug:
-        print("dictkeys:", dictkeys)
+        print('findheader')
+        print(f'{csvfile=}')
+        print(f'{type(csvfile)=}')
+        
+        print(f'{dictkeys=}')
+        print(f'{type(dictkeys)=}')
+    
+    # user did not set these values - so we must set them
+    if xlatdict is None:
+        xlatdict = dict()
+    if optiondict is None:
+        optiondict = dict()
+    if col_aref is None:
+        col_aref = list()
 
-    # local variables
-    dupkeys = []
-    dictresults = {}
+    # test inputs
+    if not dictkeys:
+        raise ValueError("dictkeys must be populated and is not")
+    if not isinstance(dictkeys, list):
+        raise TypeError("dictkeys must be a list but is: {type(dictkeys)}")
+
+    # check processing
+    if "no_header" in optiondict and optiondict["no_header"] and not col_aref:
+        raise ValueError("invalid setting optiondict[no_header] and no col_aref")
+    if "aref_result" in optiondict and optiondict["aref_result"]:
+        raise ValueError("invalid setting optiondict[aref_result]")
 
     # read in the data from the file
-    results = readcsv2list_findheader(
+    results, header = readcsv2list_findheader(
         csvfile,
         req_cols,
         xlatdict=xlatdict,
         optiondict=optiondict,
         col_aref=col_aref,
-        debug=debug,
+        debug=debug
     )
 
-    # check processing
-    if "no_header" in optiondict and optiondict["no_header"] and not col_aref:
-        raise Exception("invalid setting optiondict[no_header] and no col_aref")
-    if "aref_result" in optiondict and optiondict["aref_result"]:
-        raise Exception("invalid setting optiondict[aref_result]")
 
+    # debugging
     if debug:
+        print('results from readcsvlist_findheader')
+        print(f'{type(results)=}')
+        print("dictkeys:", dictkeys)
         print("results:", results)
+
+
+    # local variables
+    dupkeys = []
+    dictresults = {}
+    dupcount = 0
+
 
     # convert to a dictionary based on keys provided
     for rowdict in results:
@@ -807,11 +959,15 @@ def readcsv2dict_findheader(
             print("dictkeys:", dictkeys)
             print("rowdict:", rowdict)
 
+        # get the business key for this record
         reckey = kvmatch.build_multifield_key(rowdict, dictkeys)
+
         # do we fail if we see the same key multiple times?
-        if dupkeyfail:
-            if reckey in dictresults:
-                # capture this key
+        if reckey in dictresults:
+            # incremente counter
+            dupcount += 1
+            # capture this key
+            if reckey not in dupkeys:
                 dupkeys.append(reckey)
 
         # create/update the dictionary
@@ -820,13 +976,14 @@ def readcsv2dict_findheader(
     # fail if we found dupkeys
     if dupkeys:
         print("readcsv2dict:duplicate key failure:", ",".join(dupkeys))
-        raise Exception("duplicate key failure:%s", dupkeys)
+        if dupkeyfails:
+            raise ValueError("duplicate key failure:%s", dupkeys)
 
     if debug:
         print("dictresults:", dictresults)
 
     # return the results
-    return dictresults
+    return dictresults, header, dupcount
 
 
 if __name__ == "__main__":

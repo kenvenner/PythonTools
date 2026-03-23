@@ -26,16 +26,24 @@ def build_multifield_key(
     debug: bool = False,
 ) -> str:
     # validate we passed in the required keys
+    if not rowdict:
+        raise ValueError('rowdict not populated')
+    if not isinstance(rowdict, dict):
+        raise TypeError(f'rowdict must be dict but is: {type(rowdict)}')
     if not dictkeys:
         logger.debug("missing dictkeys")
-        raise Exception("dictkeys not provided")
+        raise ValueError("dictkeys not provided")
+    if isinstance(dictkeys, str):
+        # convert teh string to a list element
+        dictkeys = [dictkeys]
     if debug:
         print("build_multifield_key:dictkeys:", dictkeys)
         print("build_multifield_key:rowdict:", rowdict)
+    badkeys = [x for x in dictkeys if x not in rowdict]
+    if badkeys:
+        raise ValueError('dictkeys not in rowdict: ' + ",".join(badkeys))
     logger.debug("dictkeys:%s", dictkeys)
     logger.debug("rowdict:%s", rowdict)
-    if isinstance(dictkeys, str):
-        dictkeys = [dictkeys]
     return joinchar.join([str(rowdict[key]) for key in dictkeys])
 
 
@@ -141,19 +149,19 @@ class MatchRow(object):
     ):
         # validate input types
         if req_cols and not isinstance(req_cols, list):
-            raise Exception("req_cols must be a list: {}".format(req_cols))
+            raise ValueError("req_cols must be a list: {}".format(type(req_cols)))
         if xlatdict is None:
             xlatdict = {}
         elif not isinstance(xlatdict, dict):
-            raise Exception("xlatdict must be a dict: {}".format(req_cols))
+            raise Exception("xlatdict must be a dict: {}".format(type(xlatdict)))
         if optiondict is None:
             optiondict = {}
         elif not isinstance(optiondict, dict):
-            raise Exception("optiondict must be a dict: {}".format(req_cols))
+            raise Exception("optiondict must be a dict: {}".format(type(optiondict)))
         if optiondict2 is None:
             optiondict2 = {}
         elif not isinstance(optiondict2, dict):
-            raise Exception("optiondict2 must be a dict: {}".format(req_cols))
+            raise Exception("optiondict2 must be a dict: {}".format(type(optiondict2)))
 
         # setup variables
         self._req_cols = req_cols[
