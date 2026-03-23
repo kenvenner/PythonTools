@@ -8,6 +8,7 @@ Library of tools used in finding matches - used by kvcsv and kvxls
 
 # logging
 import logging
+from datetime import datetime
 
 logger = logging.getLogger(__name__)
 
@@ -25,25 +26,42 @@ def build_multifield_key(
     joinchar: str = "|",
     debug: bool = False,
 ) -> str:
+    """
+    Utility used to create a new consolidated business key string built off of key/value in the row dict
+
+    Inputs:
+        rowdict: dict - the data/record that we are processing
+        dictkeys: list | Any - if it is a single value we convert it to a list object - these are the keys that we will combine
+                         from rowdict to create the composite string that is the business key
+        joinchar - str/character - this is the 'join' string between values that make up the composite key
+        debug - bool - when true we print out statements about what is going on
+
+    Returns:
+        business_key - str - the concatenation of the string values of row[dictkeys] with teh joinchar separator
+
+    """
     # validate we passed in the required keys
     if not rowdict:
         raise ValueError("rowdict not populated")
     if not isinstance(rowdict, dict):
         raise TypeError(f"rowdict must be dict but is: {type(rowdict)}")
     if not dictkeys:
-        logger.debug("missing dictkeys")
         raise ValueError("dictkeys not provided")
-    if isinstance(dictkeys, str):
+    if isinstance(dictkeys, (str, int, float, datetime)):
         # convert teh string to a list element
         dictkeys = [dictkeys]
     if debug:
         print("build_multifield_key:dictkeys:", dictkeys)
         print("build_multifield_key:rowdict:", rowdict)
+    if not isinstance(dictkeys, list):
+        raise TypeError(f"dictkeys must be list but is: {type(dictkeys)}")
+    # validate that hte keys in dictkeys are keys in rowdict
     badkeys = [x for x in dictkeys if x not in rowdict]
     if badkeys:
-        raise ValueError("dictkeys not in rowdict: " + ",".join(badkeys))
+        raise ValueError("dictkeys not in rowdict: " + ",".join(str(badkeys)))
     logger.debug("dictkeys:%s", dictkeys)
     logger.debug("rowdict:%s", rowdict)
+    # get the string value for each key and concatenate and return
     return joinchar.join([str(rowdict[key]) for key in dictkeys])
 
 

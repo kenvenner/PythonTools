@@ -18,6 +18,13 @@ rowdict = {
     "ProcessDate": datetime.datetime(2020, 1, 1, 0, 0),
 }
 
+rowdict_not_string = {
+    datetime.datetime(2020, 1, 1, 0, 0): "DateTimeKey",
+    10.00: "FloatKey",
+    8: "IntKey",
+    "str": "StrKey",
+}
+
 record = ["Col1", "Col2", "Col3"]
 nonrecord = ["bad1", "bad2", "bad3"]
 xlat_dict = {"Col1": "Ken1", "Col2": "Ken2", "Col3": "Ken3"}
@@ -38,6 +45,7 @@ badoptiondict = {
 
 
 class TestKVMatch(unittest.TestCase):
+    # build_multifield_key
     def test_build_multifield_key_p01_single_string(self):
         self.assertEqual(
             kvmatch.build_multifield_key(rowdict, ["Company"]), "Test"
@@ -66,7 +74,7 @@ class TestKVMatch(unittest.TestCase):
             kvmatch.build_multifield_key(rowdict, "Company"), "Test"
         )
 
-    def test_build_multifield_key_p02_multiplestrings_joinchar(self):
+    def test_build_multifield_key_p06_multiplestrings_joinchar(self):
         self.assertEqual(
             kvmatch.build_multifield_key(
                 rowdict, ["Company", "Wine"], joinchar=":"
@@ -74,7 +82,37 @@ class TestKVMatch(unittest.TestCase):
             "Test:Yummy",
         )
 
+    def test_build_multifield_key_p07_non_string_keys(self):
+        self.assertEqual(
+            kvmatch.build_multifield_key(
+                rowdict_not_string,
+                [datetime.datetime(2020, 1, 1, 0, 0), 10.00, 8],
+            ),
+            "DateTimeKey|FloatKey|IntKey",
+        )
+
+    def test_build_multifield_key_p08_non_string_keys_1value_dt(self):
+        self.assertEqual(
+            kvmatch.build_multifield_key(
+                rowdict_not_string, datetime.datetime(2020, 1, 1, 0, 0)
+            ),
+            "DateTimeKey",
+        )
+
+    def test_build_multifield_key_p09_non_string_keys_1value_float(self):
+        self.assertEqual(
+            kvmatch.build_multifield_key(rowdict_not_string, 10.00),
+            "FloatKey",
+        )
+
+    def test_build_multifield_key_p10_non_string_keys_1value_int(self):
+        self.assertEqual(
+            kvmatch.build_multifield_key(rowdict_not_string, 8),
+            "IntKey",
+        )
+
     def test_build_multifield_key_f01_missing_key(self):
+        # dictkey value not inside rowdict
         with self.assertRaises(Exception) as context:
             kvmatch.build_multifield_key(rowdict, ["Company", "Missing"])
 
@@ -85,6 +123,18 @@ class TestKVMatch(unittest.TestCase):
     def test_build_multifield_key_f03_empty_string_dictkeys(self):
         with self.assertRaises(Exception) as context:
             kvmatch.build_multifield_key(rowdict, "")
+
+    def test_build_multifield_key_f04_empty_rowdict(self):
+        with self.assertRaises(Exception) as context:
+            kvmatch.build_multifield_key({}, ["Company"])
+
+    def test_build_multifield_key_f05_rowdict_not_dict(self):
+        with self.assertRaises(Exception) as context:
+            kvmatch.build_multifield_key("ken", ["Company"])
+
+    def test_build_multifield_key_f06_dictkeys_dict(self):
+        with self.assertRaises(Exception) as context:
+            kvmatch.build_multifield_key(rowdict, {"a": 1})
 
     # the function name: def badoption_msg(func, val, val2):
     def test_badoption_msg_p01_pass(self):
