@@ -1,7 +1,7 @@
 """
 @author:   Ken Venner
 @contact:  ken@venerllc.com
-@version: 1.14
+@version: 1.15
 
 Library of tools used to read and write CSV files
 """
@@ -15,7 +15,7 @@ import logging
 logger = logging.getLogger(__name__)
 
 # version number
-AppVersion = "1.14"
+AppVersion = "1.15"
 
 ################################ HELPER  #############################################
 
@@ -328,7 +328,7 @@ def readcsv2dict_with_header(
     headerlc: bool = False,
     encoding: str = "windows-1252",
     debug: bool = False,
-):
+) -> tuple(dict, list, int):
     """
     read in the CSV and create a dictionary to the records, and create a dict unique on business key
     assumes the first line of the CSV file is the header/defintion of the CSV
@@ -413,7 +413,7 @@ def readcsv2dict(
     headerlc: bool = False,
     encoding: str = "windows-1252",
     debug: bool = False,
-):
+) -> dict:
     """
     read in the CSV and create a dictionary to the records, and create a dict unique on business key
     assumes the first line of the CSV file is the header/defintion of the CSV
@@ -456,7 +456,7 @@ def readcsv2dict_with_noheader(
     noshowwarning: bool = False,
     encoding: str = "windows-1252",
     debug: bool = False,
-):
+) -> tuple(dict, list, int):
     """
     read in the CSV and create a dictionary to the records, and create a dict unique on business key
     no header, so we pass it in
@@ -566,7 +566,7 @@ def readcsv2list_findheader(
     optiondict: dict | None = None,
     col_aref: list | None = None,
     debug: bool = False,
-):
+) -> tuple[list, list]:
     """
     read in the CSV and create a dictionary to the records
     assumes the first line of the CSV file is the header/defintion of the CSV
@@ -855,7 +855,7 @@ def readcsv2dict_findheader(
     col_aref: list | None = None,
     dupkeyfail: bool = False,
     debug: bool = False,
-):
+) -> tuple(dict, list, int):
     """
     read in the CSV and create a dictionary to the records, the list of fields
     passed in dictkeys defines the unique business key that the dictionary we create
@@ -876,6 +876,7 @@ def readcsv2dict_findheader(
     Returns
         results - list[dict] list of records with dictionary of key/value settings
         header - list[str]  list of header values read in
+        dupcount - number of records lost because there as a duplicate business key
 
 
     optiondict options:

@@ -8,13 +8,17 @@ import unittest
 import copy
 import os
 
-
 # logging
 import kvlogger
 
 config = kvlogger.get_config("t_kvcsv.log")
 kvlogger.dictConfig(config)
 logger = kvlogger.getLogger(__name__)
+
+# CONSTANTS
+
+# test case version
+AppVersion = "1.15"
 
 # set up data that is used by these tests
 filename = kvutil.filename_unique(
