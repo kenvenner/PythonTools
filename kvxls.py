@@ -28,7 +28,7 @@ import logging
 logger = logging.getLogger(__name__)
 
 # global variables
-AppVersion = "1.40"
+AppVersion = "1.42"
 
 # ----- OPTIONS ---------------------------------------
 # debug
@@ -54,7 +54,30 @@ AppVersion = "1.40"
 # dateflds
 
 # -- CONSTANTS -- #
-ILLEGAL_CHARACTERS_RE = r"[\000-\010]|[\013-\014]|[\016-\037]"
+ILLEGAL_CHARACTERS_RE_STR_ORIG = r"[\000-\010]|[\013-\014]|[\016-\037]"
+
+ILLEGAL_CHARACTERS_LIST = [chr(x) for x in range(0, 10+1)] + \
+    [chr(x) for x in range(13, 14+1)] + \
+    [chr(x) for x in range(16, 37+1)]
+ILLEGAL_CHARACTERS_STR = "".join(ILLEGAL_CHARACTERS_LIST)
+
+ILLEGAL_CHARACTERS_RE = r"|".join(ILLEGAL_CHARACTERS_LIST)
+
+ILLEGAL_CHARACTERS_TRANS_TBL = str.maketrans(ILLEGAL_CHARACTERS_STR, " "*len(ILLEGAL_CHARACTERS_STR))
+
+
+if False:
+    print(f'{ILLEGAL_CHARACTERS_LIST=}')
+    print(f'{ILLEGAL_CHARACTERS_RE=}')
+    print(f'{ILLEGAL_CHARACTERS_STR=}')
+
+VALID_XLSX_STYLE_UNDERLINE = (
+    "single", # single underline
+    "double", # double underline
+    "singleAccounting", # single accounting underline
+    "doubleAccounting", # double accounting underline
+    "None", # no underline    
+)
 
 
 FLD_XLSROW = "XLSRow"
@@ -67,31 +90,70 @@ FLD_XLSFMT = "XLSFmt"
 # ---- UTILITY FUNCTIONS ------------------------------
 
 
-# remove characters that can not go into XLS files
-def strip_xls_illegal_chars(value: str) -> str:
+def strip_xls_illegal_chars(value: str, debug: bool=False) -> str:
+    """
+    Remove characters from string that can not be placed in XLSX files
+    
+    Input:
+        value - str/byte - the string to be changed
+        debug - bool - when true, display messages
+
+    Return:
+        value_new - str/byte - the string with illegal characters repalced with a space
+
+    """
     if isinstance(value, (str, bytes)):
-        return re.sub(ILLEGAL_CHARACTERS_RE, " ", value)
-    return value
+        if False:
+            newvalue=re.sub(ILLEGAL_CHARACTERS_RE, " ", value)
+            if debug:
+                print(f"{value=}")
+                print(f"{newvalue=}")
+            return newvalue
+        else:
+            newvalue=value.translate(ILLEGAL_CHARACTERS_TRANS_TBL)
+            if debug:
+                print(f"{value=}")
+                print(f"{newvalue=}")
+            return newvalue
 
+    else:
+        return value
 
-# utility used to convert an xls date number into a datetime object
 def xldate_to_datetime(
-    xldate: str | int, skipblank: bool = False
-) -> datetime.datetime:
+    xldate: str | int | float,
+    skipblank: bool = False
+) -> datetime.datetime | Any:
+    """
+    Convert an XLS date number to a python datetime object
+
+    Input:
+        xlsdate - str/int/float - the XLS date as a string or an int that needs to be converted
+        skipblank - bool
+
+    Returns:
+        xls_datetime - datetime representative of that passed in value
+
+    """
+   
     if isinstance(xldate, str):
+        # string - convert using string to date routines
         logger.debug(
             "converting xldate string to date using kvdate.datetime_from_str:%s",
             xldate,
         )
         return kvdate.datetime_from_str(xldate, skipblank)
-    else:
+    elif isinstance(xldate, (int, float)):
+        # int - use the defined math to convert
         logger.debug("converting xldate float to date:%s", xldate)
         temp = datetime.datetime(1899, 12, 30)
         delta = datetime.timedelta(days=xldate)
         return temp + delta
+    else:
+        # when it is neither a string or an int
+        logger.warning(f'could not convert value it is not [str,int] but is: {type(xldate)}')
+        return xldate
 
 
-# routine extracts a row from the excel file and passes back as a list
 def _extract_excel_row_into_list(
     xlsxfiletype: bool,
     s,
@@ -100,6 +162,23 @@ def _extract_excel_row_into_list(
     colmax: int,
     debug: bool = False,
 ) -> tuple[List[Any | None], int, int]:
+    """
+    Extract a row from an Excel object defined by s
+    and pass back a list of these values
+
+    Input:
+        xlsxfiletype - bool - when true - this is for an XLSX file, when false thjis is for XLS file
+        s
+        row
+        colstart
+        colmax
+        debug
+
+    Returns:
+        row - list of values extracted from cells
+
+    """
+    
     # debugging
     if debug:
         print("_extract_excel_row_into_list:row:", row)
@@ -140,16 +219,24 @@ def _extract_excel_row_into_list(
     return rowdata, c_row, c_col
 
 
-# routine to get a cell
 def getExcelCellValue(
-    excel_dict: dict, row: int, col_name: str, debug: bool = False
+    excel_dict: dict,
+    row: int, col_name: str,
+    debug: bool = False
 ) -> Any | None:
     """
-    row - integer
-    col_name - name of the column of interest
+    For a defined row number and a column name string, extract the value for that cell
 
-    return:
-    value of the row, col_name
+    Inputs:
+        excel_dict - custom excel dictionary created to represent a worksheet object
+        row - int - row number that we are extracting from
+        col_name - str - the header name associated with the column
+        debug - bool - when true, we display debugging messages
+
+    Returns:
+        cell_value - the value in the cell of interest.
+
+
     """
     if debug:
         print("getExcelCellValue:excel_dict:", excel_dict)
@@ -159,7 +246,10 @@ def getExcelCellValue(
     logger.debug("row:%s", row)
     logger.debug("col_name:%s", col_name)
 
-    # determine the col # we are using but doing a header lookup
+    # determine the col # we are using by doing a header lookup for col_name
+    # add to that the offset if the starting column is not the first columnn
+    # if the col_name provided was not in the header - it will automatically evoke a ValueError reporting the problem
+    # so we will just allow that to be the error message
     col = excel_dict["header"].index(col_name) + excel_dict["sheetmincol"]
 
     # get cell value
@@ -173,17 +263,27 @@ def getExcelCellValue(
         return excel_dict["s"].cell(row, col).value
 
 
-# routine to set a cell value
 def setExcelCellValue(
-    excel_dict: dict, row: int, col_name: str, value: Any, debug: bool = False
+    excel_dict: dict,
+    row: int,
+    col_name: str,
+    value: Any,
+    debug: bool = False
 ) -> None:
     """
-    row - integer
-    col_name - name of the column of interest
+    For a defined row number and a column name string, set the value for that cell
 
-    return:
-    value of the row, col_name
+    Inputs:
+        excel_dict - custom excel dictionary created to represent a worksheet object
+        row - int - row number that we are extracting from
+        col_name - str - the header name associated with the column
+        debug - bool - when true, we display debugging messages
+
+    Returns:
+        cell_value - the value in the cell of interest.
+
     """
+
     if debug:
         print("setExcelCellValue:excel_dict:", excel_dict)
         print("setExcelCellValue:row:", row)
@@ -192,7 +292,10 @@ def setExcelCellValue(
     logger.debug("row:%s", row)
     logger.debug("col_name:%s", col_name)
 
-    # determine the col # we are using but doing a header lookup
+    # determine the col # we are using by doing a header lookup for col_name
+    # add to that the offset if the starting column is not the first columnn
+    # if the col_name provided was not in the header - it will automatically evoke a ValueError reporting the problem
+    # so we will just allow that to be the error message
     col = excel_dict["header"].index(col_name) + excel_dict["sheetmincol"]
 
     # get cell value
@@ -202,28 +305,34 @@ def setExcelCellValue(
         )
     else:
         logger.error("feature not supported on xls file - only XLSX")
-        print(
-            "kvxls:setExcelCellValue:feature not supported on xls file - only XLSX"
-        )
-        raise
+        raise NotImplementedError("feature not supported on xls file - only XLSX")
+
 
 
 # routine to get a cell fill pattern - returns the (rgb, solid) values
 def getExcelCellFont(
-    excel_dict: dict, row: int, col_name: str, debug: bool = False
+    excel_dict: dict,
+    row: int,
+    col_name: str,
+    debug: bool = False
 ) -> tuple[str | None, str | None, str | None, str | None]:
     """
-    row - integer
-    col_name - name of the column of interest
+    For a defined row number and a column name string, get the cell_font information for that cell
 
-    return:
-    cell_font_name
-    cell_font_size
-    cell_font_bold
-    cell_font_italic
-    cell_font_underline
-    cell_font_strike
-    cell_font_color
+    Inputs:
+        excel_dict - custom excel dictionary created to represent a worksheet object
+        row - int - row number that we are extracting from
+        col_name - str - the header name associated with the column
+        debug - bool - when true, we display debugging messages
+
+    Returns:
+        cell_font_name
+        cell_font_size
+        cell_font_bold
+        cell_font_italic
+        cell_font_underline
+        cell_font_strike
+        cell_font_color
 
     """
     if debug:
@@ -234,7 +343,10 @@ def getExcelCellFont(
     logger.debug("row:%s", row)
     logger.debug("col_name:%s", col_name)
 
-    # determine the col # we are using but doing a header lookup
+    # determine the col # we are using by doing a header lookup for col_name
+    # add to that the offset if the starting column is not the first columnn
+    # if the col_name provided was not in the header - it will automatically evoke a ValueError reporting the problem
+    # so we will just allow that to be the error message
     col = excel_dict["header"].index(col_name) + excel_dict["sheetmincol"]
 
     # debugging
@@ -281,10 +393,7 @@ def getExcelCellFont(
         )
     else:
         logger.error("feature not supported on xls file - only XLSX")
-        print(
-            "kvxls:getExcelCellFont:feature not supported on xls file - only XLSX"
-        )
-        raise
+        raise NotImplementedError("feature not supported on xls file - only XLSX")
 
 
 # routine to set a cell fill pattern
@@ -300,19 +409,29 @@ def setExcelCellFont(
     strike: str | None = None,
     color: str | None = None,
     debug: bool = False,
-):
+) -> None:
     """
-    excel_dict
-    row - the row in the data
-    col_name - the name of the column we are setting
+    For a defined row number and a column name string, get the cell_font information for that cell
 
-    cell_font_name
-    cell_font_size
-    cell_font_bold
-    cell_font_italic
-    cell_font_underline
-    cell_font_strike
-    cell_font_color
+    Inputs:
+        excel_dict - custom excel dictionary created to represent a worksheet object
+        row - int - row number that we are extracting from
+        col_name - str - the header name associated with the column
+        debug - bool - when true, we display debugging messages
+
+    Optional Inputs:
+        name - str
+        size - float
+        bold - bool
+        italic - bool 
+        underline - str 
+            "single"   single underline
+            "double"   double underline
+            "singleAccounting"   single accounting underline
+            "doubleAccounting"   double accounting underline
+            None   no underline
+        strike
+        color - a hex color code, when reading it yuou need to read color.rgb to get the hex value
 
     """
 
@@ -320,11 +439,11 @@ def setExcelCellFont(
         print("setExcelCellFont:excel_dict:", excel_dict)
         print("setExcelCellFont:row:", row)
         print("setExcelCellFont:col_name:", col_name)
-    logger.debug("excel_dict:%s", excel_dict)
-    logger.debug("row:%s", row)
-    logger.debug("col_name:%s", col_name)
 
-    # determine the col # we are using but doing a header lookup
+    # determine the col # we are using by doing a header lookup for col_name
+    # add to that the offset if the starting column is not the first columnn
+    # if the col_name provided was not in the header - it will automatically evoke a ValueError reporting the problem
+    # so we will just allow that to be the error message
     col = excel_dict["header"].index(col_name) + excel_dict["sheetmincol"]
 
     # get cell value
@@ -334,6 +453,9 @@ def setExcelCellFont(
             row=row + 1 + excel_dict["row_header"], column=col + 1
         )
 
+        # get the current settings
+        orig_cell_font = cell.font
+        
         # create the new font object
         cell_font_args = {}
 
@@ -351,6 +473,11 @@ def setExcelCellFont(
             cell_font_args["italic"] = italic
 
         if underline is not None:
+            # test it is a valid value
+            if underline not in VALID_XLSX_STYLE_UNDERLINE:
+                raise ValueError(f"underline value [{underline}] not in valid list: {'|'.join(VALID_XLSX_STYLE_UNDERLINE)}")
+            if underline == "None":
+                underline = None
             cell_font_args["underline"] = underline
 
         if strike is not None:
@@ -359,31 +486,64 @@ def setExcelCellFont(
         if color is not None:
             cell_font_args["color"] = color
 
+        # if anything was populated - then set the cell.font to what was passed in
         if cell_font_args:
-            cell.font = cell.font.copy(**cell_font_args)
+            if debug:
+                print(f"{cell_font_args=}")
+                print(f"{cell.font.__dict__=}")
+                
+            new_cell_font = openpyxl.styles.Font(
+                name=cell_font_args.get("name", orig_cell_font.name),
+                size=cell_font_args.get("size", orig_cell_font.size),
+                bold=cell_font_args.get("bold", orig_cell_font.bold),
+                italic=cell_font_args.get("italic", orig_cell_font.italic),
+                underline=cell_font_args.get("underline", orig_cell_font.underline),
+                strike=cell_font_args.get("strike", orig_cell_font.strike),
+                color=cell_font_args.get("color", orig_cell_font.color),
+            )
+            
+            if debug:
+                print(f"{new_cell_font.name=}")
+                print(f"{new_cell_font.size=}")
+                print(f"{new_cell_font.bold=}")
+                print(f"{new_cell_font.italic=}")
+                print(f"{new_cell_font.underline=}")
+                print(f"{new_cell_font.strike=}")
+                print(f"{new_cell_font.color=}")
+                
+            # cell.font = cell.font.copy(**cell_font_args)
+            # cell.font = openpyxl.styles.Font(**cell.font.__dict__, **cell_font_args)
+            cell.font = new_cell_font
     else:
         logger.error("feature not supported on xls file - only XLSX")
-        print(
-            "kvxls:setExcelCellValue:feature not supported on xls file - only XLSX"
-        )
-        raise
+        raise NotImplementedError("feature not supported on xls file - only XLSX")
 
 
-# routine to get a cell fill pattern - returns the (rgb, solid) values
 def getExcelCellPatternFill(
     excel_dict: dict, row: int, col_name: str, debug: bool = False
 ) -> tuple[str | None, str | None, str | None, str | None]:
     """
-    row - integer
-    col_name - name of the column of interest
+    For a defined row number and a column name string, get the cell_font information for that cell
 
-    return:
-    cell_color
-    cell_fill_type
-    cell_start_oclor
-    cell_end_color
+    Inputs:
+        excel_dict - custom excel dictionary created to represent a worksheet object
+        row - int - row number that we are extracting from
+        col_name - str - the header name associated with the column
+        debug - bool - when true, we display debugging messages
+
+    Returns:
+        cell_color
+        cell_fill_type
+        cell_start_color
+        cell_end_color
 
     """
+    
+    cell_color = None
+    cell_fill_type = None
+    cell_start_color = None
+    cell_end_color = None
+
     if debug:
         print("setExcelCellPatternFill:excel_dict:", excel_dict)
         print("setExcelCellPatternFill:row:", row)
@@ -392,7 +552,10 @@ def getExcelCellPatternFill(
     logger.debug("row:%s", row)
     logger.debug("col_name:%s", col_name)
 
-    # determine the col # we are using but doing a header lookup
+    # determine the col # we are using by doing a header lookup for col_name
+    # add to that the offset if the starting column is not the first columnn
+    # if the col_name provided was not in the header - it will automatically evoke a ValueError reporting the problem
+    # so we will just allow that to be the error message
     col = excel_dict["header"].index(col_name) + excel_dict["sheetmincol"]
 
     # debugging
@@ -414,7 +577,8 @@ def getExcelCellPatternFill(
         .cell(row=row + 1 + excel_dict["row_header"], column=col + 1)
         .has_style
     ):
-        return None, None, None, None
+        return cell_color, cell_fill_type, cell_start_color, cell_end_color
+
 
     # get cell value
     if excel_dict["xlsxfiletype"]:
@@ -443,41 +607,72 @@ def getExcelCellPatternFill(
         )
     else:
         logger.error("feature not supported on xls file - only XLSX")
-        print(
-            "kvxls:setExcelCellValue:feature not supported on xls file - only XLSX"
-        )
-        raise
+        raise NotImplementedError("feature not supported on xls file - only XLSX")
 
 
-# routine to set a cell fill pattern
 def setExcelCellPatternFill(
     excel_dict: dict,
     row: int,
     col_name: str,
-    fill: str = None,
-    start_color: str = None,
-    end_color: str = None,
-    fg_color: str = None,
+    fill: str | None = None,
+    start_color: str | None = None,
+    end_color: str | None = None,
+    fg_color: str | None = None,
     fill_type: str = "solid",
     debug: bool = False,
 ) -> None:
     """
-    excel_dict
-    row - the row in the data
-    col_name - the name of the column we are setting
-    fill - PatternFill object
-    start_color - Specify the color of the fill using hex color codes.
-    end_color - Specify the color of the fill using hex color codes.
-    fg_color
-    fill_type - Specify the type of fill. Common types include:
-        solid: Solid color fill.
-        gray125: Light gray fill.
-        lightDown: Light diagonal stripes.
-        lightUp: Light diagonal stripes in the opposite direction.
-        darkDown: Dark diagonal stripes.
-        darkUp: Dark diagonal stripes in the opposite direction.
+    For a defined row number and a column name string, set the PatternFill attributes for a cell in excel
+
+    If you wnat to clear that setting - you must pass in the string "None" not the None value
+
+    Inputs:
+        excel_dict - custom excel dictionary created to represent a worksheet object
+        row - the row in the data
+        col_name - the name of the column we are setting
+
+    Optional Inputs:
+        fill - PatternFill object
+        fg_color - specify the color of hte fill - if it is just one color and not one that changes from start to end
+        start_color - Specify the color of the fill using hex color codes.
+        end_color - Specify the color of the fill using hex color codes.
+        fill_type - Specify the type of fill. Common types include:
+            solid: Solid color fill.
+            gray125: Light gray fill.
+            lightDown: Light diagonal stripes.
+            lightUp: Light diagonal stripes in the opposite direction.
+            darkDown: Dark diagonal stripes.
+            darkUp: Dark diagonal stripes in the opposite direction.
+
     """
 
+    # test inputs
+    if (start_color and start_color != 'None') and not (end_color and end_color != 'None'):
+        raise ValueError('start_color populated and end_color not - both must be populated - or just set fg_color')
+    if (end_color and end_color != 'None') and not (start_color and start_color != 'None'):
+        raise ValueError('end_color populated and start_color not - both must be populated - or just set fg_color')
+    if (fg_color and fg_color != 'None') and any([(start_color and start_color != 'None'), (end_color and end_color != 'None')]):
+        raise ValueError('fg_color populated and either start_color or end_color is populated - please clear start_color and/or end_color')
+
+    # make sure fill is set properly
+    if fill is not None and not isinstance(fill, openpyxl.styles.fills.PatternFill):
+        raise TypeError(
+            f"fill must be PatternFile type but is: {type(fill)}"
+        )
+
+    # override fill - if we want to clear a value we must pass it in as 'None'
+    override_fill = {}
+    if fill is not None:
+        override_fill['fill'] = None if fill == 'None' else fill
+    if fill_type is not None:
+        override_fill['fill_type'] = None if fill_type == 'None' else fill_type
+    if start_color is not None:
+        override_fill['start_color'] = None if start_color == 'None' else start_color
+    if end_color is not None:
+        override_fill['end_color'] = None if end_color == 'None' else end_color
+    if fg_color is not None:
+        override_fill['fgColor'] = None if fg_color == 'None' else fg_color
+        
     if debug:
         print("setExcelCellPatternFill:excel_dict:", excel_dict)
         print("setExcelCellPatternFill:row:", row)
@@ -487,46 +682,55 @@ def setExcelCellPatternFill(
     logger.debug("row:%s", row)
     logger.debug("col_name:%s", col_name)
 
-    # make sure fill is set properly
-    if fill is not None and type(fill) is not openpyxl.styles.fills.PatternFill:
-        raise TypeError(
-            "fill must be PatternFile type but is: " + str(type(fill))
-        )
 
-    # determine the col # we are using but doing a header lookup
+    # determine the col # we are using by doing a header lookup for col_name
+    # add to that the offset if the starting column is not the first columnn
+    # if the col_name provided was not in the header - it will automatically evoke a ValueError reporting the problem
+    # so we will just allow that to be the error message
     col = excel_dict["header"].index(col_name) + excel_dict["sheetmincol"]
 
-    # get cell value
+    # set cell Pattern value
     if excel_dict["xlsxfiletype"]:
-        if start_color:
-            excel_dict["s"].cell(
-                row=row + 1 + excel_dict["row_header"], column=col + 1
-            ).fill = openpyxl.styles.PatternFill(
-                fill_type=fill_type,
-                start_color=start_color,
-                end_color=end_color,
-            )
-        elif fill:
+        # get fill settings
+        cell_fill = (
+            excel_dict["s"]
+            .cell(row=row + 1 + excel_dict["row_header"], column=col + 1)
+            .fill
+        )
+
+        if fill:
             # passed in the fill type object - set it
             excel_dict["s"].cell(
                 row=row + 1 + excel_dict["row_header"], column=col + 1
             ).fill = fill
-        elif not fill_type:
-            excel_dict["s"].cell(
-                row=row + 1 + excel_dict["row_header"], column=col + 1
-            ).fill = openpyxl.styles.PatternFill(fill_type=None)
-        else:
+            if debug:
+                print('Pattern set by fill')
+        elif start_color:
+            # if we updated start_color and end_color
+            # now update this fill with the values passed in
             excel_dict["s"].cell(
                 row=row + 1 + excel_dict["row_header"], column=col + 1
             ).fill = openpyxl.styles.PatternFill(
-                fill_type=fill_type, fgColor=fg_color
+                fill_type=override_fill.get('fill_type', cell_fill.fill_type),
+                start_color=override_fill.get('start_color', cell_fill.start_color),
+                end_color=override_fill.get('end_color', cell_fill.end_color),
             )
+            if debug:
+                print('Pattern set by start_color/end_color')
+        else:
+            # if we updated fgColor
+            # now update this fill with the values passed in
+            excel_dict["s"].cell(
+                row=row + 1 + excel_dict["row_header"], column=col + 1
+            ).fill = openpyxl.styles.PatternFill(
+                fill_type=override_fill.get('fill_type', cell_fill.fill_type),
+                fgColor=override_fill.get('fgColor', cell_fill.fgColor),
+            )
+            if debug:
+                print('Pattern set by fgColor')
     else:
         logger.error("feature not supported on xls file - only XLSX")
-        print(
-            "kvxls:setExcelCellValue:feature not supported on xls file - only XLSX"
-        )
-        raise
+        raise NotImplementedError("feature not supported on xls file - only XLSX")
 
 
 # copy the cell formatting from src into out cell by cell - this is color and fill
@@ -537,21 +741,37 @@ def copyExcelCellFmtOnRow(
     row: int,
     debug: bool = False,
 ) -> None:
-    # step through the output columns
-    for fld in excel_dict_out["header"]:
+    """
+    Read in the format defintion for a worksheet (src), and input row
+    and copy cell by cell for each column based on the column name in both worksheets
+    to an output worksheet (out)
+
+    Inputs:
+        excel_dict_src - custom excel dictionary created to represent a worksheet object that is the source for formatting
+        src_row - int - row number that we are extracting source formatting from
+        excel_dict_out - custom excel dictionary created to represent a worksheet object that is where we assign formatting
+        row - int - row number that we are placing formatting into
+        debug - bool - when true, we display debugging messages
+
+    """
+    
+    # step through the output columns - find the input column with the sname name and copy over the formatting
+    for col_name in excel_dict_out["header"]:
         # validate the out column exists in the source
-        if fld not in excel_dict_src["header"]:
-            # not in so get next field
+        if col_name not in excel_dict_src["header"]:
+            # not in the input worksheet so skip
             continue
+
         # grab the color and field for this row/column
         fg_color, fill_type, start_color, end_color = getExcelCellPatternFill(
-            excel_dict_src, src_row, fld, debug=debug
+            excel_dict_src, src_row, col_name, debug=debug
         )
 
+        # debugging
         if debug:
             print("OnRow - fg_color:", fg_color, "fill_type:", fill_type)
 
-        # take no action if
+        # take no action if if there is no format to copy over
         if (
             fill_type is None
             and fg_color is None
@@ -560,11 +780,11 @@ def copyExcelCellFmtOnRow(
         ):
             continue
 
-        # now copy this over to the out
+        # now copy this over to the out worksheet
         setExcelCellPatternFill(
             excel_dict_out,
             row,
-            fld,
+            col_name,
             fill=None,
             start_color=start_color,
             end_color=end_color,
@@ -574,40 +794,79 @@ def copyExcelCellFmtOnRow(
         )
 
 
-# updated in place for a column the values in that column
 def setExcelColumnValue(
-    excel_dict: dict, col_name: str, value: Any = "", debug: bool = False
+    excel_dict: dict,
+    col_name: str,
+    value: Any = "",
+    debug: bool = False
 ) -> None:
     """
-    Find the column, then clear all cell values in that column
+    Set the value of a column, defined by col_name, to the value passed in for all cells in range
+
+    Find the column, then set all cell values in that column
     Then iterate through that column and set the values
+
+    Inputs:
+        excel_dict - custom excel dictionary created to represent a worksheet object
+        col_name - str - the header name associated with the column
+        value - Any - the value to put in the cells in thsi column
+        debug - bool - when true, we display debugging messages
+
+
     """
+
+    # step through all rows for a defined column name and set the value to the single value passed in
     for row in range(excel_dict["row_header"] + 1, excel_dict["sheetmaxrow"]):
         setExcelCellValue(excel_dict, row, col_name, value, debug)
 
 
-# taken from kvutil
-# return true if one of the copy_fields values is populated
-def any_field_is_populated(rec: dict, copy_fields: list[str]) -> bool:
+def any_field_is_populated(rec: dict, fldlist: list[str], debug: bool=False) -> bool:
     """
-    Return a TRUE if any of the 'copy_fields' elements in rec is populated
+    Return a TRUE if any of the 'fldlist' elements in rec is populated
+    the field has a value or the field is not a string
+
+    Inputs:
+        rec - dict - the record being evaluated
+        fldlist - list - list of fields to check to see if they are populated
+        debug - bool - when true - dsiplay run time messages
+
+    Returns
+        is_populated - bool - true when any of the values in fldlist is populated
+
     """
-    for fld in copy_fields:
+    # test inputs
+    if not rec:
+        return False
+    if not isinstance(rec, dict):
+        raise TypeError(f'rec must be dict but is: {type(rec)}')
+    if not fldlist:
+        raise ValueError('fldlist must be populated')
+    if not isinstance(fldlist, list):
+        raise TypeError(f'fldlist must be dict but is: {type(fields)}')
+    
+    # validate fldlist
+    for fld in fldlist:
         # current conditions - if it returns true or has a length
         if rec[fld]:
-            # print('rec populated')
+            if debug:
+                print(f'fld [{fld}] is popuated it has a value')
             return True
         elif not isinstance(rec[fld], str):
-            # print('type not string')
+            if debug:
+                print(f'fld [{fld}] is populated because it is not a string')
             return True
+        else:
+            if debug:
+                print(f'fld [{fld}] is not populated')
+
+    if debug:
+        print('no fldlist are populated - returning false')
+        
     return False
 
 
-# create a multi-key dictionary from a excel object
-# this was taken and modified from kvutil that does
-# the same thing but for lists
 def create_multi_key_lookup_excel(
-    excel_dict: dict, fldlist: list[Any], copy_fields: list[Any] = None
+        excel_dict: dict, fldlist: list[Any], copy_fields: list[Any] | None = None, debug: bool=False
 ) -> dict:
     """
     Create a multi key dictionary that gets to the record based on the
@@ -617,33 +876,40 @@ def create_multi_key_lookup_excel(
     then we check the record
     to determine if any of the fields has a value, and if none have a value we skip
     that record
+
+    Inputs:
+        excel_dict - custom excel dictionary created to represent a worksheet object
+        fldlist - list - the list of column names that make the unique bueinsss key
+        copy_fields - list|None - defines the list of fields that we would want to copy over when populated
+        debug - bool - when true, we display debugging messages
+
+    Returns
+        src_lookup - dict - a multi key dictionary with the final value being the record itself.
+
     """
-    if type(fldlist) is not list:
-        print("fldlist must be type - list - but is: ", type(fldlist))
-        raise TypeError()
-    # check that the fldlist keys are in the first record
-    for fld in fldlist:
-        if fld not in excel_dict["header"]:
-            print("ERROR:  Unable to find key field: ", fld)
-            print("in the header:")
-            pprint.pprint(excel_dict["header"])
-            print("This routine will fail")
+
+    # set value if not set
+    if copy_fields is None:
+        copy_fields = list()
+    
+    # test inputs
+    if not isinstance(fldlist, list):
+        raise TypeError(f"fldlist must be type - list - but is: {type(fldlist)}")
     # check that the copy_fields keys are in the first record
-    if copy_fields:
-        if type(copy_fields) is not list:
-            print(
-                "copy_fields must be type - list - but is: ", type(copy_fields)
-            )
-            raise TypeError()
-        for fld in copy_fields:
-            if fld not in excel_dict["header"]:
-                print("ERROR:  Unable to find copy field: ", fld)
-                print("in the header:")
-                pprint.pprint(excel_dict["header"])
-                print("This routine will fail")
+    if copy_fields and not isinstance(copy_fields, list):
+        raise TypeError(f"copy_fields must be type - list - but is: {type(copy_fields)}")
+
+    # validate keys passed in match column names we found
+    bad_keys = [x for x in fldlist if x not in excel_dict["header"]]
+    if bad_keys:
+        raise ValueError(f'fldlist values not in the header: {",".join(bad_keys)}')
+    bad_keys = [x for x in copy_fields if x not in excel_dict["header"]]
+    if bad_keys:
+        raise ValueError(f'copy_fields values not in the header: {",".join(bad_keys)}')
     #
     # set up the dictionary to be populated
     src_lookup = {}
+
     # step through each record
     for row in range(excel_dict["row_header"] + 1, excel_dict["sheetmaxrow"]):
         # test that this record has values in the copy_fields attributes
@@ -651,6 +917,7 @@ def create_multi_key_lookup_excel(
         # if False and copy_fields and not any_field_is_populated(row, copy_fields):
         # no values set in copy_fields has a value so we don't convert this record
         # continue
+
         # get the first key and value
         fld = fldlist[0]
         fldvalue = getExcelCellValue(excel_dict, row, fld)
@@ -661,14 +928,16 @@ def create_multi_key_lookup_excel(
             else:
                 # single key - set the value
                 src_lookup[fldvalue] = row
+
         # now create the changing key
         ptr = src_lookup[fldvalue]
-        # now work through other keys
+
+        # get all other key/value after the first
         for fld in fldlist[1:]:
             # get the value
             fldvalue = getExcelCellValue(excel_dict, row, fld)
             # check to see this level is working
-            if getExcelCellValue(excel_dict, row, fld) not in ptr:
+            if fldvalue not in ptr:
                 ptr[fldvalue] = {}
             # if we are on the last fld then set to rec
             if fld == fldlist[-1]:
@@ -676,7 +945,7 @@ def create_multi_key_lookup_excel(
             else:
                 # update the ptr
                 ptr = ptr[fldvalue]
-    #
+
     return src_lookup
 
 
@@ -685,13 +954,19 @@ def create_multi_key_lookup_excel(
 
 def calc_col_mapping(rec: dict) -> tuple[str, dict]:
     """
-    take a dict that is a record that has FLD_XLSCOL_ABS as one of the keys and
-    create a column header to column number mapping
+    take a dict that is a record that has FLD_XLSCOL_ABS as one of the keys
+    done by loaded with "save_col_abs" flag in option dict set to true
+    and create a column header to column number mapping
     that is then converted to json
 
-    rec - dict - a record that has been read in
+    Inputs:
+        rec - dict - a record that has been read in with FLD_XLSCOL_ABS as one of the attributes
 
-    returns json string and dict of col_mapping
+    Returns:
+        json string - str - string version of col_mapping
+        col_mapping - dict - 
+
+    Primative
 
     """
 
@@ -711,9 +986,18 @@ def calc_col_mapping(rec: dict) -> tuple[str, dict]:
     return json.dumps(col_mapping), col_mapping
 
 
-def set_col_mapping(rec) -> None:
+def set_col_mapping(rec: dict) -> None:
     """
-    calculate and add column mapping to a single record
+    calculate and add column mapping to a single record into the FLD_XLSNEW_COLMAP fields in the record
+    this is an inplace update where we add a new key to the rec dictionary
+
+    Inputs:
+        rec - dict - the record read in from xlsx
+
+    Returns:
+        Nothing
+
+    Primative
 
     """
 
@@ -725,8 +1009,16 @@ def set_col_mapping(rec) -> None:
 
 def set_col_mapping_list(records: list[dict]) -> None:
     """
-    cacluate the column mapping for this list
+    calcuate the column mapping for this list or records that were read in
     and add column mapping to all records in thie list
+
+    this routine is generally called when flags are set to add this value to read in data
+
+    Inputs:
+        records - list[dict] - list of records read in 
+
+    Returns:
+        Nothing
 
     """
 
@@ -744,9 +1036,14 @@ def extract_col_mapping(rec: dict) -> tuple[dict, str]:
     extract the column header to column number mapping
     and return string and dict version of this
 
-    rec - dict - a record that has been read in
+    Inputs:
+        rec - dict - the record read in from xlsx
 
-    returns dict and json string
+    Returns:
+        col_mapping - dict
+        col_mapping_str - str
+
+    Primative
 
     """
     # test for existance
@@ -765,15 +1062,29 @@ def extract_col_mapping(rec: dict) -> tuple[dict, str]:
 # -------- READ FILES -------------------------
 
 
-# read in the XLS and create a dictionary to the records
-# assumes the first line of the XLS file is the header/defintion of the XLS
 def readxls2list(
     xlsfile: str | os.PathLike,
     sheetname: str | None = None,
     save_row: bool = False,
+    optiondict: dict | None = None,
     debug: bool = False,
-    optiondict: None | dict = None,
 ) -> list[dict]:
+    """
+    Read in a XLS or XLSX file
+    read in the XLS and create a dictionary to the records
+    assumes the first line of the XLS file is the header/defintion of the XLS
+
+    Inputs:
+        xlsfile - the filename/path to the file being read in
+        sheetname - if populated, the worksheet name in the excel file we should get data from
+        save_row - bool - when enabled, we add a column to each record that defines the row(XLSRow) in the XLS where the line came from 
+        optiondict - dict - key/value pairs that control behaviors
+        debug - bool - when enabled, we display processing messages to track and debug what is going on.
+
+    Returns
+        data - list of dictionaries - the data extarcted from the xls/worksheet as a list of dictionaries
+
+    """
     if optiondict is None:
         optiondict = {"col_header": True, "save_row": save_row}
     else:
@@ -787,18 +1098,22 @@ def readxls2list(
     )
 
 
-# read in the XLS and create a dictionary to the records
-# based on one or more key fields
-# assumes the first line of the CSV file is the header/defintion of the CSV
 def readxls2dict(
     xlsfile: str,
     dictkeys: list[str],
     sheetname: str | None = None,
     save_row: bool = False,
     dupkeyfail: bool = False,
+    optiondict:  dict | None = None,
     debug: bool = False,
-    optiondict: None | dict = None,
 ) -> dict:
+    """
+    read in the XLS and create a dictionary to the records
+    based on one or more key fields
+    assumes the first line of the CSV file is the header/defintion of the CSV
+
+
+    """
     if optiondict is None:
         optiondict = {"col_header": True, "save_row": save_row}
     else:
@@ -817,18 +1132,24 @@ def readxls2dict(
     )
 
 
-# read in the xls - output the first XX lines
+
 def readxls2dump(
     xlsfile: str,
     rows: int = 10,
     sep: str = ":",
     no_warnings: bool = False,
     returnrecs: bool = False,
-    sheet_name_col: None | str = None,
+    sheet_name_col: str | None = None,
     debug: bool = False,
-):
+) -> list:
+    """
+    read in the xls - output the first XX lines
+
+    """
+    
     if sheet_name_col is None:
         sheet_name_col = "sheet_name"
+
     fmtstr1 = sep.join(("{}", "{}", "{}", "{}", "{}")) + sep
     fmtstr2 = sep.join(("{}", "{}", "{:02d}", "{:03d}", "{}")) + sep
     recheader = ["xlsfile", sheet_name_col, "reccnt", "colcnt", "value"]
@@ -893,34 +1214,43 @@ def readxls2dump(
         return xlslines
 
 
-# read in workbook with multiple sheets - hopefully each sheet is the same structrue
-# and pull out all data from them - finding the header and then getting a list of dicts
-# return a dictionary keyed by sheetname, with values of the list of dicts that made up the data in that sheet
 def readxls2list_all_sheets(
     xlsfile: str,
     req_cols: list[str],
-    xlatdict: None | dict = None,
-    optiondict: None | dict = None,
-    col_aref: None | list[str] = None,
+    xlatdict: dict| None = None,
+    optiondict: dict| None = None,
+    col_aref: list[str]| None = None,
     data_only: bool = True,
     debug: bool = False,
-) -> Tuple[None | dict, None | list[str], None | dict]:
+) -> Tuple[dict | None, list[str] | None, dict | None]:
     """
     This routine opens the xlsx and reads teh data in from all sheets -
     but teh column headers have to be same across sheets
 
-    returns -
+    read in workbook with multiple sheets - hopefully each sheet is the same structrue
+    and pull out all data from them - finding the header and then getting a list of dicts
+    return a dictionary keyed by sheetname, with values of the list of dicts that made up the data in that sheet
+
+    Inputs:
+        xlsfile - str - filename/path to the excel file being read
+        req_cols - list - column names we want as the outputs for in each sheet
+        xlatdict - dict - mapping from what may exist in sheet and how it maps to a value in req_cols
+        col_aref - list
+        data_only - bool
+        debug - bool - when true, we display processing messages used in debugging.
+
+    Returns:
         a dict where the key is the sheet name and values list of dicts read in for that sheet
         a list of the headers captured in the right order for the first sheet read in
         a dict by sheetname of errors found when reading in sheets
 
     """
 
-    # capture the passed in sheet name and make sure we return it
-    origsheetname = None
     if optiondict is None:
         optiondict = {}
 
+    # capture the passed in sheet name and make sure we return it
+    origsheetname = None
     if "sheetname" in optiondict:
         origsheetname = optiondict["sheetname"]
 
@@ -1057,27 +1387,32 @@ def readxls_excelDict(
     data_only: bool = True,
     debug: bool = False,
 ) -> dict[str, list[str]]:
+    """
+
+    """
+
+    # set values if they were not set
     if xlatdict is None:
         xlatdict = {}
     if optiondict is None:
         optiondict = {}
 
     # type check
-    if col_aref is not None and type(col_aref) is not list:
+    if col_aref and not isinstance(col_aref, list):
         raise TypeError(
-            "col_aref must be type list but is: " + str(type(col_aref))
+            f"col_aref must be type list but is: {type(col_aref)}"
         )
-    if type(req_cols) is not list:
+    if not isinstance(req_cols, list):
         raise TypeError(
-            "req_cols must be type list but is: " + str(type(req_cols))
+            f"req_cols must be type list but is: {type(req_cols)}"
         )
-    if type(optiondict) is not dict:
+    if not isinstance(optiondict, dict):
         raise TypeError(
-            "optiondict must be type dict but is: " + str(type(optiondict))
+            f"optiondict must be type dict but is: {type(optiondict)}"
         )
-    if type(xlatdict) is not dict:
+    if not isinstance(xlatdict, dict):
         raise TypeError(
-            "xlatdict must be type dict but is: " + str(type(xlatdict))
+            f"xlatdict must be type dict but is: {type(xlatdict)}"
         )
 
     # local variables - not used so commented out
