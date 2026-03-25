@@ -341,7 +341,7 @@ class TestKVxls(unittest.TestCase):
     # def test__extract_excel_row_into_list_p01_pass(self):
     def test__extract_excel_row_into_list_p01_pass(self):
         excel_dict = kvxls.readxls_findheader(
-            filenamexlsx, req_cols, debug=False
+            filenamexlsx, req_cols, debug=True
         )        
         row, c_row, c_col = kvxls._extract_excel_row_into_list(
             excel_dict["xlsxfiletype"],
@@ -890,8 +890,9 @@ class TestKVxls(unittest.TestCase):
     # the function name: def copyExcelCellFmtOnRow(excel_dict_src, src_row, excel_dict_out, row, debug=False):
     # def test_copyExcelCellFmtOnRow_p01_pass(self):
     ########################################
-    # the function name: def setExcelColumnValue(excel_dict, col_name, value='', debug=False):
 
+
+    # the function name: def setExcelColumnValue(excel_dict, col_name, value='', debug=False):
     def test_setExcelColumnValue_p01_pass(self):
         col_name = "LastSeen"
         value = 'SetValue'
@@ -922,11 +923,15 @@ class TestKVxls(unittest.TestCase):
         )
         self.assertEqual(value_read, value)
 
+    ########################################
+    # prior function: setExcelColumnValue
+    # the function name: def any_field_is_populated(rec: dict, fldlist: list[str], debug: bool=False) -> bool:
     # def test_any_field_is_populated_p01_pass(self):
+
         
     ########################################
     # the function name: def create_multi_key_lookup_excel(excel_dict, fldlist, copy_fields=None):
-    def test_create_multi_key_lookup_excel_xlsx_p01_pass(self):
+    def test_create_multi_key_lookup_excel_p01_xlsx_pass(self):
         excel_dict = kvxls.readxls_findheader(
             filenamexlsx, req_cols, debug=False
         )
@@ -935,7 +940,7 @@ class TestKVxls(unittest.TestCase):
         )
         self.assertTrue(multi_key_dict, records_multi_key)
 
-    def test_create_multi_key_lookup_excel_xlsx_f01_fldlist_dict(self):
+    def test_create_multi_key_lookup_excel_f01_xlsx_fldlist_dict(self):
         with self.assertRaises(Exception) as context:
             excel_dict = kvxls.readxls_findheader(
                 filenamexlsx, req_cols, debug=False
@@ -946,7 +951,7 @@ class TestKVxls(unittest.TestCase):
                 debug=False,
             )
 
-    def test_create_multi_key_lookup_excel_xlsx_f02_fldlist_badvalues(self):
+    def test_create_multi_key_lookup_excel_f02_xlsx_fldlist_badvalues(self):
         with self.assertRaises(Exception) as context:
             excel_dict = kvxls.readxls_findheader(
                 filenamexlsx, req_cols, debug=False
@@ -957,7 +962,7 @@ class TestKVxls(unittest.TestCase):
                 debug=False,
             )
 
-    def test_create_multi_key_lookup_excel_xlsx_f03_copy_fields_dict(self):
+    def test_create_multi_key_lookup_excel_f03__xlsx_copy_fields_dict(self):
         with self.assertRaises(Exception) as context:
             excel_dict = kvxls.readxls_findheader(
                 filenamexlsx, req_cols, debug=False
@@ -969,7 +974,7 @@ class TestKVxls(unittest.TestCase):
                 debug=False,
             )
 
-    def test_create_multi_key_lookup_excel_xlsx_f04_copy_fields_badvalues(self):
+    def test_create_multi_key_lookup_excel_f04__xlsx__copy_fields_badvalues(self):
         with self.assertRaises(Exception) as context:
             excel_dict = kvxls.readxls_findheader(
                 filenamexlsx, req_cols, debug=False
@@ -1318,8 +1323,8 @@ class TestKVxls(unittest.TestCase):
         self.assertTrue("XLSColAbs1" in results[0].keys())
         self.assertEqual(len(results), len(records2))
 
-    # set start_row
     def test_readxls2list_p01_xls_start_row(self):
+        # set start_row
         kvxls.writelist2xls(
             filenamexls3, records, optiondict={"start_row": 3}, debug=False
         )
@@ -1373,8 +1378,8 @@ class TestKVxls(unittest.TestCase):
         self.assertEqual(len(results2), len(records))
         kvutil.remove_filename(filenamexlsx3, kvutil.functionName())
 
-    # set start_row with abs row/column
     def test_readxls2list_p03_xls_start_row_and_abs(self):
+        # set start_row with abs row/column
         optiondict = {
             "save_row": True,
             "save_col_abs": True,
@@ -1445,6 +1450,9 @@ class TestKVxls(unittest.TestCase):
     # the function name: def readxls2dict(xlsfile, dictkeys, sheetname=None, save_row=False, dupkeyfail=False, debug=False, optiondict=None):
     # def test_readxls2dict_p01_pass(self):
     ########################################
+
+
+    
     # the function name: def readxls2dump(xlsfile, rows=10, sep=':', no_warnings=False, returnrecs=False, sheet_name_col=None, debug=False):
     def test_readxls2dump_p01_xls_pass(self):
         result = kvxls.readxls2dump(filenamexls, debug=False)
@@ -1519,6 +1527,33 @@ class TestKVxls(unittest.TestCase):
                 )
             )
         self.assertEqual(result[: len(run_result)], run_result)
+
+    ########################################
+    # prior function: readxls2dump
+    # the function name: def readxls2list_all_sheets(
+    # def test_readxls2list_all_sheets_p01_pass(self):
+    ########################################
+
+
+    ########################################
+    # the function name: def readxls_excelDict(
+    # def test_readxls_excelDict_p01_pass(self):
+    ########################################
+
+
+    ########################################
+    # prior function: readxls_findheader
+    # the function name: def readxls2excel_dict_findheader(
+    # def test_readxls2excel_dict_findheader_p01_pass(self):
+    ########################################
+    
+    
+    ########################################
+    # prior function: readxls2list_findheader
+    # the function name: def excelDict2list_findheader(
+    # def test_excelDict2list_findheader_p01_pass(self):
+    ########################################
+    
 
     ### READXLS_FINDHEADER
 
@@ -2691,15 +2726,20 @@ class TestKVxls(unittest.TestCase):
             )
         kvutil.remove_filename(filenamexlsx3, kvutil.functionName())
 
-    # the function name: def excelDict2list_findheader(excel_dict, req_cols, xlatdict=None, optiondict=None, col_aref=None, debug=False):
-    # def test_excelDict2list_findheader_p01_pass(self):
+
     ########################################
     # the function name: def readxls2dict_findheader(xlsfile, dictkeys, req_cols=None, xlatdict=None, optiondict=None,
     # def test_readxls2dict_findheader_p01_pass(self):
     ########################################
+
+
+    ########################################
     # the function name: def writedict2xls(xlsfile, data, col_aref=None, optiondict={}, debug=False):
     # def test_writedict2xls_p01_pass(self):
+    ########################################
 
+
+    
     ########################################
     # the function name: def writelist2xls(xlsfile, data, col_aref=None, optiondict=None, debug=False):
     def test_writelist2xls_p01_xlsx_simple_pass(self):

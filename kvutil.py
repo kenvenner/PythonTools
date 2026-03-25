@@ -2416,5 +2416,32 @@ def disp_dict_on_key_value(
     except Exception as e:
         print("ERROR: ", e)
 
+def format_dict_sorted_by_value_key(
+        disp_dict: dict, indent: int, dictname: str
+) -> str:
+    """
+    take in a dict and create s string that is a display of this dict
+    to put in your code sorted by value and then by key
+
+    Inputs:
+        disp_dict - dict to be processed
+        indent - int - generally a multiple of 4 to get the right indent level - should be zero if start of line
+        dictname - str - name of the dict
+
+    Returns
+        dict_str - the string that is this object to put in code
+
+    """
+
+    indent_val = indent + 4
+
+    dict_str_list = []
+    
+    dict_str_list.append(f"{' '*indent}{dictname} = \u007b")
+    for k, v in [x.split('|') for x in sorted([f"{v}|{k}" for k, v in disp_dict.items()])]:
+        dict_str_list.append(f"{' '*indent_val}'{v}': '{k}',")
+    dict_str_list.append(f"{' '*indent}\u007d")
+
+    return "\n".join(dict_str_list)
 
 # eof

@@ -15,6 +15,8 @@ from xlutils.copy import (
 import os  # determine if a file exists
 import pprint
 import json
+
+from dataclasses import dataclass, fields
 from typing import List, Any, Tuple
 
 import kvdate
@@ -85,6 +87,81 @@ FLD_XLSROW_ABS = "XLSRowAbs"
 FLD_XLSCOL_ABS = "XLSColAbs1"
 FLD_XLSNEW_COLMAP = "XLSColMap"
 FLD_XLSFMT = "XLSFmt"
+
+@dataclass
+class ExcelConfig:
+    xlsxfiletype: bool | None=None # true when the file tupe is XLSX otherwise false
+    filename: str | None=None # the filename this configuration is related to
+    
+    req_cols: list | None=None
+    col_aref: list | None=None
+    xlatdict: dict | None=None
+    
+    allow_empty: bool = False # if true - we allow a header to be read in with no data - otherwise we raise and exceptoin
+    aref_result: bool = False # if true - we don't return dicts, we return a list
+    col_header: bool = False # if true - we take the first row of the file as the header, we don't go looking for the header
+    data_only: bool = True # if true - we open the file as data_only
+    keep_vba: bool = True # if true - then load the xlsx with vba scripts on and save as xlsm
+    no_header: bool = False # if true - there are no headers read - we either return
+    no_warnings: bool = False
+
+    sheetname: str | None = None
+    sheetrow: int | None = None
+
+    start_row: int = 0  # if passed in - we start the search at this row (starts at 1 or greater)
+                        # change user input to reduce by one as we are zero based - so if we start on row 1 - this value should be zero
+    max_rows: int = 100000000  # max rows we process to before giving up
+
+    row_header: int | None = None
+
+    save_row: bool = False # if true - then we append/save the XLSRow with the record
+    save_row_abs: bool = False # if true - then we append/save the openpxl row (only works on XLSX)
+    save_col_abs: bool = False # if true - then we append/save the absolute xlsx column number of the first column - from openpyxl (only works on XLSX)
+    save_col_fmt: bool = False # if populated with a column header - than we capture and save the format of that column
+
+    
+FLDS_EXCELCONFIG = [f.name for f in fields(ExcelConfig)]
+
+# create the list of misconfigured solutions
+BADOPTIONDICT = {
+    'allowempty': 'allow_empty',
+    'header_empty': 'allow_empty',
+    'headerempty': 'allow_empty',
+    'aref_results': 'aref_result',
+    'arefresult': 'aref_result',
+    'arefresults': 'aref_result',
+    'col_headers': 'col_header',
+    'colheaders': 'col_header',
+    'keepvba': 'keep_vba',
+    'max_row': 'max_rows',
+    'maxrow': 'max_rows',
+    'maxrows': 'max_rows',
+    'no_headers': 'no_header',
+    'noheader': 'no_header',
+    'noheaders': 'no_header',
+    'save_cols_abs': 'save_col_abs',
+    'save_colsabs': 'save_col_abs',
+    'savecolabs': 'save_col_abs',
+    'savecolsabs': 'save_col_abs',
+    'save_col_fmt': 'save_colfmt',
+    'savecol_fmt': 'save_colfmt',
+    'savecolfmt': 'save_colfmt',
+    'savecolmap': 'save_colmap',
+    'save_rows_abs': 'save_row_abs',
+    'save_rowsabs': 'save_row_abs',
+    'saverowabs': 'save_row_abs',
+    'saverowsabs': 'save_row_abs',
+    'save_rows': 'save_row',
+    'saverow': 'save_row',
+    'saverows': 'save_row',
+    'sheet_name': 'sheetname',
+    'sheetrows': 'sheetrow',
+    'sheet_row': 'sheetrow',
+    'sheet_rows': 'sheetrow',
+    'startrow': 'start_row',
+    'startrows': 'start_row',
+    'start_rows': 'start_row',
+}
 
 
 # ---- UTILITY FUNCTIONS ------------------------------
@@ -1388,6 +1465,7 @@ def readxls_excelDict(
     debug: bool = False,
 ) -> dict[str, list[str]]:
     """
+    Open the excel file and prepare for doing other work, create an excel object to be used for future work
 
     """
 
@@ -1415,6 +1493,28 @@ def readxls_excelDict(
             f"xlatdict must be type dict but is: {type(xlatdict)}"
         )
 
+    # run through bad optoins to fix bad keys
+    msg = kvmatch.badoptiondict_check(
+        "kvxls.readxls_excelDict",
+        optiondict,
+        BADOPTIONDICT,
+        noshowwarning=True,
+        fix_missing=True,
+    )
+
+    
+    # pull from option dict all the values that we are going to set for configuration
+    cfg_dict = {k: v for k, v in optiondict.items() if k in FLDS_EXCELCONFIG}
+
+    # create the configuration object
+    excel_config = ExcelConfig(**cfg_dict)
+    
+    # add passed in values
+    excel_config.req_cols = req_cols
+    excel_config.col_aref = col_aref
+    excel_config.xlatdict = xlatdict
+
+    
     # local variables - not used so commented out
     # header = None
 
@@ -1423,11 +1523,9 @@ def readxls_excelDict(
         print("req_cols:", req_cols)
         print("xlatdict:", xlatdict)
         print("optiondict:", optiondict)
+        print("cfg_dict:", cfg_dict)
         print("col_aref:", col_aref)
-    logger.debug("req_cols:%s", req_cols)
-    logger.debug("xlatdict:%s", xlatdict)
-    logger.debug("optiondict:%s", optiondict)
-    logger.debug("col_aref:%s", col_aref)
+        print("excel_config:", excel_config)
 
     # set flags
     col_header = (
@@ -1450,46 +1548,8 @@ def readxls_excelDict(
 
     max_rows = 100000000
 
-    # create the list of misconfigured solutions
-    badoptiondict = {
-        "allowempty": "allow_empty",
-        "headerempty": "allow_empty",
-        "header_empty": "allow_empty",
-        "startrow": "start_row",
-        "startrows": "start_row",
-        "start_rows": "start_row",
-        "colheaders": "col_header",
-        "col_headers": "col_header",
-        "noheader": "no_header",
-        "noheaders": "no_header",
-        "no_headers": "no_header",
-        "arefresult": "aref_result",
-        "arefresults": "aref_result",
-        "aref_results": "aref_result",
-        "keepvba": "keep_vba",
-        "maxrow": "max_rows",
-        "max_row": "max_rows",
-        "maxrows": "max_rows",
-        "saverow": "save_row",
-        "saverows": "save_row",
-        "save_rows": "save_row",
-        "saverowabs": "save_row_abs",
-        "saverowsabs": "save_row_abs",
-        "save_rowsabs": "save_row_abs",
-        "save_rows_abs": "save_row_abs",
-        "savecolabs": "save_col_abs",
-        "savecolsabs": "save_col_abs",
-        "save_colsabs": "save_col_abs",
-        "save_cols_abs": "save_col_abs",
-        "savecolmap": "save_colmap",
-        "savecolfmt": "save_colfmt",
-        "save_col_fmt": "save_colfmt",
-        "savecol_fmt": "save_colfmt",
-        "sheet_name": "sheetname",
-    }
-
     if debug:
-        print("after badoption_check:", badoptiondict)
+        print("after badoption_check:", BADOPTIONDICT)
 
     # pull in passed values from optiondict
     if "col_header" in optiondict:
@@ -1521,7 +1581,7 @@ def readxls_excelDict(
 
     # debugging
     if debug:
-        print("readxls_findheader")
+        print("readxls_excelDict")
         print("req_cols:", req_cols)
         print("col_aref:", col_aref)
         print("col_header:", col_header)
@@ -1545,7 +1605,10 @@ def readxls_excelDict(
 
     # determine what filetype we have here
     xlsxfiletype = xlsfile.endswith(".xlsx") or xlsfile.endswith(".xlsm")
+    excel_config.xlsxfiletype = xlsxfiletype
 
+    logger.debug('readxls_excelDict:excel_config: ', excel_config)
+    
     # debugging
     logger.debug("xlsxfiletype:%s", xlsxfiletype)
 
@@ -1644,11 +1707,6 @@ def readxls_excelDict(
 
 
 #
-# generic routine that reads in the XLS and returns back a dictionary for that xls
-# that is either used to interact with that XLS object, or is passed to other routines
-# that then create the dictionary/list of that xls and then close out that XLS.
-#    data_only - when set to FALSE - will allow you to read macro enable file and update directly
-#                and save the updated file
 def readxls_findheader(
     xlsfile: str,
     req_cols: list[str],
@@ -1658,42 +1716,80 @@ def readxls_findheader(
     data_only: bool = True,
     debug: bool = False,
 ) -> dict:
+    """
+    generic routine that reads in the XLS and returns back a dictionary for that xls
+    that is either used to interact with that XLS object, or is passed to other routines
+    that then create the dictionary/list of that xls and then close out that XLS.
+         data_only - when set to FALSE - will allow you to read macro enable file and update directly
+                     and save the updated file
+    """
+    
+    # defaults for not set values
     if xlatdict is None:
         xlatdict = {}
     if optiondict is None:
         optiondict = {}
 
     # type check
-    if col_aref is not None and type(col_aref) is not list:
+    if col_aref is not None and not isinstance(col_aref, list):
         raise TypeError(
-            "col_aref must be type list but is: " + str(type(col_aref))
+            f"col_aref must be type list but is: {type(col_aref)}"
         )
-    if type(req_cols) is not list:
+    if not isinstance(req_cols, list):
         raise TypeError(
-            "req_cols must be type list but is: " + str(type(req_cols))
+            f"req_cols must be type list but is: {type(req_cols)}"
         )
-    if type(optiondict) is not dict:
+    if not isinstance(optiondict, dict):
         raise TypeError(
-            "optiondict must be type dict but is: " + str(type(optiondict))
+            f"optiondict must be type dict but is: {type(optiondict)}"
         )
-    if type(xlatdict) is not dict:
+    if not isinstance(xlatdict, dict):
         raise TypeError(
-            "xlatdict must be type dict but is: " + str(type(xlatdict))
+            f"xlatdict must be type dict but is: {type(xlatdict)}"
         )
 
-    # local variables
-    header = None
+    # run through bad optoins to fix bad keys
+    msg = kvmatch.badoptiondict_check(
+        "kvxls.readxls_excelDict",
+        optiondict,
+        BADOPTIONDICT,
+        noshowwarning=True,
+        fix_missing=True,
+    )
+
+    
+    # pull from option dict all the values that we are going to set for configuration
+    cfg_dict = {k: v for k, v in optiondict.items() if k in FLDS_EXCELCONFIG}
+
+    # create the configuration object
+    excel_config = ExcelConfig(**cfg_dict)
+    
+    # add passed in values
+    excel_config.filename = xlsfile
+    excel_config.req_cols = req_cols
+    excel_config.col_aref = col_aref
+    excel_config.xlatdict = xlatdict
+
+    # determine what filetype we have here
+    xlsxfiletype = xlsfile.endswith(".xlsx") or xlsfile.endswith(".xlsm")
+    excel_config.xlsxfiletype = xlsxfiletype
+
+    
+    # local variables - not used so commented out
+    # header = None
 
     # debugging
     if debug:
         print("req_cols:", req_cols)
         print("xlatdict:", xlatdict)
         print("optiondict:", optiondict)
+        print("cfg_dict:", cfg_dict)
         print("col_aref:", col_aref)
-    logger.debug("req_cols:%s", req_cols)
-    logger.debug("xlatdict:%s", xlatdict)
-    logger.debug("optiondict:%s", optiondict)
-    logger.debug("col_aref:%s", col_aref)
+        print("excel_config:", excel_config)
+
+    
+    # local variables
+    header = None
 
     # set flags
     col_header = (
@@ -1716,55 +1812,17 @@ def readxls_findheader(
 
     max_rows = 100000000
 
-    # create the list of misconfigured solutions
-    badoptiondict = {
-        "allowempty": "allow_empty",
-        "headerempty": "allow_empty",
-        "header_empty": "allow_empty",
-        "startrow": "start_row",
-        "startrows": "start_row",
-        "start_rows": "start_row",
-        "colheaders": "col_header",
-        "col_headers": "col_header",
-        "noheader": "no_header",
-        "noheaders": "no_header",
-        "no_headers": "no_header",
-        "arefresult": "aref_result",
-        "arefresults": "aref_result",
-        "aref_results": "aref_result",
-        "keepvba": "keep_vba",
-        "maxrow": "max_rows",
-        "max_row": "max_rows",
-        "maxrows": "max_rows",
-        "saverow": "save_row",
-        "saverows": "save_row",
-        "save_rows": "save_row",
-        "saverowabs": "save_row_abs",
-        "saverowsabs": "save_row_abs",
-        "save_rowsabs": "save_row_abs",
-        "save_rows_abs": "save_row_abs",
-        "savecolabs": "save_col_abs",
-        "savecolsabs": "save_col_abs",
-        "save_colsabs": "save_col_abs",
-        "save_cols_abs": "save_col_abs",
-        "savecolmap": "save_colmap",
-        "savecolfmt": "save_colfmt",
-        "save_col_fmt": "save_colfmt",
-        "savecol_fmt": "save_colfmt",
-        "sheet_name": "sheetname",
-    }
-
     # check what got passed in
     msg = kvmatch.badoptiondict_check(
         "kvxls.readxls_findheader",
         optiondict,
-        badoptiondict,
+        BADOPTIONDICT,
         noshowwarning=True,
         fix_missing=True,
     )
 
     if debug:
-        print("after badoption_check:", badoptiondict)
+        print("after badoption_check:", BADOPTIONDICT)
         print("msg from bad_option: ", msg)
 
     # pull in passed values from optiondict
@@ -1828,6 +1886,7 @@ def readxls_findheader(
     # special condidtiaon for no header
     if not col_header and not req_cols and start_row and col_aref:
         no_header = True
+        excel_config.no_header = True
         if debug:
             print(
                 "Setting no_header because of col_header, start_row, col_aref"
@@ -1836,6 +1895,18 @@ def readxls_findheader(
     elif debug:
         print(col_header, start_row, col_aref)
 
+    # another special condition
+    if no_header and not col_aref and not aref_result:
+        # there is no header in the file
+        # we did not pass in a header
+        # and they did not set this as aref_results
+        # we must force it to aref_result
+        aref_result = True
+        excel_config.aref_result = True
+
+        if debug:
+            print('no_header true, col_aref not populated and aref_result False - force aref_result to True')
+            
     # build object that will be used for record matching
     p = kvmatch.MatchRow(
         req_cols,
@@ -1874,10 +1945,13 @@ def readxls_findheader(
     # get the sheet we are going to work with
     if "sheetname" in optiondict and optiondict["sheetname"]:
         sheet_name = optiondict["sheetname"]
+        excel_config.sheet_name = optiondict["sheetname"]
     elif "sheetrow" in optiondict:
         sheet_name = sheet_names[optiondict["sheetrow"]]
+        excel_config.sheet_name = sheet_names[optiondict["sheetrow"]]
     else:
         sheet_name = sheet_names[0]
+        excel_config.sheet_name = sheet_names[0]
 
     # debugging
     if debug:
@@ -1909,7 +1983,7 @@ def readxls_findheader(
     logger.debug("sheetmaxrow:%s", sheetmaxrow)
     logger.debug("sheetmaxcol:%s", sheetmaxcol)
 
-    # lower the limit
+    # lower the max row limit by the record count if the record count is smaller than prior limits
     p.lower_max_row_by_reccount(sheetmaxrow)
 
     # check and see if we need to limit max row
@@ -1930,8 +2004,9 @@ def readxls_findheader(
         # 2025-01-11 changed to none as there was no row header
         row_header = None
 
+        # 2026-03-25 - this logic was moved earlier as a configuratoin test not down here in the logic
         # if no col_aref - then we must force this to aref_result
-        if not col_aref:
+        if False and not col_aref:
             aref_result = True
             if debug:
                 print("no_header:no col_aref:set aref_result to true")
@@ -1956,7 +2031,7 @@ def readxls_findheader(
                     "exception:find_header:sheetmaxrow==0:no header to find"
                 )
 
-                raise Exception("heetmaxrow==0:no header to find")
+                raise Exception("sheetmaxrow==0:no header to find")
             else:
                 # debug
                 if debug:
@@ -2147,21 +2222,21 @@ def chgsheet_findheader(
         req_cols = []
 
     # type check
-    if col_aref is not None and type(col_aref) is not list:
+    if col_aref is not None and not isinstance(col_aref, list):
         raise TypeError(
-            "col_aref must be type list but is: " + str(type(col_aref))
+            f"col_aref must be type list but is: {type(col_aref)}"
         )
-    if type(req_cols) is not list:
+    if not isinstance(req_cols, list):
         raise TypeError(
-            "req_cols must be type list but is: " + str(type(req_cols))
+            f"req_cols must be type list but is: {type(req_cols)}"
         )
-    if type(optiondict) is not dict:
+    if not isinstance(optiondict, dict):
         raise TypeError(
-            "optiondict must be type dict but is: " + str(type(optiondict))
+            f"optiondict must be type dict but is: {type(optiondict)}"
         )
-    if type(xlatdict) is not dict:
+    if not isinstance(xlatdict, dict):
         raise TypeError(
-            "xlatdict must be type dict but is: " + str(type(xlatdict))
+            f"xlatdict must be type dict but is: {type(xlatdict)}"
         )
 
     # local variables
@@ -2198,51 +2273,17 @@ def chgsheet_findheader(
     max_rows = 100000000
 
     # create the list of misconfigured solutions
-    badoptiondict = {
-        "startrow": "start_row",
-        "startrows": "start_row",
-        "start_rows": "start_row",
-        "colheaders": "col_header",
-        "col_headers": "col_header",
-        "noheader": "no_header",
-        "noheaders": "no_header",
-        "no_headers": "no_header",
-        "arefresult": "aref_result",
-        "arefresults": "aref_result",
-        "aref_results": "aref_result",
-        "keepvba": "keep_vba",
-        "maxrow": "max_rows",
-        "max_row": "max_rows",
-        "maxrows": "max_rows",
-        "saverow": "save_row",
-        "saverows": "save_row",
-        "save_rows": "save_row",
-        "saverowabs": "save_row_abs",
-        "saverowsabs": "save_row_abs",
-        "save_rowsabs": "save_row_abs",
-        "save_rows_abs": "save_row_abs",
-        "savecolabs": "save_col_abs",
-        "savecolsabs": "save_col_abs",
-        "save_colsabs": "save_col_abs",
-        "save_cols_abs": "save_col_abs",
-        "savecolmap": "save_colmap",
-        "savecolfmt": "save_colfmt",
-        "save_col_fmt": "save_colfmt",
-        "savecol_fmt": "save_colfmt",
-        "sheet_name": "sheetname",
-    }
-
     # check what got passed in
     msg = kvmatch.badoptiondict_check(
         "kvxls.chgsheet_findheader",
         optiondict,
-        badoptiondict,
+        BADOPTIONDICT,
         noshowwarning=True,
         fix_missing=True,
     )
 
     if debug:
-        print("after badoption_check:", badoptiondict)
+        print("after badoption_check:", BADOPTIONDICT)
         print("msg from bad_option: ", msg)
 
     # pull in passed values from optiondict
@@ -3053,9 +3094,9 @@ def writelist2xls(
     """
     if optiondict is None:
         optiondict = {}
-    elif type(optiondict) is not dict:
+    elif not isinstance(optiondict, dict):
         raise TypeError(
-            "optiondict must be dictionary and is " + str(type(optiondict))
+            f"optiondict must be dictionary and is {type(optiondict)}"
         )
 
     # debugging
@@ -3119,8 +3160,8 @@ def writelist2xls(
             col_aref = list(data[0].keys())
 
     # validate we have the right type of variable
-    if col_aref and type(col_aref) is not list:
-        raise TypeError("col_aref must be list and is " + str(type(col_aref)))
+    if col_aref and not isinstance(col_aref, list):
+        raise TypeError(f"col_aref must be list and is {type(col_aref)}")
 
     # debuging
     if debug:
