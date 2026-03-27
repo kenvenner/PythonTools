@@ -1,10 +1,13 @@
 """
 @author:   Ken Venner
 @contact:  ken@venerllc.com
-@version:  1.03
+@version: 1.04
 
-Library of tools used to read excel files with the native desktop application excel
+Library of tools used to read excel files with the native desktop application excel COM  connection
 
+This enables a shared xlsx to be updated in real time through the Excel UI - rather than driving updates through openpyxl
+
+The major function called:
 update_excel_cells - open xlsx, and update list of row/col/value/optionally-sheet, and save updates
 
 pip install pywin32
@@ -17,11 +20,13 @@ from pathlib import Path
 import ctypes
 import win32com.client as win32
 
+
 def normalize_excel_path(path: str) -> str:
-    r"""
-    Normalize paths returned by Excel COM to match local filesystem paths.
-    Handles forward slashes, accidental https:\ prefixes, and duplicate backslashes.
     """
+    Normalize paths returned by Excel COM to match local filesystem paths.
+    Handles forward slashes, accidental https:\\ prefixes, and duplicate backslashes.
+    """
+    # take Unix slashes and make them DOS slashes
     s = str(path).replace("/", "\\")
     # Strip any accidental https:\ prefix
     if "https:\\" in s.lower():
@@ -29,6 +34,7 @@ def normalize_excel_path(path: str) -> str:
     # Remove empty segments from duplicated backslashes
     s = "\\".join(part for part in s.split("\\") if part)
     return s.lower()  # Windows paths are case-insensitive
+
 
 def is_same_workbook(path1: str, path2: str) -> bool:
     """
@@ -42,11 +48,13 @@ def is_same_workbook(path1: str, path2: str) -> bool:
     except Exception as e:
         return False
 
-def ensure_onedrive_file_local(filename: str, timeout=5):
+
+def ensure_onedrive_file_local(filename: str, timeout: int = 5):
     """
     Ensure a OneDrive file is locally available.
     Handles files in OneDrive folders properly.
     """
+    # convert string to Path object
     fpath = Path(filename)
 
     # If the path looks like a URL, raise error
@@ -75,10 +83,12 @@ def ensure_onedrive_file_local(filename: str, timeout=5):
                 if not (attrs & 0x1000):  # FILE_ATTRIBUTE_OFFLINE
                     return fpath
             except Exception as e:
+                print(f"ctypes error: {e}")
                 pass
         if time.time() - start > timeout:
             raise FileNotFoundError(f"File not available locally: {fpath}")
         time.sleep(0.1)
+
 
 def bring_excel_to_front(excel):
     """Bring Excel window to front if visible."""
@@ -89,10 +99,21 @@ def bring_excel_to_front(excel):
     except Exception as e:
         pass
 
-def update_excel_cells(filename: str, updates: list[dict], visible: bool=True, leave_open: bool=False, disp_msg: bool=True):
+
+def update_excel_cells(
+    filename: str,
+    updates: list[dict],
+    visible: bool = True,
+    leave_open: bool = False,
+    disp_msg: bool = True,
+):
     """
     Update Excel cells. Auto-close workbook if opened by this script.
-    updates = [{'sheet':'Sheet1', 'row':1,'col':1,'value':'X'}, ...]
+
+    updates = [
+        {'sheet':'Sheet1', 'row':1,'col':1,'value':'X'},
+         ...,
+    ]
 
     filename - name/path to the excel file to be worked in
     updates - list of dict changes as defined above
@@ -101,54 +122,97 @@ def update_excel_cells(filename: str, updates: list[dict], visible: bool=True, l
                        when false, and we open the file with this script - then close the file when done
     disp_msg - bool, when true, we print to console messagers we are progress
     """
+    # tests inputs
+    if not updates:
+        raise ValueError("updates must be populated")
+    if not isinstance(updates, list):
+        raise TypeError(f"updates must be list but is: {type(updates)}")
+    if not isinstance(updates[0], dict):
+        raise TypeError(f"updates[0] must be dict but is:  {type(updates[0])}")
+    # see if the updates definitions has the right set of keys
+    # did not check for sheet as it is NOT a required field
+    missingkeys = [
+        x for x in ("row", "col", "value") if x not in updates[0].keys()
+    ]
+    if missingkeys:
+        raise ValueError(
+            f"updates[0] missing following keys: {','.join(missingkeys)}"
+        )
+
+    # local variables
+    opened_excel = False
+
+    # display message
     if disp_msg:
         print(f"DEBUG: filename received = {filename}")
 
+    # get the absolute path to this file and assure it is locally available
     abs_path = str(ensure_onedrive_file_local(filename))
 
+    # start up excel as a COM object
     try:
         excel = win32.GetActiveObject("Excel.Application")
         if disp_msg:
             print("Attached to existing Excel instance.")
     except Exception as e:
         excel = win32.Dispatch("Excel.Application")
+        opened_excel = True
         if disp_msg:
             print("Started new Excel instance.")
 
+    # let excel know if it should be visible
     excel.Visible = visible
 
+    # set the local variables
     workbook = None
     _opened_by_script = False
 
     # Check if workbook is already open (robust)
+    # step through all the open work books and see if we have already opened this file
     for wb in excel.Workbooks:
         if is_same_workbook(wb.FullName, abs_path):
+            # the desired workbook is already open in Excel - save this
             workbook = wb
             if disp_msg:
                 print(f"Workbook already open: {abs_path}")
+            # and break out we found the already open instance
             break
 
-    # Open workbook if not already open
+    # We did nto find the workbook so we now need to open it
     if workbook is None:
+        # open the desired workbook
         workbook = excel.Workbooks.Open(abs_path)
+        # and set the flag that we opened it to true
         _opened_by_script = True
         if disp_msg:
             print(f"Opened workbook: {abs_path}")
 
+    # if the user wanted to see the changes, then bring forward this window
     if visible:
         bring_excel_to_front(excel)
 
-    # Update cells
+    # Update cells based on information in updates
     for upd in updates:
+        # pull out the values of interest - optionally pull sheet
         sheet_name = upd.get("sheet")
+        # the following fields are required and the script will fail if they don't exist in the dictionary
         row = upd["row"]
         col = upd["col"]
         value = upd["value"]
+        # make the updates
         try:
-            ws = workbook.Sheets(sheet_name) if sheet_name else workbook.ActiveSheet
+            # if sheet is populated - change to that sheet in this workbook - otherwise we just work the active sheet
+            ws = (
+                workbook.Sheets(sheet_name)
+                if sheet_name
+                else workbook.ActiveSheet
+            )
+            # set the value in the defined cell
             ws.Cells(row, col).Value = value
             if disp_msg:
-                print(f"Updated {sheet_name or 'ActiveSheet'} cell ({row},{col}) = {value}")
+                print(
+                    f"Updated {sheet_name or 'ActiveSheet'} cell ({row},{col}) = {value}"
+                )
         except Exception as e:
             if disp_msg:
                 print(f"Failed to update cell ({row},{col}): {e}")
@@ -169,12 +233,18 @@ def update_excel_cells(filename: str, updates: list[dict], visible: bool=True, l
         if disp_msg:
             print(f"Workbook closed: {abs_path}")
 
+    # if we opened excel we may want to close it
+    if opened_excel:
+        excel.Quit()
+        if disp_msg:
+            print("Quit Excel")
+
 
 if __name__ == "__main__":
     test_file = r"test.xlsx"  # Local file in current dir (OneDrive folder)
     updates = [
         {"sheet": "Sheet1", "row": 1, "col": 1, "value": "Hello"},
-        {"sheet": "Sheet1", "row": 2, "col": 1, "value": "World"}
+        {"sheet": "Sheet1", "row": 2, "col": 1, "value": "World"},
     ]
 
     try:
