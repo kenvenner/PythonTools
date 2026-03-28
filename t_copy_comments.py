@@ -73,6 +73,9 @@ base_optiondict = {
 # Testing class
 class TestCopyComment(unittest.TestCase):
 
+    # the function name: def expand_dir_env_var(optiondict: dict, dir: str) -> None:
+    # def test_expand_dir_env_var_p01_pass(self):
+
     def test_update_optiondict4json_create_p01_only_create_json(self):
         # set a value to just get a value set
         optiondict = {
@@ -468,6 +471,35 @@ class TestCopyComment(unittest.TestCase):
     # def test_validate_inputs_p20-thru-p30_internal_copy_fields_tests(self):
     # def test_validate_inputs_p30-thru-p40_internal_compare_fields_tests(self):
 
+    # the function name: def convert_hyperlink_values(
+    # def test_convert_hyperlink_values_p01_pass(self):
+    ########################################
+    # the function name: def src_to_dst_actions(
+    # def test_src_to_dst_actions_p01_pass(self):
+    ########################################
+    # the function name: def removed_records(
+    # def test_removed_records_p01_pass(self):
+    ########################################
+    # the function name: def added_records(
+    # def test_added_records_p01_pass(self):
+    ########################################
+    # the function name: def generate_out_output_file_not_formatted(
+    # def test_generate_out_output_file_not_formatted_p01_pass(self):
+    ########################################
+    # the function name: def generate_rmv_output_file_not_formatted(
+    # def test_generate_rmv_output_file_not_formatted_p01_pass(self):
+    ########################################
+    # the function name: def generate_add_output_file_not_formatted(
+    # def test_generate_add_output_file_not_formatted_p01_pass(self):
+    ########################################
+    # the function name: def format_output(optiondict):
+    # def test_format_output_p01_pass(self):
+    ########################################
+    # the function name: def format_cell(optiondict):
+    # def test_format_cell_p01_pass(self):
+    ########################################
+    # the function name: def generate_out_output_file_formatted(dst_data, optiondict, updated_recs):
+    # def test_generate_out_output_file_formatted_p01_pass(self):
     
     def test_validate_inputs_p41_force_copy_flds_not_copy_flds(self):
         # get the defaults
@@ -546,6 +578,9 @@ class TestCopyComment(unittest.TestCase):
             # now load the records
             copy_comments.load_records(optiondict, 'src')
 
+    # the function name: def read_src_file_format(optiondict: dict) -> None:
+    # def test_read_src_file_format_p01_pass(self):
+
     def test_validate_missing_columns_p01_all_columns_there(self):
         optiondict = {'req_cols': ['a','b','c']}
         loaded_data = [{'a':1, 'b': 2, 'c': 3, 'd': 4}]
@@ -557,6 +592,10 @@ class TestCopyComment(unittest.TestCase):
         self.assertEqual(copy_comments.validate_missing_columns(loaded_data, optiondict, 'req_cols'), ['e', 'f'])
 
 
+    # the function name: def create_flds_in_records(loaded_data: list[dict], fields: list) -> None:
+    # def test_create_flds_in_records_p01_pass(self):
+
+    
     def test_validate_src_to_dst_actions_p01_set_actions_in_optiondict(self):
         optiondict = {'key_fields': ['a','b']}
         src_data = []

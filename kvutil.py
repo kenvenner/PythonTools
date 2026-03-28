@@ -2011,84 +2011,6 @@ def create_multi_key_lookup(
     return src_lookup
 
 
-def create_multi_key_lookup_excel(
-    excel_dict, fldlist: list, copy_fields: list | None = None
-):
-    """
-    create a multi-key dictionary from a list of dictionaries
-
-    not sure this owrks for xcel
-
-    Create a multi key dictionary that gets to the record based on the
-    keys in the record
-
-    if user sets the copy_fields with the list of fields that can have values
-    then we check the record
-    to determine if any of the fields has a value, and if none have a value we skip
-    that record
-    """
-    if type(fldlist) is not list:
-        print("fldlist must be type - list - but is: ", type(fldlist))
-        raise TypeError()
-    # check that the fldlist keys are in the first record
-    for fld in fldlist:
-        if fld not in excel_dict["header"]:
-            print("ERROR:  Unable to find key field: ", fld)
-            print("in the header:")
-            pprint.pprint(excel_dict["header"])
-            print("This routine will fail")
-    # check that the copy_fields keys are in the first record
-    if copy_fields:
-        if type(copy_fields) is not list:
-            print(
-                "copy_fields must be type - list - but is: ", type(copy_fields)
-            )
-            raise TypeError()
-        for fld in copy_fields:
-            if fld not in excel_dict["header"]:
-                print("ERROR:  Unable to find copy field: ", fld)
-                print("in the header:")
-                pprint.pprint(excel_dict["header"])
-                print("This routine will fail")
-    #
-    # set up the dictionary to be populated
-    src_lookup = {}
-    src_data = []  # need to build what src_data looks like here.
-    # TODO - determine how to step through records on the excel_dict file
-    raise NotImplementedError("Not implemented yet")
-
-    # -------------------------------------------------------------------------------
-    # step through each record
-    for rec in src_data:
-        # test that this record has values in the copy_fields attributes
-        if copy_fields and not any_field_is_populated(rec, copy_fields):
-            # no values set in copy_fields has a value so we don't convert this record
-            continue
-        # get the first key
-        if rec[fldlist[0]] not in src_lookup:
-            if len(fldlist) > 1:
-                # multi key
-                src_lookup[rec[fldlist[0]]] = {}
-            else:
-                # single key - set the value
-                src_lookup[rec[fldlist[0]]] = rec
-        # now create the changing key
-        ptr = src_lookup[rec[fldlist[0]]]
-        # now work through other keys
-        for fld in fldlist[1:]:
-            # check to see this level is working
-            if rec[fld] not in ptr:
-                ptr[rec[fld]] = {}
-            # if we are on the last fld then set to rec
-            if fld == fldlist[-1]:
-                ptr[rec[fld]] = rec
-            else:
-                # update the ptr
-                ptr = ptr[rec[fld]]
-    #
-    return src_lookup
-
-
 def copy_matched_data_cnt(
     dst_data: list[dict],
     src_lookup: dict,
@@ -2392,7 +2314,7 @@ def disp_dict_on_key_idx(
         if disp_dict_name:
             print(disp_dict_name)
         # show them the value of they key
-        print(f"{idx}:{thekey}")
+        print(f"{idx=}:{thekey=}")
         # display the dict fully
         pprint.pprint(disp_dict[thekey])
     except Exception as e:

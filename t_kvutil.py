@@ -518,10 +518,25 @@ class TestKVUtilFilenames(unittest.TestCase):
         
     ########################################
     # the function name: def remove_dir(dirname, calledfrom='', debug=False, maxretry=20):
-    # def test_remove_dir_p01_pass(self):
+    def test_remove_dir_p01_pass(self):
+        """ test the remove_dir function """
+        dirname = 't_kvutil_dir2remove'
+        # create the dir and subdir to remove
+        os.makedirs(dirname, exist_ok=True)
+        # now remove
+        kvutil.remove_dir(dirname)
+        self.assertFalse(os.path.exists(dirname))
+        
     ########################################
     # the function name: def dir_remove(dirname, calledfrom='', debug=False, maxretry=20):
-    # def test_dir_remove_p01_pass(self):
+    def test_dir_remove_p01_pass(self):
+        """ test the remove_dir function """
+        dirname = 't_kvutil_dir2remove'
+        # create the dir and subdir to remove
+        os.makedirs(dirname, exist_ok=True)
+        # now remove
+        kvutil.dir_remove(dirname)
+        self.assertFalse(os.path.exists(dirname))
         
     # logfile filename
     def test_filename_log_day_of_month_p01_simple(self):
@@ -710,6 +725,23 @@ class TestKVUtilFilenames(unittest.TestCase):
         kvutil.filename_remove(fname)
         self.assertFalse(os.path.exists(fname))
 
+    # the function name: def filename_copy(src_filename: str, dst_filename: str) -> None:
+    def test_filename_copy_p01_pass(self):
+        orig_fname = 't_kvutil_orig.txt'
+        copy_fname = 't_kvutil_copy.txt'
+        content = 'the copy content'
+        with open(orig_fname, 'w') as fp:
+            fp.write(content)
+        read_file = kvutil.slurp(orig_fname)
+        self.assertEqual(content, read_file)
+        kvutil.filename_copy(orig_fname, copy_fname)
+        self.assertTrue(os.path.exists(copy_fname))
+        read_file = kvutil.slurp(copy_fname)
+        self.assertEqual(content, read_file)
+        os.remove(orig_fname)
+        os.remove(copy_fname)
+        
+    
     # filename unique
     def test_filename_unique_p01_filename(self):
         self.assertEqual(kvutil.filename_unique('uniquefname.txt'), os.path.normpath('./uniquefname.txt'))
@@ -1142,11 +1174,6 @@ class TestKVUtilFilenames(unittest.TestCase):
             self.assertEqual(kvutil.create_multi_key_lookup(src_data, fldlist, disp_msg=False), result)
         
             
-    ########################################
-    # prior function: create_multi_key_lookup
-    # the function name: def create_multi_key_lookup_excel(excel_dict, fldlist, copy_fields=None):
-    # def test_create_multi_key_lookup_excel_p01_pass(self):
-
     # copy_matched_data_cnt(dst_data, src_lookup, key_fields, copy_fields)
     def test_copy_matched_data_cnt_p01_2keys(self):
         dst_data = [
@@ -1557,7 +1584,7 @@ class TestKVUtilFilenames(unittest.TestCase):
         ]
         res = kvutil.extract_unmatched_data(src_data, dst_lookup, key_fields)
         self.assertEqual(src_data, result)
-    def test_extract_umatched_data_p02_2keys_1match(self):
+    def test_extract_unmatched_data_p02_2keys_1match(self):
         src_data = [
             {'col1': 'val1',  'col2': 'val2',  'col3': 'val3',  'col4': 'val4'},
             {'col1': 'val11', 'col2': 'val12', 'col3': 'val13', 'col4': 'val14'}
@@ -1600,7 +1627,39 @@ class TestKVUtilFilenames(unittest.TestCase):
         res = kvutil.extract_unmatched_data(src_data, dst_lookup, key_fields)
         self.assertEqual(res, result)
         
-    
+    # the function name: def disp_dict_on_key_idx(
+    def test_disp_dict_on_key_idx_p01_pass(self):
+        if False:
+            testdict = {'a': {'a': 1, 'b': 2},
+                        'b': {'c': 1, 'd': 3}}
+            kvutil.disp_dict_on_key_idx(testdict, 1, 'testdict:1')
+        else:
+            pass
+        
+    ########################################
+    # the function name: def disp_dict_on_key_value(
+    def test_disp_dict_on_key_value_p01_pass(self):
+        if False:
+            testdict = {'a': {'a': 1, 'b': 2},
+                        'b': {'c': 1, 'd': 3}}
+            kvutil.disp_dict_on_key_value(testdict, 'b', 'testdict:b')
+        else:
+            pass
+        
+    ########################################
+    # the function name: def format_dict_sorted_by_value_key(
+    def test_format_dict_sorted_by_value_key_p01_pass(self):
+        testdict = {
+            'b': 'z',
+            'a': 'z',
+            'd': 'y',
+            'c': 'y',
+            'e': 'a',
+        }
+        dictsorted = kvutil.format_dict_sorted_by_value_key(testdict, 0, 'testdict')
+        answer = "testdict = {\n    'e': 'a',\n    'c': 'y',\n    'd': 'y',\n    'a': 'z',\n    'b': 'z',\n}"
+        self.assertEqual(dictsorted, answer)
+        
 if __name__ == '__main__':
     logger.info('STARTUP(v%s)%s', AppVersion, '-'*40)
     logger.info('kvutil(v%s)%s', kvutil.AppVersion, '-'*40)

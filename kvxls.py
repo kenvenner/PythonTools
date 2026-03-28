@@ -1082,10 +1082,11 @@ def create_multi_key_lookup_excel(
         copy_fields = list()
 
     # test inputs
+    if not isinstance(excel_dict, dict):
+        raise TypeError(f"excel_dict must be type dict but is: {type(fldlist)}")
     if not isinstance(fldlist, list):
-        raise TypeError(
-            f"fldlist must be type - list - but is: {type(fldlist)}"
-        )
+        raise TypeError(f"fldlist must be type list but is: {type(fldlist)}")
+
     # check that the copy_fields keys are in the first record
     if copy_fields and not isinstance(copy_fields, list):
         raise TypeError(
