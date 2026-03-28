@@ -7,11 +7,14 @@ Library of tools used to process XLS/XLSX files
 """
 
 import openpyxl  # xlsx (read/write)
+
+# comment out below if we are XLSX ONLY
 import xlrd  # xls (read)
 import xlwt  # xls (write)
 from xlutils.copy import (
     copy as xl_copy,
 )  # xls(read copy over tool to enalve write)/ pip install xlutils
+
 import os  # determine if a file exists
 import pprint
 import json
@@ -32,6 +35,9 @@ logger = logging.getLogger(__name__)
 
 # global variables
 AppVersion = "1.42"
+
+# set to true in kvxlsx.py
+XLSXONLY = False
 
 # ----- OPTIONS ---------------------------------------
 # debug
@@ -1703,6 +1709,9 @@ def readxls_excelDict(
                 xlsfile, read_only=False, keep_vba=keep_vba
             )
         sheet_names = wb.sheetnames
+    elif XLSXONLY:
+        # put in to deal with a simplified library
+        raise NotImplementedError('this library only supports newer Excel file types')
     else:
         # XLS file
         wb = xlrd.open_workbook(xlsfile)
@@ -1978,6 +1987,9 @@ def readxls_findheader(
                 xlsfile, read_only=False, keep_vba=keep_vba
             )
         sheet_names = wb.sheetnames
+    elif XLSXONLY:
+        # put in to deal with a simplified library
+        raise NotImplementedError('this library only supports newer Excel file types')
     else:
         # XLS file
         wb = xlrd.open_workbook(xlsfile)
@@ -3278,6 +3290,9 @@ def writelist2xls(
         if sheetname != "Sheet1":
             ws.title = sheetname
 
+    elif XLSXONLY:
+        # put in to deal with a simplified library
+        raise NotImplementedError('this library only supports newer Excel file types')
     else:
         # XLS file - create the output work book we want to create
         if replace_sheet and sheetname and os.path.exists(xlsfile):
