@@ -124,7 +124,7 @@ class ExcelConfig:
     no_warnings: bool = False  # if true - do not display warning message
 
     sheetname: str | None = None  # sheet name we are processing
-    sheetrow: int | None = None
+    sheetrow: int | None = None # index number of sheet you want
 
     start_row: int = 0  # if passed in - we start the search at this row (starts at 1 or greater)
     # change user input to reduce by one as we are zero based - so if we start on row 1 - this value should be zero
@@ -156,6 +156,7 @@ BADOPTIONDICT = {
     "arefresult": "aref_result",
     "arefresults": "aref_result",
     "col_headers": "col_header",
+    "colheader": "col_header",
     "colheaders": "col_header",
     "keepvba": "keep_vba",
     "max_row": "max_rows",
@@ -166,8 +167,12 @@ BADOPTIONDICT = {
     "noheaders": "no_header",
     "replaceindex": "replace_index",
     "addsheet": "replace_sheet",
+    "addsheets": "replace_sheet",
     "add_sheet": "replace_sheet",
+    "add_sheets": "replace_sheet",
     "replacesheet": "replace_sheet",
+    "replacesheets": "replace_sheet",
+    "replace_sheets": "replace_sheet",
     "save_cols_abs": "save_col_abs",
     "save_colsabs": "save_col_abs",
     "savecolabs": "save_col_abs",
@@ -811,6 +816,9 @@ def setExcelCellPatternFill(
             darkDown: Dark diagonal stripes.
             darkUp: Dark diagonal stripes in the opposite direction.
 
+        to clear these values pass in "None" string that will cause the optoin to be set to the None variable
+        if None value is passed in we skip updating that attribute
+
     """
 
     # test inputs
@@ -837,7 +845,7 @@ def setExcelCellPatternFill(
         )
 
     # make sure fill is set properly
-    if fill is not None and not isinstance(
+    if fill and fill != "None" and not isinstance(
         fill, openpyxl.styles.fills.PatternFill
     ):
         raise TypeError(f"fill must be PatternFile type but is: {type(fill)}")
@@ -862,9 +870,6 @@ def setExcelCellPatternFill(
         print("setExcelCellPatternFill:row:", row)
         print("setExcelCellPatternFill:col_name:", col_name)
         print("setExcelCellPatternFill:fill-type:", type(fill))
-    logger.debug("excel_dict:%s", excel_dict)
-    logger.debug("row:%s", row)
-    logger.debug("col_name:%s", col_name)
 
     # determine the col # we are using by doing a header lookup for col_name
     # add to that the offset if the starting column is not the first columnn
@@ -925,7 +930,7 @@ def copyExcelCellFmtOnRow(
     excel_dict_src: dict,
     src_row: int,
     excel_dict_out: dict,
-    row: int,
+    out_row: int,
     debug: bool = False,
 ) -> None:
     """
@@ -937,7 +942,7 @@ def copyExcelCellFmtOnRow(
         excel_dict_src - custom excel dictionary created to represent a worksheet object that is the source for formatting
         src_row - int - row number that we are extracting source formatting from
         excel_dict_out - custom excel dictionary created to represent a worksheet object that is where we assign formatting
-        row - int - row number that we are placing formatting into
+        out_row - int - row number that we are placing formatting into
         debug - bool - when true, we display debugging messages
 
     """
@@ -956,7 +961,7 @@ def copyExcelCellFmtOnRow(
 
         # debugging
         if debug:
-            print("OnRow - fg_color:", fg_color, "fill_type:", fill_type)
+            print(f"{src_row=}, {fg_color=}, {fill_type=}, {start_color=}, {end_color=}")
 
         # take no action if if there is no format to copy over
         if (
@@ -967,10 +972,17 @@ def copyExcelCellFmtOnRow(
         ):
             continue
 
+        # force to fg_color if set - need to understand this better
+        if fg_color:
+            start_color = None
+            end_color = None
+            if debug:
+                print('fg_color is set, clearing start_color and end_color')
+            
         # now copy this over to the out worksheet
         setExcelCellPatternFill(
             excel_dict_out,
-            row,
+            out_row,
             col_name,
             fill=None,
             start_color=start_color,
@@ -1028,7 +1040,7 @@ def any_field_is_populated(
     if not fldlist:
         raise ValueError("fldlist must be populated")
     if not isinstance(fldlist, list):
-        raise TypeError(f"fldlist must be dict but is: {type(fields)}")
+        raise TypeError(f"fldlist must be list but is: {type(fields)}")
 
     # validate fldlist
     for fld in fldlist:

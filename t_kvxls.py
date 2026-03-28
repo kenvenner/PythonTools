@@ -305,6 +305,101 @@ class TestKVxls(unittest.TestCase):
             kvutil.remove_filename(filenamexls4, kvutil.functionName())
             kvutil.remove_filename(filenamexlsx4, kvutil.functionName())
 
+    # the function name: def create_excel_config(
+    def test_create_excel_config_p01_pass(self):
+        excel_cfg = kvxls.create_excel_config()
+        self.assertTrue(isinstance(excel_cfg, kvxls.ExcelConfig))
+        self.assertEqual(excel_cfg.xlsxfiletype, None)
+        self.assertEqual(excel_cfg.filename, None)
+        self.assertEqual(excel_cfg.req_cols, None)
+        self.assertEqual(excel_cfg.col_aref, None)
+        self.assertEqual(excel_cfg.xlatdict, None)
+        self.assertFalse(excel_cfg.allow_empty)
+        self.assertFalse(excel_cfg.aref_result)
+        self.assertFalse(excel_cfg.col_header)
+        self.assertTrue(excel_cfg.data_only)
+        self.assertTrue(excel_cfg.keep_vba)
+        self.assertFalse(excel_cfg.no_header)
+        self.assertFalse(excel_cfg.no_warnings)
+        self.assertEqual(excel_cfg.start_row, 0)
+        self.assertEqual(excel_cfg.max_rows, 100000000)
+        self.assertEqual(excel_cfg.row_header, None)
+        self.assertFalse(excel_cfg.save_row)
+        self.assertFalse(excel_cfg.save_row_abs)
+        self.assertFalse(excel_cfg.save_col_abs)
+        self.assertFalse(excel_cfg.save_col_fmt)
+        self.assertFalse(excel_cfg.replace_sheet)
+        self.assertEqual(excel_cfg.replace_index, None)
+    def test_create_excel_config_p02_optiondict(self):
+        optiondict = {
+            'save_row': True,
+            'col_header': True,
+        }
+        saved_optiondict = optiondict.copy()
+        excel_cfg = kvxls.create_excel_config(optiondict)
+        self.assertTrue(isinstance(excel_cfg, kvxls.ExcelConfig))
+        self.assertEqual(excel_cfg.xlsxfiletype, None)
+        self.assertEqual(excel_cfg.filename, None)
+        self.assertEqual(excel_cfg.req_cols, None)
+        self.assertEqual(excel_cfg.col_aref, None)
+        self.assertEqual(excel_cfg.xlatdict, None)
+        self.assertFalse(excel_cfg.allow_empty)
+        self.assertFalse(excel_cfg.aref_result)
+        self.assertTrue(excel_cfg.col_header)
+        self.assertTrue(excel_cfg.data_only)
+        self.assertTrue(excel_cfg.keep_vba)
+        self.assertFalse(excel_cfg.no_header)
+        self.assertFalse(excel_cfg.no_warnings)
+        self.assertEqual(excel_cfg.start_row, 0)
+        self.assertEqual(excel_cfg.max_rows, 100000000)
+        self.assertEqual(excel_cfg.row_header, None)
+        self.assertTrue(excel_cfg.save_row)
+        self.assertFalse(excel_cfg.save_row_abs)
+        self.assertFalse(excel_cfg.save_col_abs)
+        self.assertFalse(excel_cfg.save_col_fmt)
+        self.assertFalse(excel_cfg.replace_sheet)
+        self.assertEqual(excel_cfg.replace_index, None)
+
+        self.assertEqual(optiondict, saved_optiondict)
+    def test_create_excel_config_p03_badoptiondict(self):
+        saved_optiondict = {
+            'save_row': True,
+            'col_header': True,
+            'saverow': True,
+            'colheader': True,
+        }
+        optiondict = {
+            'saverow': True,
+            'colheader': True,
+        }
+
+        excel_cfg = kvxls.create_excel_config(optiondict)
+        self.assertTrue(isinstance(excel_cfg, kvxls.ExcelConfig))
+        self.assertEqual(excel_cfg.xlsxfiletype, None)
+        self.assertEqual(excel_cfg.filename, None)
+        self.assertEqual(excel_cfg.req_cols, None)
+        self.assertEqual(excel_cfg.col_aref, None)
+        self.assertEqual(excel_cfg.xlatdict, None)
+        self.assertFalse(excel_cfg.allow_empty)
+        self.assertFalse(excel_cfg.aref_result)
+        self.assertTrue(excel_cfg.col_header)
+        self.assertTrue(excel_cfg.data_only)
+        self.assertTrue(excel_cfg.keep_vba)
+        self.assertFalse(excel_cfg.no_header)
+        self.assertFalse(excel_cfg.no_warnings)
+        self.assertEqual(excel_cfg.start_row, 0)
+        self.assertEqual(excel_cfg.max_rows, 100000000)
+        self.assertEqual(excel_cfg.row_header, None)
+        self.assertTrue(excel_cfg.save_row)
+        self.assertFalse(excel_cfg.save_row_abs)
+        self.assertFalse(excel_cfg.save_col_abs)
+        self.assertFalse(excel_cfg.save_col_fmt)
+        self.assertFalse(excel_cfg.replace_sheet)
+        self.assertEqual(excel_cfg.replace_index, None)
+
+        self.assertEqual(optiondict, saved_optiondict)
+        
+        
     # strip_xls_illegal_chars
     def test_strip_xls_illegal_chars_p01_chars_removed(self):
         newvalue = kvxls.strip_xls_illegal_chars(kvxls.ILLEGAL_CHARACTERS_STR)
@@ -1135,8 +1230,31 @@ class TestKVxls(unittest.TestCase):
 
     ########################################
     # the function name: def copyExcelCellFmtOnRow(excel_dict_src, src_row, excel_dict_out, row, debug=False):
-    # def test_copyExcelCellFmtOnRow_p01_pass(self):
-    ########################################
+    def test_copyExcelCellFmtOnRow_p01_pass(self):
+        yellow = "FFFFFF00"
+        # open the file
+        excel_dict = kvxls.readxls_findheader(
+            filenamexlsx, req_cols, debug=False
+        )
+        # set the formatting on this file
+        for colname in excel_dict['header']:
+            kvxls.setExcelCellPatternFill(excel_dict, 2, colname, fg_color=yellow, fill_type='solid', debug=False)
+        # create a file to copy over to
+        fstarter = "tst1-"
+        new_file = fstarter + filenamexlsx3
+        kvxls.writelist2xls(new_file, records, debug=False)
+        excel_dict2 = kvxls.readxls_findheader(
+            new_file, req_cols, debug=False
+        )
+        # now copy over the format
+        kvxls.copyExcelCellFmtOnRow(excel_dict, 2, excel_dict2, 2, debug=False)
+        # test that this worked
+        for colname in excel_dict2['header']:
+            cell_color, cell_fill_type, cell_start_color, cell_end_color = kvxls.getExcelCellPatternFill(excel_dict2, 2, colname)
+            self.assertEqual(cell_color, yellow)
+        # remove the temp file
+        kvutil.remove_filename(new_file)
+
 
     # the function name: def setExcelColumnValue(excel_dict, col_name, value='', debug=False):
     def test_setExcelColumnValue_p01_pass(self):
@@ -1297,7 +1415,7 @@ class TestKVxls(unittest.TestCase):
 
     ########################################
     # the function name: def set_col_mapping_list(records: list[dict]) -> None:
-    def test_set_col_mapping__list_p01_pass(self):
+    def test_set_col_mapping_list_p01_pass(self):
         results = kvxls.readxls2list(
             filenamexlsx, optiondict={"save_col_abs": True}, debug=False
         )
@@ -3050,19 +3168,19 @@ class TestKVxls(unittest.TestCase):
             ["NHLiq", "BevMo", "WineClub", "TotalCA", "Vons"],
         )
 
-    def test_test_readxls2dict_findheader_f01_dictkeys_none(self):
+    def test_readxls2dict_findheader_f01_xlsx_dictkeys_none(self):
         with self.assertRaises(Exception) as context:
             kvxls.readxls2dict_findheader(
                 filenamexlsx, None, req_cols, debug=False
             )
 
-    def test_test_readxls2dict_findheader_f02_dictkeys_int(self):
+    def test_readxls2dict_findheader_f02_xlsx_dictkeys_int(self):
         with self.assertRaises(Exception) as context:
             kvxls.readxls2dict_findheader(
                 filenamexlsx, 1, req_cols, debug=False
             )
 
-    def test_test_readxls2dict_findheader_f03_req_cols_int(self):
+    def test_readxls2dict_findheader_f03_xlsx_req_cols_int(self):
         with self.assertRaises(Exception) as context:
             kvxls.readxls2dict_findheader(
                 filenamexlsx, req_cols, 1, debug=False
