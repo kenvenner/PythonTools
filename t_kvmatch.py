@@ -342,12 +342,15 @@ class TestKVMatch(unittest.TestCase):
         xlat_dict_lower = {x.lower(): y.lower() for (x, y) in xlat_dict.items()}
         self.assertEqual(p._xlatdict_lower, xlat_dict_lower)
 
-
     # the function name:     def lower_max_row_by_reccount(self, reccount: int) -> None:
-    # def test_MatchRow_lower_max_row_by_reccount_p01_pass(self):
+    def test_MatchRow_lower_max_row_by_reccount_p01_pass(self):
+        p = kvmatch.MatchRow(["Col1"])
+        self.assertEqual(p.max_rows, 10)
+        p.lower_max_row_by_reccount(100)
+        self.assertEqual(p.max_rows, 10)
+        p.lower_max_row_by_reccount(2)
+        self.assertEqual(p.max_rows, 2)
 
-
-    
     # the function name:     def reset(self):
     def test_MatchRow_reset_p01_pass(self):
         p = kvmatch.MatchRow(["Col1"])
