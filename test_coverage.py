@@ -86,7 +86,11 @@ def grep_function_parse_line(line: str, func_found: bool, func_def: list, func_l
             func_def.append(combine_func_lines(func_lines))
             # clear the func_lines list as we closed out this function
             # func_lines = list() # this ddid not work
-            [func_lines.remove(x) for x in func_lines[::-1]]
+            # this might have worked:
+            # del func_lines[:]
+            # [func_lines.remove(x) for x in func_lines[::-1]]
+            # this is the solution from the internet
+            func_lines.clear()
             # set func_found to false as we are now done
             func_found = False
 
