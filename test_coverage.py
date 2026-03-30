@@ -1,4 +1,4 @@
-__version__ = '1.07'
+__version__ = '1.08'
 
 import argparse
 import sys
@@ -12,7 +12,13 @@ import pprint
 pp = pprint.PrettyPrinter(indent=4)
 
 
-def grep_function_def(filename):
+RE_FUNC_START = re.compile(r"def\s+.+\(")
+RE_FUNC_ENDS = (
+    re.compile(r"\)\s*:"),
+    re.compile(r"\)\s*->\s*.*:"),
+)
+
+def grep_function_def_external(filename):
     """
     grep the filename and pull out all the function definition lines
 
@@ -24,6 +30,95 @@ def grep_function_def(filename):
     output = subprocess.check_output(grep_cmd)
 
     return output.decode('ascii').split('\n')
+
+def combine_func_lines(func_lines: list) -> str:
+    """
+    Take in a list of lines (1 or more) that make up a function definition
+    and combine them into a single line that is the full function defintion
+
+    Inputs:
+        func_lines - list - list of 1 or more lines that make up a function defintion
+
+    Returns:
+        funcstr - str - single line string that is the function definition
+
+    """
+
+    return ' '.join([x.strip() for x in func_lines])
+                    
+def grep_function_parse_line(line: str, func_found: bool, func_def: list, func_lines: list) -> bool:
+    """
+    take in a line and a set of options
+    and update lists passed in and return back func_found boolean value
+
+    if this line is part of a function defintion - added the line to func_lines
+    if this line represents the closing of a function definiton - 
+        - then add this line to func_lines
+        - convert func_lines to a single string
+        - add this function string to func_def
+        - clear the members of func_lines
+        - set the func_found to False
+
+    Inputs:
+        line - a string that is the next line processed
+        func_found - bool - when true, a prior line defined a function all
+        func_def - list - list of function defintion headers with all parameters on one line
+        func_list - list - list of intermedicate lines that make up a full function defintion
+
+    Returns:
+        func_found - bool - are we still looking for a function end
+
+    """
+    if not func_found:
+        # if we are not already processing a function defition - check to see if this line starts one
+        if RE_FUNC_START.search(line):
+            func_found = True
+
+    if func_found:
+        # we already started - processing a function definition
+        # add this line to the list of lines that make up this 
+        func_lines.append(line)
+        # test the various RE defintions for endinng
+        func_end = [x for x in RE_FUNC_ENDS if x.search(line)]
+        if func_end:
+            # we found the end of this function call - so consolidate all the lines into one line
+            # and add this line to the list of function defintions
+            func_def.append(combine_func_lines(func_lines))
+            # clear the func_lines list as we closed out this function
+            # func_lines = list() # this ddid not work
+            [func_lines.remove(x) for x in func_lines[::-1]]
+            # set func_found to false as we are now done
+            func_found = False
+
+    return func_found
+
+    
+def grep_function_def(filename):
+    """
+    grep the filename and pull out all the function definition lines
+
+    :param filename: (string)
+    """
+
+    func_def = []
+    func_lines = []
+    func_found = False
+
+    # read in the file
+    with open(filename, 'r') as fp:
+        # get the next line
+        filelines = fp.readlines()
+
+    # remove the CR at the end of each line
+    filelines = [x.strip('\n') for x in filelines]
+
+    # step through and process all lines
+    for line in filelines:
+        # process this line and get back the flag
+        func_found = grep_function_parse_line(line, func_found, func_def, func_lines)
+
+    # file processed return back the function declarations
+    return func_def
 
 
 def grep_function_class_def(filename):
