@@ -330,10 +330,11 @@ class TestKVxls(unittest.TestCase):
         self.assertFalse(excel_cfg.save_col_fmt)
         self.assertFalse(excel_cfg.replace_sheet)
         self.assertEqual(excel_cfg.replace_index, None)
+
     def test_create_excel_config_p02_optiondict(self):
         optiondict = {
-            'save_row': True,
-            'col_header': True,
+            "save_row": True,
+            "col_header": True,
         }
         saved_optiondict = optiondict.copy()
         excel_cfg = kvxls.create_excel_config(optiondict)
@@ -361,16 +362,17 @@ class TestKVxls(unittest.TestCase):
         self.assertEqual(excel_cfg.replace_index, None)
 
         self.assertEqual(optiondict, saved_optiondict)
+
     def test_create_excel_config_p03_badoptiondict(self):
         saved_optiondict = {
-            'save_row': True,
-            'col_header': True,
-            'saverow': True,
-            'colheader': True,
+            "save_row": True,
+            "col_header": True,
+            "saverow": True,
+            "colheader": True,
         }
         optiondict = {
-            'saverow': True,
-            'colheader': True,
+            "saverow": True,
+            "colheader": True,
         }
 
         excel_cfg = kvxls.create_excel_config(optiondict)
@@ -398,8 +400,7 @@ class TestKVxls(unittest.TestCase):
         self.assertEqual(excel_cfg.replace_index, None)
 
         self.assertEqual(optiondict, saved_optiondict)
-        
-        
+
     # strip_xls_illegal_chars
     def test_strip_xls_illegal_chars_p01_chars_removed(self):
         newvalue = kvxls.strip_xls_illegal_chars(kvxls.ILLEGAL_CHARACTERS_STR)
@@ -845,9 +846,13 @@ class TestKVxls(unittest.TestCase):
             filenamexlsx, req_cols, debug=False
         )
 
-        cell_color, cell_fill_type, cell_start_color, cell_end_color = (
-            kvxls.getExcelCellPatternFill(excel_dict, 1, "Company", debug=False)
-        )
+        (
+            cell_color,
+            cell_fill_type,
+            cell_start_color,
+            cell_end_color,
+            cell_fill,
+        ) = kvxls.getExcelCellPatternFill(excel_dict, 1, "Company", debug=False)
         self.assertEqual(cell_color, None)
         self.assertEqual(cell_fill_type, None)
         self.assertEqual(cell_start_color, None)
@@ -874,6 +879,7 @@ class TestKVxls(unittest.TestCase):
             orig_cell_fill_type,
             orig_cell_start_color,
             orig_cell_end_color,
+            orig_cell_fill,
         ) = kvxls.getExcelCellPatternFill(
             excel_dict, row, col_name, debug=False
         )
@@ -884,6 +890,7 @@ class TestKVxls(unittest.TestCase):
                 orig_cell_fill_type,
                 orig_cell_start_color,
                 orig_cell_end_color,
+                orig_cell_fill,
             )
             print(
                 [
@@ -893,6 +900,7 @@ class TestKVxls(unittest.TestCase):
                         orig_cell_fill_type,
                         orig_cell_start_color,
                         orig_cell_end_color,
+                        orig_cell_fill,
                     )
                 ]
             )
@@ -902,6 +910,7 @@ class TestKVxls(unittest.TestCase):
             orig_cell_fill_type,
             orig_cell_start_color,
             orig_cell_end_color,
+            orig_cell_fill,
         ) = [
             "None" if x is None else x
             for x in (
@@ -909,6 +918,7 @@ class TestKVxls(unittest.TestCase):
                 orig_cell_fill_type,
                 orig_cell_start_color,
                 orig_cell_end_color,
+                orig_cell_fill,
             )
         ]
         if debug:
@@ -918,6 +928,7 @@ class TestKVxls(unittest.TestCase):
                 orig_cell_fill_type,
                 orig_cell_start_color,
                 orig_cell_end_color,
+                orig_cell_fill,
             )
             print(
                 [
@@ -927,6 +938,7 @@ class TestKVxls(unittest.TestCase):
                         orig_cell_fill_type,
                         orig_cell_start_color,
                         orig_cell_end_color,
+                        orig_cell_fill,
                     )
                 ]
             )
@@ -934,10 +946,14 @@ class TestKVxls(unittest.TestCase):
         kvxls.setExcelCellPatternFill(
             excel_dict, row, col_name, fg_color=yellow_fill
         )
-        cell_color, cell_fill_type, cell_start_color, cell_end_color = (
-            kvxls.getExcelCellPatternFill(
-                excel_dict, row, col_name, debug=False
-            )
+        (
+            cell_color,
+            cell_fill_type,
+            cell_start_color,
+            cell_end_color,
+            cell_fill,
+        ) = kvxls.getExcelCellPatternFill(
+            excel_dict, row, col_name, debug=False
         )
         if debug:
             print(
@@ -946,6 +962,7 @@ class TestKVxls(unittest.TestCase):
                 cell_fill_type,
                 cell_start_color,
                 cell_end_color,
+                cell_fill,
             )
             self.assertEqual(yellow_fill, cell_color)
         self.assertEqual("solid", cell_fill_type)
@@ -959,10 +976,14 @@ class TestKVxls(unittest.TestCase):
             start_color=orig_cell_start_color,
             end_color=orig_cell_end_color,
         )
-        cell_color, cell_fill_type, cell_start_color, cell_end_color = (
-            kvxls.getExcelCellPatternFill(
-                excel_dict, row, col_name, debug=False
-            )
+        (
+            cell_color,
+            cell_fill_type,
+            cell_start_color,
+            cell_end_color,
+            cell_fill,
+        ) = kvxls.getExcelCellPatternFill(
+            excel_dict, row, col_name, debug=False
         )
         if debug:
             print(
@@ -996,6 +1017,7 @@ class TestKVxls(unittest.TestCase):
             orig_cell_fill_type,
             orig_cell_start_color,
             orig_cell_end_color,
+            orig_cell_fill,
         ) = kvxls.getExcelCellPatternFill(
             excel_dict, row, col_name, debug=False
         )
@@ -1006,6 +1028,7 @@ class TestKVxls(unittest.TestCase):
                 orig_cell_fill_type,
                 orig_cell_start_color,
                 orig_cell_end_color,
+                orig_cell_fill,
             )
             print(
                 [
@@ -1015,6 +1038,7 @@ class TestKVxls(unittest.TestCase):
                         orig_cell_fill_type,
                         orig_cell_start_color,
                         orig_cell_end_color,
+                        orig_cell_fill,
                     )
                 ]
             )
@@ -1024,6 +1048,7 @@ class TestKVxls(unittest.TestCase):
             orig_cell_fill_type,
             orig_cell_start_color,
             orig_cell_end_color,
+            orig_cell_fill,
         ) = [
             "None" if x is None else x
             for x in (
@@ -1031,6 +1056,7 @@ class TestKVxls(unittest.TestCase):
                 orig_cell_fill_type,
                 orig_cell_start_color,
                 orig_cell_end_color,
+                orig_cell_fill,
             )
         ]
         if debug:
@@ -1040,6 +1066,7 @@ class TestKVxls(unittest.TestCase):
                 orig_cell_fill_type,
                 orig_cell_start_color,
                 orig_cell_end_color,
+                orig_cell_fill,
             )
             print(
                 [
@@ -1049,6 +1076,7 @@ class TestKVxls(unittest.TestCase):
                         orig_cell_fill_type,
                         orig_cell_start_color,
                         orig_cell_end_color,
+                        orig_cell_fill,
                     )
                 ]
             )
@@ -1057,10 +1085,14 @@ class TestKVxls(unittest.TestCase):
             excel_dict, row, col_name, fill=red_fill, debug=False
         )
         # read in after the change
-        cell_color, cell_fill_type, cell_start_color, cell_end_color = (
-            kvxls.getExcelCellPatternFill(
-                excel_dict, row, col_name, debug=False
-            )
+        (
+            cell_color,
+            cell_fill_type,
+            cell_start_color,
+            cell_end_color,
+            cell_fill,
+        ) = kvxls.getExcelCellPatternFill(
+            excel_dict, row, col_name, debug=False
         )
         if debug:
             print(
@@ -1069,6 +1101,7 @@ class TestKVxls(unittest.TestCase):
                 cell_fill_type,
                 cell_start_color,
                 cell_end_color,
+                cell_fill,
             )
         # test this
         self.assertEqual(start_color, cell_color)
@@ -1086,10 +1119,14 @@ class TestKVxls(unittest.TestCase):
             end_color=orig_cell_end_color,
             debug=False,
         )
-        cell_color, cell_fill_type, cell_start_color, cell_end_color = (
-            kvxls.getExcelCellPatternFill(
-                excel_dict, row, col_name, debug=False
-            )
+        (
+            cell_color,
+            cell_fill_type,
+            cell_start_color,
+            cell_end_color,
+            cell_fill,
+        ) = kvxls.getExcelCellPatternFill(
+            excel_dict, row, col_name, debug=False
         )
         if debug:
             print(
@@ -1098,6 +1135,7 @@ class TestKVxls(unittest.TestCase):
                 cell_fill_type,
                 cell_start_color,
                 cell_end_color,
+                cell_fill,
             )
 
     def test_setExcelCellPatternFill_p03_xlsx_start_end_color(self):
@@ -1120,6 +1158,7 @@ class TestKVxls(unittest.TestCase):
             orig_cell_fill_type,
             orig_cell_start_color,
             orig_cell_end_color,
+            orig_cell_fill,
         ) = kvxls.getExcelCellPatternFill(
             excel_dict, row, col_name, debug=False
         )
@@ -1130,6 +1169,7 @@ class TestKVxls(unittest.TestCase):
                 orig_cell_fill_type,
                 orig_cell_start_color,
                 orig_cell_end_color,
+                orig_cell_fill,
             )
             print(
                 [
@@ -1139,6 +1179,7 @@ class TestKVxls(unittest.TestCase):
                         orig_cell_fill_type,
                         orig_cell_start_color,
                         orig_cell_end_color,
+                        orig_cell_fill,
                     )
                 ]
             )
@@ -1148,6 +1189,7 @@ class TestKVxls(unittest.TestCase):
             orig_cell_fill_type,
             orig_cell_start_color,
             orig_cell_end_color,
+            orig_cell_fill,
         ) = [
             "None" if x is None else x
             for x in (
@@ -1155,6 +1197,7 @@ class TestKVxls(unittest.TestCase):
                 orig_cell_fill_type,
                 orig_cell_start_color,
                 orig_cell_end_color,
+                orig_cell_fill,
             )
         ]
         if debug:
@@ -1164,6 +1207,7 @@ class TestKVxls(unittest.TestCase):
                 orig_cell_fill_type,
                 orig_cell_start_color,
                 orig_cell_end_color,
+                orig_cell_fill,
             )
             print(
                 [
@@ -1173,6 +1217,7 @@ class TestKVxls(unittest.TestCase):
                         orig_cell_fill_type,
                         orig_cell_start_color,
                         orig_cell_end_color,
+                        orig_cell_fill,
                     )
                 ]
             )
@@ -1185,10 +1230,14 @@ class TestKVxls(unittest.TestCase):
             end_color=end_color,
             debug=False,
         )
-        cell_color, cell_fill_type, cell_start_color, cell_end_color = (
-            kvxls.getExcelCellPatternFill(
-                excel_dict, row, col_name, debug=False
-            )
+        (
+            cell_color,
+            cell_fill_type,
+            cell_start_color,
+            cell_end_color,
+            cell_fill,
+        ) = kvxls.getExcelCellPatternFill(
+            excel_dict, row, col_name, debug=False
         )
         if debug:
             print(
@@ -1197,6 +1246,7 @@ class TestKVxls(unittest.TestCase):
                 cell_fill_type,
                 cell_start_color,
                 cell_end_color,
+                cell_fill,
             )
             self.assertEqual(yellow_fill, cell_color)
         # tests
@@ -1214,10 +1264,14 @@ class TestKVxls(unittest.TestCase):
             start_color=orig_cell_start_color,
             end_color=orig_cell_end_color,
         )
-        cell_color, cell_fill_type, cell_start_color, cell_end_color = (
-            kvxls.getExcelCellPatternFill(
-                excel_dict, row, col_name, debug=False
-            )
+        (
+            cell_color,
+            cell_fill_type,
+            cell_start_color,
+            cell_end_color,
+            cell_fill,
+        ) = kvxls.getExcelCellPatternFill(
+            excel_dict, row, col_name, debug=False
         )
         if debug:
             print(
@@ -1226,6 +1280,7 @@ class TestKVxls(unittest.TestCase):
                 cell_fill_type,
                 cell_start_color,
                 cell_end_color,
+                cell_fill,
             )
 
     ########################################
@@ -1237,24 +1292,34 @@ class TestKVxls(unittest.TestCase):
             filenamexlsx, req_cols, debug=False
         )
         # set the formatting on this file
-        for colname in excel_dict['header']:
-            kvxls.setExcelCellPatternFill(excel_dict, 2, colname, fg_color=yellow, fill_type='solid', debug=False)
+        for colname in excel_dict["header"]:
+            kvxls.setExcelCellPatternFill(
+                excel_dict,
+                2,
+                colname,
+                fg_color=yellow,
+                fill_type="solid",
+                debug=False,
+            )
         # create a file to copy over to
         fstarter = "tst1-"
         new_file = fstarter + filenamexlsx3
         kvxls.writelist2xls(new_file, records, debug=False)
-        excel_dict2 = kvxls.readxls_findheader(
-            new_file, req_cols, debug=False
-        )
+        excel_dict2 = kvxls.readxls_findheader(new_file, req_cols, debug=False)
         # now copy over the format
         kvxls.copyExcelCellFmtOnRow(excel_dict, 2, excel_dict2, 2, debug=False)
         # test that this worked
-        for colname in excel_dict2['header']:
-            cell_color, cell_fill_type, cell_start_color, cell_end_color = kvxls.getExcelCellPatternFill(excel_dict2, 2, colname)
+        for colname in excel_dict2["header"]:
+            (
+                cell_color,
+                cell_fill_type,
+                cell_start_color,
+                cell_end_color,
+                cell_fill,
+            ) = kvxls.getExcelCellPatternFill(excel_dict2, 2, colname)
             self.assertEqual(cell_color, yellow)
         # remove the temp file
         kvutil.remove_filename(new_file)
-
 
     # the function name: def setExcelColumnValue(excel_dict, col_name, value='', debug=False):
     def test_setExcelColumnValue_p01_pass(self):

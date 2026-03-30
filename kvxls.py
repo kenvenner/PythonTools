@@ -130,7 +130,7 @@ class ExcelConfig:
     no_warnings: bool = False  # if true - do not display warning message
 
     sheetname: str | None = None  # sheet name we are processing
-    sheetrow: int | None = None # index number of sheet you want
+    sheetrow: int | None = None  # index number of sheet you want
 
     start_row: int = 0  # if passed in - we start the search at this row (starts at 1 or greater)
     # change user input to reduce by one as we are zero based - so if we start on row 1 - this value should be zero
@@ -698,7 +698,7 @@ def setExcelCellFont(
 
 def getExcelCellPatternFill(
     excel_dict: dict, row: int, col_name: str, debug: bool = False
-) -> tuple[str | None, str | None, str | None, str | None]:
+) -> tuple[str | None, str | None, str | None, str | None, str | None]:
     """
     For a defined row number and a column name string, get the cell_font information for that cell
 
@@ -713,6 +713,7 @@ def getExcelCellPatternFill(
         cell_fill_type
         cell_start_color
         cell_end_color
+        cell_fill - the PatternFill object of this cell
 
     """
 
@@ -754,7 +755,13 @@ def getExcelCellPatternFill(
         .cell(row=row + 1 + excel_dict["row_header"], column=col + 1)
         .has_style
     ):
-        return cell_color, cell_fill_type, cell_start_color, cell_end_color
+        return (
+            cell_color,
+            cell_fill_type,
+            cell_start_color,
+            cell_end_color,
+            None,
+        )
 
     # get cell value
     if excel_dict["xlsxfiletype"]:
@@ -766,21 +773,34 @@ def getExcelCellPatternFill(
         )
         # debugging
         if debug:
-            print(
-                "setExcelCellPatternFill:start:",
-                cell_fill.start_color,
-                "setExcelCellPatternFill:end:",
-                cell_fill.end_color,
-                "setExcelCellPatternFill:fgColor.rgb:",
-                cell_fill.fgColor.rgb,
-            )
+            print(f"{cell_fill=}\n{'-' * 40}")
+            print("setExcelCellPatternFill:fill_type:", cell_fill.fill_type)
+            for x in [
+                y for y in dir(cell_fill) if "__" not in y and y != "copy"
+            ]:
+                print(
+                    "setExcelCellPatternFill:" + str(x) + ":",
+                    getattr(cell_fill, x),
+                )
+
+        # special processing based on type
+        if cell_fill.fill_type in ("solid", "darkHorizontal"):
+            cell_color = cell_fill.fgColor.rgb
+            cell_fill_type = cell_fill.fill_type
+            cell_start_color = cell_fill.start_color
+            cell_end_color = cell_fill.end_color
+        else:
+            cell_fill_type = cell_fill.fill_type
+
         # return cell_fill
         return (
-            cell_fill.fgColor.rgb,
-            cell_fill.fill_type,
-            cell_fill.start_color,
-            cell_fill.end_color,
+            cell_color,
+            cell_fill_type,
+            cell_start_color,
+            cell_end_color,
+            cell_fill,
         )
+
     else:
         logger.error("feature not supported on xls file - only XLSX")
         raise NotImplementedError(
@@ -851,8 +871,10 @@ def setExcelCellPatternFill(
         )
 
     # make sure fill is set properly
-    if fill and fill != "None" and not isinstance(
-        fill, openpyxl.styles.fills.PatternFill
+    if (
+        fill
+        and fill != "None"
+        and not isinstance(fill, openpyxl.styles.fills.PatternFill)
     ):
         raise TypeError(f"fill must be PatternFile type but is: {type(fill)}")
 
@@ -961,13 +983,17 @@ def copyExcelCellFmtOnRow(
             continue
 
         # grab the color and field for this row/column
-        fg_color, fill_type, start_color, end_color = getExcelCellPatternFill(
-            excel_dict_src, src_row, col_name, debug=debug
+        fg_color, fill_type, start_color, end_color, cell_fill = (
+            getExcelCellPatternFill(
+                excel_dict_src, src_row, col_name, debug=debug
+            )
         )
 
         # debugging
         if debug:
-            print(f"{src_row=}, {fg_color=}, {fill_type=}, {start_color=}, {end_color=}")
+            print(
+                f"{src_row=}, {fg_color=}, {fill_type=}, {start_color=}, {end_color=}"
+            )
 
         # take no action if if there is no format to copy over
         if (
@@ -983,8 +1009,8 @@ def copyExcelCellFmtOnRow(
             start_color = None
             end_color = None
             if debug:
-                print('fg_color is set, clearing start_color and end_color')
-            
+                print("fg_color is set, clearing start_color and end_color")
+
         # now copy this over to the out worksheet
         setExcelCellPatternFill(
             excel_dict_out,
@@ -1711,7 +1737,9 @@ def readxls_excelDict(
         sheet_names = wb.sheetnames
     elif XLSXONLY:
         # put in to deal with a simplified library
-        raise NotImplementedError('this library only supports newer Excel file types')
+        raise NotImplementedError(
+            "this library only supports newer Excel file types"
+        )
     else:
         # XLS file
         wb = xlrd.open_workbook(xlsfile)
@@ -1989,7 +2017,9 @@ def readxls_findheader(
         sheet_names = wb.sheetnames
     elif XLSXONLY:
         # put in to deal with a simplified library
-        raise NotImplementedError('this library only supports newer Excel file types')
+        raise NotImplementedError(
+            "this library only supports newer Excel file types"
+        )
     else:
         # XLS file
         wb = xlrd.open_workbook(xlsfile)
@@ -3292,7 +3322,9 @@ def writelist2xls(
 
     elif XLSXONLY:
         # put in to deal with a simplified library
-        raise NotImplementedError('this library only supports newer Excel file types')
+        raise NotImplementedError(
+            "this library only supports newer Excel file types"
+        )
     else:
         # XLS file - create the output work book we want to create
         if replace_sheet and sheetname and os.path.exists(xlsfile):
