@@ -85,7 +85,7 @@
 
 @author:   Ken Venner
 @contact:  ken.venner@sierrspace.com
-@version: 1.42
+@version: 1.43
 
     Created:   2024-05-20;kv
     Version:   2025-07-12;kv - lots of changes and now callable as a librarry
@@ -111,8 +111,8 @@ import re
 
 # ----------------------------------------
 
-AppVersion = "1.42"
-__version__ = "1.42"
+AppVersion = "1.43"
+__version__ = "1.43"
 
 
 # ----------------------------------------
@@ -122,7 +122,7 @@ __version__ = "1.42"
 
 optiondictconfig = {
     "AppVersion": {
-        "value": "1.42",
+        'value': '1.43',
     },
     "debug": {
         "value": False,
@@ -1074,8 +1074,8 @@ def create_flds_in_records(loaded_data: list[dict], fields: list) -> None:
 def convert_hyperlink_values(
     loaded_data: list,
     hyperlink_flds: list | None = None,
-    optiondict: dict = None,
-):
+    optiondict: dict | None = None,
+) -> None:
     """
     Take a list of fields and convert them to hyperlink fields
     """
@@ -1220,13 +1220,13 @@ def src_to_dst_actions(
 
 def removed_records(
     src_data: list[dict], dst_data: list[dict], optiondict: dict
-) -> tuple[int, dict]:
+) -> tuple[list, dict]:
     """
     find the records in src_data that are not in dst_data
 
     returns
-    rmv_data: int - number of removed recordss
-    dst_lookup: dict - dst_data convrted to dickt
+    rmv_data: list - list of records that are in src but not in dst
+    dst_lookup: dict - dst_data converted to dict
 
     """
     if "key_fields" not in optiondict:
@@ -1561,9 +1561,12 @@ def format_cell(optiondict):
         matched = True
         ptr = src_lookup
         for fld in optiondict["key_fields"]:
+            # get the value for the column header on this row
             fldvalue = kvxls.getExcelCellValue(excel_dict_out, row, fld)
             # debug
             # print('row', row, 'fldvalue', fldvalue)
+            #
+            # if this value matches a source lookup - capture this dict pointer as we chain down
             if fldvalue in ptr:
                 ptr = ptr[fldvalue]
             else:
@@ -1576,7 +1579,7 @@ def format_cell(optiondict):
         if not matched:
             continue
 
-        # we now have the src row
+        # we now have the src row integer which is the final value in the dict
         src_row = ptr
 
         # debug

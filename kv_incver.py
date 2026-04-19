@@ -16,14 +16,14 @@ import kvlogger
 """
 @author:   Ken Venner
 @contact:  ken@venerllc.com
-@version:  1.12
+@version: 1.13
 
 Tooling that creates a new major/minor version on a file
 
 """
 
 # VERSION NUMBERS
-__version__ = "1.12"
+__version__ = "1.13"
 BuildVersion = "5"
 
 # set up the pretty printer
@@ -62,7 +62,7 @@ sys.excepthook = handle_exception
 # application variables
 optiondictconfig = {
     "AppVersion": {
-        "value": "1.12",
+        'value': '1.13',
         "description": "defines the version number for the app",
     },
     "input_folder": {
@@ -864,9 +864,9 @@ if __name__ == "__main__":
 
     # get the list of files to be processed
     filelist = kvutil.filename_list(
-        vargs["input_file"],
-        vargs["input_list"],
-        vargs["input_glob"],
+        filename = vargs["input_file"],
+        filenamelist = vargs["input_list"],
+        fileglob = vargs["input_glob"],
         glob_filename=True,
     )
 
@@ -936,7 +936,8 @@ if __name__ == "__main__":
                     debug=vargs["debug"],
                 )
                 logger.info(
-                    "version changed in git for:%s:outputs are appVer:%s, newAppVer:%s, filename:%s, file_bak:%s".chk_file,
+                    "version changed in git for:%s:outputs are appVer:%s, newAppVer:%s, filename:%s, file_bak:%s",
+                    chk_file,
                     appVer,
                     newAppVer,
                     filename,

@@ -1,7 +1,7 @@
 """
 @author:   Ken Venner
 @contact:  ken@venerllc.com
-@version:  1.09
+@version: 1.10
 
 Library of tools to work directly with Excel files
 """
@@ -12,7 +12,7 @@ from openpyxl.styles import Font
 import os
 
 # global variables
-AppVersion = '1.09'
+AppVersion = '1.10'
 
 def open_xlsx_get_ws_wb( xls_filename, ws_sheetname = None, disp_msg=False ):
     """
@@ -26,21 +26,7 @@ def open_xlsx_get_ws_wb( xls_filename, ws_sheetname = None, disp_msg=False ):
         ws = wb.active
     return ws, wb
 
-def get_existing_column_width( xls_filename, ws_sheetname = None, disp_msg=False ):
-    """
-    Pass in a filename
-    Extract the column widths from a define xlsx filename
-    """
-    if not os.path.exists( xls_filename ):
-        if disp_msg:
-            print('get_existing_column_width:file did not exist for:', xls_filename)
-        return col_width
-    ws, wb = open_xlsx_get_ws_wb( xls_filename, ws_sheetname, disp_msg=disp_msg )
-    col_width = get_existing_col_width_ws(ws, disp_msg=disp_msg)
-    return col_width
-
-
-def get_existing_column_width_ws( ws, disp_msg=False ):
+def get_existing_column_width_ws( ws, disp_msg=False ) -> dict:
     """
     Pass in a ws
     Extract the column widths from a define xlsx filename
@@ -50,24 +36,28 @@ def get_existing_column_width_ws( ws, disp_msg=False ):
         col_width[k] = cd.width
     return col_width
 
-def get_existing_column_format( xls_filename, ws_sheetname = None, columns=None, disp_msg=False ):
+def get_existing_column_width( xls_filename: str, ws_sheetname: str | None = None, disp_msg: bool=False ) -> dict:
     """
-    Pass in a filename
+    Pass in a filename, sheetnname
     Extract the column widths from a define xlsx filename
     """
+    col_width = {}
     if not os.path.exists( xls_filename ):
         if disp_msg:
             print('get_existing_column_width:file did not exist for:', xls_filename)
-        return col_format
+        return col_width
     ws, wb = open_xlsx_get_ws_wb( xls_filename, ws_sheetname, disp_msg=disp_msg )
-    col_format = get_existing_col_format_ws(ws, columns=columns, disp_msg=disp_msg)
-    return col_format
-    
-def get_existing_column_format_ws( ws, columns=None, disp_msg=False ):
+    col_width = get_existing_column_width_ws(ws, disp_msg=disp_msg)
+    return col_width
+
+
+def get_existing_column_format_ws( ws, columns: list | None=None, disp_msg: bool=False ) -> dict:
     """
     Pass in a ws
     Extract the column widths from a define xlsx filename
     """
+    if columns is None:
+        columns = []
     col_format = {}
     # get each column and pull teh format for the row 2 cell in that column because row 1 is the header
     for col in columns:
@@ -75,25 +65,24 @@ def get_existing_column_format_ws( ws, columns=None, disp_msg=False ):
         col_format[col] = cell.number_format
     return col_format
 
-def get_existing_column_hidden( xls_filename, ws_sheetname = None, disp_msg=False ):
+def get_existing_column_format( xls_filename: str, ws_sheetname: str | None = None, columns: list | None =None, disp_msg: bool=False ) -> dict:
     """
     Pass in a filename
     Extract the column widths from a define xlsx filename
     """
+    col_format = {}
     if not os.path.exists( xls_filename ):
         if disp_msg:
-            print('get_existing_column_hidden:file did not exist for:', xls_filename)
-        return col_hidden
-
-    # open file 
+            print('get_existing_column_width:file did not exist for:', xls_filename)
+        return col_format
     ws, wb = open_xlsx_get_ws_wb( xls_filename, ws_sheetname, disp_msg=disp_msg )
-    col_hidden = get_existing_column_hidden_ws( ws, disp_msg=disp_msg)
-    return col_hidden
-
-def get_existing_column_hidden_ws( ws, disp_msg=False ):
+    col_format = get_existing_column_format_ws(ws, columns=columns, disp_msg=disp_msg)
+    return col_format
+    
+def get_existing_column_hidden_ws( ws, disp_msg: bool=False ) -> list:
     """
     Pass in a ws
-    Extract the column widths from a define xlsx filename
+    Extract the list of columns marked as hidden
     """
     col_hidden = []
 
@@ -123,6 +112,22 @@ def get_existing_column_hidden_ws( ws, disp_msg=False ):
         else:
             last_hidden_group_max = 0
 
+    return col_hidden
+
+def get_existing_column_hidden( xls_filename: str, ws_sheetname: str | None = None, disp_msg: bool=False ) -> list:
+    """
+    Pass in a filename
+    Extract the list of columns that are hidden
+    """
+    col_hidden = []
+    if not os.path.exists( xls_filename ):
+        if disp_msg:
+            print('get_existing_column_hidden:file did not exist for:', xls_filename)
+        return col_hidden
+
+    # open file 
+    ws, wb = open_xlsx_get_ws_wb( xls_filename, ws_sheetname, disp_msg=disp_msg )
+    col_hidden = get_existing_column_hidden_ws( ws, disp_msg=disp_msg)
     return col_hidden
 
 # convert this into a class and then apply to that object you opened

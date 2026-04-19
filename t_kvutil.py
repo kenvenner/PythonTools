@@ -576,7 +576,7 @@ class TestKVUtilFilenames(unittest.TestCase):
     def test_filename_maxmin_p02_reverse(self):
         self.assertEqual(kvutil.filename_maxmin(  tst_filename+'*', reverse=True ), '{}.{:03d}'.format(tst_filename, range(tst_ext_range)[-1]) )
     def test_filename_maxmin_p03_nofiles(self):
-        self.assertEqual(kvutil.filename_maxmin( 'no'+tst_filename+'*' ), None)
+        self.assertEqual(kvutil.filename_maxmin( 'no'+tst_filename+'*' ), '')
 
 
     # filename_create 
