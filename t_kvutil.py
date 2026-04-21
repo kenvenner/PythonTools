@@ -17,7 +17,7 @@ kvlogger.dictConfig(config)
 logger=kvlogger.getLogger(__name__)
 
 # set the module version number
-AppVersion = '1.31'
+AppVersion = '1.32'
 
 # global variables
 tst_filename='t_kvutil_tst'
@@ -60,6 +60,8 @@ def file_setup(  startfilename='t_kvutil_tst', ext_range=4, disp_msg=True):
             with open( fname, 'w' ) as t:
                 pass
         
+def fname_rename_add_1(a):
+    return '1'+a
 
         
 # test class
@@ -755,7 +757,21 @@ class TestKVUtilFilenames(unittest.TestCase):
     def test_filename_unique_p05_filename_output_dir(self):
         self.assertEqual(kvutil.filename_unique('uniquefname.txt', filename_href={'file_path': 'xlsx'}), os.path.normpath('xlsx/uniquefname.txt'))
 
-        
+    # filename_rename
+    def test_filenames_rename_p01_pass(self):
+        files = ['abc.txt', 'def.txt']
+        converted_files = [f"REN \"{x}\" \"{'1'+x}\"" for x in files]
+        self.assertEqual(kvutil.filenames_rename(files, fname_rename_add_1), converted_files)
+    def test_filenames_rename_f01_not_list(self):
+        files = 'abc.txt'
+        with self.assertRaises(Exception) as context:
+            kvutil.filenames_rename(files, fname_rename_add_1)
+    def test_filenames_rename_f02_not_function(self):
+        files = ['abc.txt']
+        with self.assertRaises(Exception) as context:
+            kvutil.filenames_rename(files, 'a')
+
+
     # cloudpath
     def test_cloudpath_p01_dropbox(self):
         self.assertEqual(kvutil.cloudpath('Dropbox/LinuxShare/python/tools'), os.path.normpath( os.environ.get('USERPROFILE')+'/Dropbox/LinuxShare/python/tools'))

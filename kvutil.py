@@ -1,18 +1,22 @@
 """
 @author:   Ken Venner
 @contact:  ken@venerllc.com
-@version: 1.101
+@version: 1.102
 
 Library of tools used in general by KV
 """
 
 from __future__ import print_function
 
+from typing import Callable
+
 import glob
 import os
 import datetime
 import pprint
 import time
+import types
+
 
 # moved datetime processing to its own module
 import kvdate
@@ -38,8 +42,8 @@ debug_file = False
 logger = logging.getLogger(__name__)
 
 # set the module version number
-AppVersion = "1.101"
-__version__ = "1.101"
+AppVersion = "1.102"
+__version__ = "1.102"
 HELP_KEYS = (
     "help",
     "helpall",
@@ -1631,6 +1635,37 @@ def filename_unique(
 
     # return the final filename
     return filename_proper(filename, file_dir=default_options["file_path"])
+
+
+def filenames_rename(fname_list: list[str], func_rename: Callable, os: str='WIN') -> list[str]:
+    """
+    take in a list of filenames
+    and a function that converts each string into its desired name
+    and return a list of rename commands that will cause the files to be renamed
+
+    Inputs:
+        fname_list - list - list of filenames to rename
+        func_rename - function - that each fname is passed into that causes the string to convert to the new filename
+
+    Returns:
+        rename_fname_list - list of REN commands based on the os passed in
+    """
+
+    if not isinstance(fname_list, list):
+        raise TypeError('fname_list must be a list but is: {}'.format(type(fname_list)))
+    if not isinstance(func_rename, types.FunctionType):
+        raise TypeError('func_name must be a function but is: {}'.format(type(func_rename)))
+        
+    rename_cmd = 'REN'
+    if os != 'WIN':
+        rename_cmd = 'mv'
+
+    rename_list = []
+    for fname in fname_list:
+        new_fname = func_rename(fname)
+        rename_list.append(f"{rename_cmd} \"{fname}\" \"{new_fname}\"")
+
+    return rename_list
 
 
 def cloudpath(filepath: str | None = None, filename: str = "") -> str:
