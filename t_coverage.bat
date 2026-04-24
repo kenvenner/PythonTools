@@ -1,0 +1,13 @@
+python test_coverage.py copy_comments.py -t t_copy_comments.py
+python test_coverage.py kvcsv.py -t t_kvcsv.py
+python test_coverage.py kvdate.py -t t_kvdate.py
+python test_coverage.py kvgmail.py -t t_kvgmail.py
+python test_coverage.py kvgmailrcv.py -t t_kvgmailrcv.py
+python test_coverage.py kvgmailsend.py -t t_kvgmailsend.py
+python test_coverage.py kvjpg.py -t t_kvjpg.py
+python test_coverage.py kvlogger.py -t t_kvlogger.py
+python test_coverage.py kvmatch.py -t t_kvmatch.py
+python test_coverage.py kvutil.py -t t_kvutil.py
+python test_coverage.py kvxls.py -t t_kvxls.py
+python test_coverage.py kv_incver.py -t t_kv_incver.py
+python test_coverage.py xlsx_diff.py -t xlsx_diff.py
