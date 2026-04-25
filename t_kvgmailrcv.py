@@ -1,4 +1,5 @@
 import kvgmailrcv
+import kvargs
 import unittest
 import os
 import sys
@@ -7,8 +8,8 @@ import imaplib
 # set the module version number
 AppVersion = "1.06"
 
-user = "wines@vennerllc.com"
-password = "win3s3arch*"
+user = "<please load values from t_kvgmailrcv.json>"
+password = "<please load values from t_kvgmailrcv.json>"
 
 msgPathValid = "c:/temp/gmail"
 
@@ -427,5 +428,10 @@ class TestKVGmailRcv(unittest.TestCase):
 
 
 if __name__ == "__main__":
+    conf = kvargs.load_json_file_to_dict('t_kvgmailrcv.json')
+    user = conf['user']
+    password = conf['password']
+    print(conf)
+    sys.exit()
     unittest.main()
     print("assure you have messages in:{}:{}".format(user, folder_msgs))
