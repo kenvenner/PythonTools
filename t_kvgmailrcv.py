@@ -428,9 +428,9 @@ class TestKVGmailRcv(unittest.TestCase):
 
 
 if __name__ == "__main__":
-    conf = kvargs.load_json_file_to_dict('t_kvgmailrcv.json')
-    user = conf['user']
-    password = conf['password']
+    conf = kvargs.load_json_file_to_dict("t_kvgmailrcv.json")
+    user = conf["user"]
+    password = conf["password"]
     print(conf)
     sys.exit()
     unittest.main()

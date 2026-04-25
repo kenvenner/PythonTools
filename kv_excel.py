@@ -12,21 +12,23 @@ from openpyxl.styles import Font
 import os
 
 # global variables
-AppVersion = '1.10'
+AppVersion = "1.10"
 
-def open_xlsx_get_ws_wb( xls_filename, ws_sheetname = None, disp_msg=False ):
+
+def open_xlsx_get_ws_wb(xls_filename, ws_sheetname=None, disp_msg=False):
     """
     Pass in a filename
     Open a xlsx document to the specified sheet name or the active sheetname
     """
-    wb = openpyxl.load_workbook( xls_filename )
+    wb = openpyxl.load_workbook(xls_filename)
     if ws_sheetname:
         ws = wb[ws_sheetname]
     else:
         ws = wb.active
     return ws, wb
 
-def get_existing_column_width_ws( ws, disp_msg=False ) -> dict:
+
+def get_existing_column_width_ws(ws, disp_msg=False) -> dict:
     """
     Pass in a ws
     Extract the column widths from a define xlsx filename
@@ -36,22 +38,27 @@ def get_existing_column_width_ws( ws, disp_msg=False ) -> dict:
         col_width[k] = cd.width
     return col_width
 
-def get_existing_column_width( xls_filename: str, ws_sheetname: str | None = None, disp_msg: bool=False ) -> dict:
+
+def get_existing_column_width(
+    xls_filename: str, ws_sheetname: str | None = None, disp_msg: bool = False
+) -> dict:
     """
     Pass in a filename, sheetnname
     Extract the column widths from a define xlsx filename
     """
     col_width = {}
-    if not os.path.exists( xls_filename ):
+    if not os.path.exists(xls_filename):
         if disp_msg:
-            print('get_existing_column_width:file did not exist for:', xls_filename)
+            print("get_existing_column_width:file did not exist for:", xls_filename)
         return col_width
-    ws, wb = open_xlsx_get_ws_wb( xls_filename, ws_sheetname, disp_msg=disp_msg )
+    ws, wb = open_xlsx_get_ws_wb(xls_filename, ws_sheetname, disp_msg=disp_msg)
     col_width = get_existing_column_width_ws(ws, disp_msg=disp_msg)
     return col_width
 
 
-def get_existing_column_format_ws( ws, columns: list | None=None, disp_msg: bool=False ) -> dict:
+def get_existing_column_format_ws(
+    ws, columns: list | None = None, disp_msg: bool = False
+) -> dict:
     """
     Pass in a ws
     Extract the column widths from a define xlsx filename
@@ -61,25 +68,32 @@ def get_existing_column_format_ws( ws, columns: list | None=None, disp_msg: bool
     col_format = {}
     # get each column and pull teh format for the row 2 cell in that column because row 1 is the header
     for col in columns:
-        cell = ws[col + '2']
+        cell = ws[col + "2"]
         col_format[col] = cell.number_format
     return col_format
 
-def get_existing_column_format( xls_filename: str, ws_sheetname: str | None = None, columns: list | None =None, disp_msg: bool=False ) -> dict:
+
+def get_existing_column_format(
+    xls_filename: str,
+    ws_sheetname: str | None = None,
+    columns: list | None = None,
+    disp_msg: bool = False,
+) -> dict:
     """
     Pass in a filename
     Extract the column widths from a define xlsx filename
     """
     col_format = {}
-    if not os.path.exists( xls_filename ):
+    if not os.path.exists(xls_filename):
         if disp_msg:
-            print('get_existing_column_width:file did not exist for:', xls_filename)
+            print("get_existing_column_width:file did not exist for:", xls_filename)
         return col_format
-    ws, wb = open_xlsx_get_ws_wb( xls_filename, ws_sheetname, disp_msg=disp_msg )
+    ws, wb = open_xlsx_get_ws_wb(xls_filename, ws_sheetname, disp_msg=disp_msg)
     col_format = get_existing_column_format_ws(ws, columns=columns, disp_msg=disp_msg)
     return col_format
-    
-def get_existing_column_hidden_ws( ws, disp_msg: bool=False ) -> list:
+
+
+def get_existing_column_hidden_ws(ws, disp_msg: bool = False) -> list:
     """
     Pass in a ws
     Extract the list of columns marked as hidden
@@ -98,7 +112,7 @@ def get_existing_column_hidden_ws( ws, disp_msg: bool=False ) -> list:
     for i, col_letter in enumerate(all_cols_letters):
         # Get the column dimension object (openpyxl creates it if it doesn't exist)
         col_dim = ws.column_dimensions[col_letter]
-    
+
         # Check if the column is marked as hidden
         if col_dim.hidden:
             col_hidden.append(col_letter)
@@ -114,24 +128,28 @@ def get_existing_column_hidden_ws( ws, disp_msg: bool=False ) -> list:
 
     return col_hidden
 
-def get_existing_column_hidden( xls_filename: str, ws_sheetname: str | None = None, disp_msg: bool=False ) -> list:
+
+def get_existing_column_hidden(
+    xls_filename: str, ws_sheetname: str | None = None, disp_msg: bool = False
+) -> list:
     """
     Pass in a filename
     Extract the list of columns that are hidden
     """
     col_hidden = []
-    if not os.path.exists( xls_filename ):
+    if not os.path.exists(xls_filename):
         if disp_msg:
-            print('get_existing_column_hidden:file did not exist for:', xls_filename)
+            print("get_existing_column_hidden:file did not exist for:", xls_filename)
         return col_hidden
 
-    # open file 
-    ws, wb = open_xlsx_get_ws_wb( xls_filename, ws_sheetname, disp_msg=disp_msg )
-    col_hidden = get_existing_column_hidden_ws( ws, disp_msg=disp_msg)
+    # open file
+    ws, wb = open_xlsx_get_ws_wb(xls_filename, ws_sheetname, disp_msg=disp_msg)
+    col_hidden = get_existing_column_hidden_ws(ws, disp_msg=disp_msg)
     return col_hidden
 
+
 # convert this into a class and then apply to that object you opened
-def apply_col_width_ws_obj( ws, col_width, disp_msg=True ):
+def apply_col_width_ws_obj(ws, col_width, disp_msg=True):
     """
     Pass in a worksheet object and a column width dictionary
     Format the worksheet object to have column widths as defined in the dictionary
@@ -144,7 +162,7 @@ def apply_col_width_ws_obj( ws, col_width, disp_msg=True ):
                 ws.column_dimensions[k].width = col_width[k]
             else:
                 if disp_msg:
-                    print('Skipped column width change - new width not defined: ', k)
+                    print("Skipped column width change - new width not defined: ", k)
     else:
         # print('column range')
         for col in range(ws.min_column, ws.max_column):
@@ -154,10 +172,11 @@ def apply_col_width_ws_obj( ws, col_width, disp_msg=True ):
                 ws.column_dimensions[k].width = col_width[k]
             else:
                 if disp_msg:
-                    print('Skipped column: ', k)
-            
+                    print("Skipped column: ", k)
+
+
 # convert this into a class and then apply to that object you opened
-def apply_col_format_ws_obj( ws, col_format, disp_msg=True ):
+def apply_col_format_ws_obj(ws, col_format, disp_msg=True):
     """
     Pass in a worksheet object and a column format dictionary
     Format the worksheet object to have column widths as defined in the dictionary
@@ -167,31 +186,35 @@ def apply_col_format_ws_obj( ws, col_format, disp_msg=True ):
         for cell in ws[col]:
             if cell.row > 1:
                 cell.number_format = fmt
-            
+
+
 # convert this into a class and then apply to that object you opened
-def apply_col_hidden_ws_obj( ws, col_hidden, disp_msg=True ):
+def apply_col_hidden_ws_obj(ws, col_hidden, disp_msg=True):
     """
     Pass in a worksheet object and a column width dictionary
     Format the worksheet object to have column widths as defined in the dictionary
     """
     for col in col_hidden:
         ws.column_dimensions[col].hidden = True
-        
-def apply_filter_all_columns( ws ):
+
+
+def apply_filter_all_columns(ws):
     """
     Pass in a worksheet option
     Enble the filter all columns feature with row 1 as the header
     """
     ws.auto_filter.ref = ws.dimensions
 
-def apply_row_freeze( ws, cell='A2'):
+
+def apply_row_freeze(ws, cell="A2"):
     """
     Pass in a worksheet object, and optoinally a position
     Cause this worksheet to freeze to the top row of the row/col passed in
     """
     ws.freeze_panes = cell
 
-def apply_row_bold( ws, row=1):
+
+def apply_row_bold(ws, row=1):
     """
     Pass in a worksheet object, and optoinally a position
     Cause this worksheet to apply the bold font to the row defined
@@ -202,8 +225,7 @@ def apply_row_bold( ws, row=1):
             cell.font = Font(bold=True)
 
 
-
-def autofit_column_width( ws ):
+def autofit_column_width(ws):
     """
     Pass in a work sheet object
     Calculate the column widths to auto-fit the column to the data
@@ -222,7 +244,14 @@ def autofit_column_width( ws ):
         ws.column_dimensions[column_letter].width = adjusted_width
 
 
-def format_xlsx_with_filter_and_freeze( xls_filename, ws_sheetname=None, col_width=None, col_hidden=None, col_format=None, disp_msg=True ):
+def format_xlsx_with_filter_and_freeze(
+    xls_filename,
+    ws_sheetname=None,
+    col_width=None,
+    col_hidden=None,
+    col_format=None,
+    disp_msg=True,
+):
     """
     Take in a xlsx filename
     Open this file
@@ -233,73 +262,72 @@ def format_xlsx_with_filter_and_freeze( xls_filename, ws_sheetname=None, col_wid
     Freeze
     Save back to the original filename
     """
-    if not os.path.exists( xls_filename ):
-        raise Exception('File does not exist: ' + xls_filename)
+    if not os.path.exists(xls_filename):
+        raise Exception("File does not exist: " + xls_filename)
     ws, wb = open_xlsx_get_ws_wb(xls_filename, disp_msg=disp_msg)
-    
-    #import time
-    #starttime = time.time()
-    
+
+    # import time
+    # starttime = time.time()
+
     if col_width:
         if disp_msg:
-            print('Applying defined col_width')
+            print("Applying defined col_width")
         apply_col_width_ws_obj(ws, col_width, disp_msg=disp_msg)
     else:
         if disp_msg:
-            print('Autofit col_width')
+            print("Autofit col_width")
         autofit_column_width(ws)
-        
-    #print('col_width:', time.time()-starttime)
-    #starttime=time.time()
+
+    # print('col_width:', time.time()-starttime)
+    # starttime=time.time()
 
     if col_hidden:
         apply_col_hidden_ws_obj(ws, col_hidden, disp_msg=disp_msg)
 
-        #print('col_hidden:', time.time()-starttime)
-        #starttime=time.time()
+        # print('col_hidden:', time.time()-starttime)
+        # starttime=time.time()
     if col_format:
-        apply_col_format_ws_obj( ws, col_format, disp_msg=disp_msg )        
+        apply_col_format_ws_obj(ws, col_format, disp_msg=disp_msg)
 
-        #print('col_format:', time.time()-starttime)
-        #starttime=time.time()
+        # print('col_format:', time.time()-starttime)
+        # starttime=time.time()
     apply_filter_all_columns(ws)
     apply_row_freeze(ws)
     # save out the filename
     wb.save(xls_filename)
-    
-       
+
 
 # when not used as a library
-if __name__ == '__main__':
-    src_dir = '/Users/116919/Sierra Space Corporation/Information Technology - PO_Files/'
-    src_fname = 'SierraSpace-Open-PO-Lines.xlsx'
-    dst_dir = '/Users/116919/Sierra Space Corporation/Information Technology - PO_Files/po-requestor/'
-    dst_fname = 'Abraham_Rez_SierraSpace-Open-PO-Lines.xlsx'
-    dst_fname2 = 'Abraham_Rez_SierraSpace-Open-PO-Lines_fmt.xlsx'
-    dst_fname3 = 'Abraham_Rez_SierraSpace-Open-PO-Lines_fmt2.xlsx'
-
+if __name__ == "__main__":
+    src_dir = (
+        "/Users/116919/Sierra Space Corporation/Information Technology - PO_Files/"
+    )
+    src_fname = "SierraSpace-Open-PO-Lines.xlsx"
+    dst_dir = "/Users/116919/Sierra Space Corporation/Information Technology - PO_Files/po-requestor/"
+    dst_fname = "Abraham_Rez_SierraSpace-Open-PO-Lines.xlsx"
+    dst_fname2 = "Abraham_Rez_SierraSpace-Open-PO-Lines_fmt.xlsx"
+    dst_fname3 = "Abraham_Rez_SierraSpace-Open-PO-Lines_fmt2.xlsx"
 
     # get the master file column widths
-    col_width = get_existing_column_width(src_dir+src_fname)
+    col_width = get_existing_column_width(src_dir + src_fname)
 
     # get the to be worked on Excel workbook and worksheet
-    ws, wb = open_xlsx_get_ws_wb(dst_dir+dst_fname)
+    ws, wb = open_xlsx_get_ws_wb(dst_dir + dst_fname)
 
     # save for the other test
-    wb.save(dst_dir+dst_fname3)
+    wb.save(dst_dir + dst_fname3)
 
     ## TEST1
-    
+
     # step through and format
     # apply_col_width_ws_obj(ws, col_width)
-    autofit_column_width( ws )
+    autofit_column_width(ws)
     apply_filter_all_columns(ws)
     apply_row_freeze(ws)
 
     # save out the filename
-    wb.save(dst_dir+dst_fname2)
-    
+    wb.save(dst_dir + dst_fname2)
 
     ## TEST2
-    format_xlsx_with_filter_and_freeze( dst_dir+dst_fname3, col_width=col_width )
-#eof
+    format_xlsx_with_filter_and_freeze(dst_dir + dst_fname3, col_width=col_width)
+# eof

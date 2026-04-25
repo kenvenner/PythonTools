@@ -51,9 +51,7 @@ def handle_exception(exc_type, exc_value, exc_traceback):
         return
 
     # other wise catch/log this error
-    logger.error(
-        "Uncaught exception", exc_info=(exc_type, exc_value, exc_traceback)
-    )
+    logger.error("Uncaught exception", exc_info=(exc_type, exc_value, exc_traceback))
 
 
 # create overall hook to catch uncaught exceptions
@@ -62,7 +60,7 @@ sys.excepthook = handle_exception
 # application variables
 optiondictconfig = {
     "AppVersion": {
-        'value': '1.13',
+        "value": "1.13",
         "description": "defines the version number for the app",
     },
     "input_folder": {
@@ -190,9 +188,7 @@ SEARCH4BUILDVERSION = [
 ]
 
 
-def debug_print(
-    msg, new_app_ver, new_version, m, line, version_changed, opt_ver_found
-):
+def debug_print(msg, new_app_ver, new_version, m, line, version_changed, opt_ver_found):
     """
     Display the variables of interest
     """
@@ -271,9 +267,7 @@ def build_version_update(
                 line = line.replace(m.group(1), new_bld_version)
             else:
                 line = line.replace(m.group(1), new_bld_version)
-                bld_version_new = int(
-                    new_bld_version.split(" ")[2].replace("'", "")
-                )
+                bld_version_new = int(new_bld_version.split(" ")[2].replace("'", ""))
 
             # return what we found
             return (
@@ -730,9 +724,7 @@ def git_modified_files_in_folder(folder_path="", debug=False):
 
     # git status call to find files that changed
     if folder_path:
-        result = subprocess.run(
-            ["git", "status", folder_path], stdout=subprocess.PIPE
-        )
+        result = subprocess.run(["git", "status", folder_path], stdout=subprocess.PIPE)
     else:
         result = subprocess.run(["git", "status"], stdout=subprocess.PIPE)
 
@@ -770,9 +762,7 @@ def version_changed_in_git_branch(filename, debug=False):
 
     if debug:
         print("version_changed_in_git_branch:maxlines_checked:", filename)
-        print(
-            "version_changed_in_git_branch:maxlines_checked:", MAXLINES_CHECKED
-        )
+        print("version_changed_in_git_branch:maxlines_checked:", MAXLINES_CHECKED)
         print("version_changed_in_git_branch:results of git diff:\n", result)
 
     linecnt = 0
@@ -832,9 +822,7 @@ if __name__ == "__main__":
     )
     parser.add_argument("--conf", help="configuration file")
     parser.add_argument("--test", action="store_true", help="Run in test mode")
-    parser.add_argument(
-        "--debug", action="store_true", help="Run in debug mode"
-    )
+    parser.add_argument("--debug", action="store_true", help="Run in debug mode")
     parser.add_argument(
         "--disp_vargs", action="store_true", help="Display command line options"
     )
@@ -864,9 +852,9 @@ if __name__ == "__main__":
 
     # get the list of files to be processed
     filelist = kvutil.filename_list(
-        filename = vargs["input_file"],
-        filenamelist = vargs["input_list"],
-        fileglob = vargs["input_glob"],
+        filename=vargs["input_file"],
+        filenamelist=vargs["input_list"],
+        fileglob=vargs["input_glob"],
         glob_filename=True,
     )
 
@@ -922,13 +910,9 @@ if __name__ == "__main__":
                 continue
 
             if vargs["debug"]:
-                print(
-                    "-" * 40, "\nInspecting for version  number file:", chk_file
-                )
+                print("-" * 40, "\nInspecting for version  number file:", chk_file)
 
-            if not version_changed_in_git_branch(
-                chk_file, debug=vargs["debug"]
-            ):
+            if not version_changed_in_git_branch(chk_file, debug=vargs["debug"]):
                 appVer, newAppVer, filename, file_bak = update_file_version(
                     chk_file,
                     major_update=vargs["major_update"],
@@ -944,6 +928,4 @@ if __name__ == "__main__":
                     file_bak,
                 )
             else:
-                logger.info(
-                    "version previously changed in git for: %s", chk_file
-                )
+                logger.info("version previously changed in git for: %s", chk_file)

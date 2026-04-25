@@ -47,9 +47,7 @@ badoptiondict = {
 class TestKVMatch(unittest.TestCase):
     # build_multifield_key
     def test_build_multifield_key_p01_single_string(self):
-        self.assertEqual(
-            kvmatch.build_multifield_key(rowdict, ["Company"]), "Test"
-        )
+        self.assertEqual(kvmatch.build_multifield_key(rowdict, ["Company"]), "Test")
 
     def test_build_multifield_key_p02_multiplestrings(self):
         self.assertEqual(
@@ -70,15 +68,11 @@ class TestKVMatch(unittest.TestCase):
         )
 
     def test_build_multifield_key_p05_single_string_string(self):
-        self.assertEqual(
-            kvmatch.build_multifield_key(rowdict, "Company"), "Test"
-        )
+        self.assertEqual(kvmatch.build_multifield_key(rowdict, "Company"), "Test")
 
     def test_build_multifield_key_p06_multiplestrings_joinchar(self):
         self.assertEqual(
-            kvmatch.build_multifield_key(
-                rowdict, ["Company", "Wine"], joinchar=":"
-            ),
+            kvmatch.build_multifield_key(rowdict, ["Company", "Wine"], joinchar=":"),
             "Test:Yummy",
         )
 
@@ -115,26 +109,38 @@ class TestKVMatch(unittest.TestCase):
         # dictkey value not inside rowdict
         with self.assertRaises(Exception) as context:
             kvmatch.build_multifield_key(rowdict, ["Company", "Missing"])
+        self.assertEqual(
+            str(context.exception), "dictkeys not in rowdict: [,',M,i,s,s,i,n,g,',]"
+        )
 
     def test_build_multifield_key_f02_empty_dictkeys(self):
         with self.assertRaises(Exception) as context:
             kvmatch.build_multifield_key(rowdict, [])
+        self.assertEqual(str(context.exception), "dictkeys not provided")
 
     def test_build_multifield_key_f03_empty_string_dictkeys(self):
         with self.assertRaises(Exception) as context:
             kvmatch.build_multifield_key(rowdict, "")
+        self.assertEqual(str(context.exception), "dictkeys not provided")
 
     def test_build_multifield_key_f04_empty_rowdict(self):
         with self.assertRaises(Exception) as context:
             kvmatch.build_multifield_key({}, ["Company"])
+        self.assertEqual(str(context.exception), "rowdict not populated")
 
     def test_build_multifield_key_f05_rowdict_not_dict(self):
         with self.assertRaises(Exception) as context:
             kvmatch.build_multifield_key("ken", ["Company"])
+        self.assertEqual(
+            str(context.exception), "rowdict must be dict but is: <class 'str'>"
+        )
 
     def test_build_multifield_key_f06_dictkeys_dict(self):
         with self.assertRaises(Exception) as context:
             kvmatch.build_multifield_key(rowdict, {"a": 1})
+        self.assertEqual(
+            str(context.exception), "dictkeys must be list but is: <class 'dict'>"
+        )
 
     # the function name: def badoption_msg(func, val, val2):
     def test_badoption_msg_p01_pass(self):
@@ -225,34 +231,49 @@ class TestKVMatch(unittest.TestCase):
                 True,
                 dieonbadoption=True,
             )
+        self.assertEqual(str(context.exception), "badoption found")
 
     def test_MatchRow___init___p01_simple(self):
         self.assertIsInstance(kvmatch.MatchRow(["Col1"]), kvmatch.MatchRow)
 
     def test_MatchRow___init___p02_xlat(self):
-        self.assertIsInstance(
-            kvmatch.MatchRow(["Col1"], xlat_dict), kvmatch.MatchRow
-        )
+        self.assertIsInstance(kvmatch.MatchRow(["Col1"], xlat_dict), kvmatch.MatchRow)
 
     def test_MatchRow___init___f01_no_req_col(self):
         with self.assertRaises(Exception) as context:
             kvmatch.MatchRow()
+        self.assertEqual(
+            str(context.exception),
+            "MatchRow.__init__() missing 1 required positional argument: 'req_cols'",
+        )
 
     def test_MatchRow___init___f02_req_col_not_list(self):
         with self.assertRaises(Exception) as context:
             kvmatch.MatchRow("Col1")
+        self.assertEqual(
+            str(context.exception), "req_cols must be a list: <class 'str'>"
+        )
 
     def test_MatchRow___init___f03_xlatdict_not_dict(self):
         with self.assertRaises(Exception) as context:
             kvmatch.MatchRow(["Col1"], "xlatdict")
+        self.assertEqual(
+            str(context.exception), "xlatdict must be a dict: <class 'str'>"
+        )
 
     def test_MatchRow___init___f04_optiondict_not_dict(self):
         with self.assertRaises(Exception) as context:
             kvmatch.MatchRow(["Col1"], optiondict="optiondict")
+        self.assertEqual(
+            str(context.exception), "optiondict must be a dict: <class 'str'>"
+        )
 
     def test_MatchRow___init___f05_optiondict2_not_dict(self):
         with self.assertRaises(Exception) as context:
             kvmatch.MatchRow(["Col1"], optiondict2="optiondict2")
+        self.assertEqual(
+            str(context.exception), "optiondict2 must be a dict: <class 'str'>"
+        )
 
     def test_MatchRow___init___p01_init_optiondict_warning(self):
         self.assertIsInstance(
@@ -293,6 +314,7 @@ class TestKVMatch(unittest.TestCase):
         # print('tempdict:', tempdict)
         with self.assertRaises(Exception) as context:
             p = kvmatch.MatchRow(["Col1"], optiondict=tempdict)
+        self.assertEqual(str(context.exception), "badoption found")
 
     def test_MatchRow___init___f02_init_optiondict_warning_invalid_optiondict_die_fix(
         self,
@@ -304,12 +326,11 @@ class TestKVMatch(unittest.TestCase):
         tempdict["fix_missing"] = True
         # print('tempdict:', tempdict)
         with self.assertRaises(Exception) as context:
-            p = kvmatch.MatchRow(["Col1"], optiondict=tempdict)
+            kvmatch.MatchRow(["Col1"], optiondict=tempdict)
+        self.assertEqual(str(context.exception), "badoption found")
 
     def test_MatchRow___init___p01_init_optiondict_nocase(self):
-        p = kvmatch.MatchRow(
-            ["Col1"], optiondict={"nocase": True, "no_warnings": True}
-        )
+        p = kvmatch.MatchRow(["Col1"], optiondict={"nocase": True, "no_warnings": True})
         self.assertEqual(p.nocase, True)
 
     def test_MatchRow___init___p01_init_optiondict_unique_column(self):
@@ -319,9 +340,7 @@ class TestKVMatch(unittest.TestCase):
         self.assertEqual(p.unique_column, True)
 
     def test_MatchRow___init___p01_init_optiondict_maxrows(self):
-        p = kvmatch.MatchRow(
-            ["Col1"], optiondict={"max_rows": 2, "no_warnings": True}
-        )
+        p = kvmatch.MatchRow(["Col1"], optiondict={"max_rows": 2, "no_warnings": True})
         self.assertEqual(p.max_rows, 2)
 
     def test_MatchRow___init___p01_init_optiondict_dieonbadoption(self):
@@ -443,9 +462,7 @@ class TestKVMatch(unittest.TestCase):
         self.assertTrue(p.matchRowList(record, debug=False))
 
     def test_MatchRow_matchRowList_p06_find_row_in_list(self):
-        p = kvmatch.MatchRow(
-            kenlist, xlat_dict, {"nocase": True, "startrow": 2}
-        )
+        p = kvmatch.MatchRow(kenlist, xlat_dict, {"nocase": True, "startrow": 2})
         tempdata = [nonrecord] * 4
         tempdata.append(kenlist)
         tempdata.append(record)
@@ -459,9 +476,7 @@ class TestKVMatch(unittest.TestCase):
         self.assertTrue(p.matchRowList(data, debug=False))
 
     def test_MatchRow_matchRowList_p07_not_find_row_in_list(self):
-        p = kvmatch.MatchRow(
-            kenlist, xlat_dict, {"nocase": True, "max_rows": 3}
-        )
+        p = kvmatch.MatchRow(kenlist, xlat_dict, {"nocase": True, "max_rows": 3})
         tempdata = [nonrecord] * 4
         tempdata.append(kenlist)
         tempdata.append(record)

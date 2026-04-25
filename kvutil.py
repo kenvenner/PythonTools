@@ -312,9 +312,7 @@ def kv_parse_command_line(
             # skip this if the key is not populated
             if not key:
                 if debug:
-                    print(
-                        "kv_parse_command_line:key-not-populated-skipping-arg"
-                    )
+                    print("kv_parse_command_line:key-not-populated-skipping-arg")
                 logger.debug("Key-not-populated-with-value-skipping-arg")
                 continue
 
@@ -351,9 +349,7 @@ def kv_parse_command_line(
                 )
             conf_json_files = [optiondict["conf_json"]]
             optiondict["conf_json"] = conf_json_files
-        logger.debug(
-            "Config files defined on optiondictconfig:%s", conf_json_files
-        )
+        logger.debug("Config files defined on optiondictconfig:%s", conf_json_files)
 
     # step through all the configuration files reading in the settings
     # and flatten them out into a final configuratin file based dictionary
@@ -368,19 +364,13 @@ def kv_parse_command_line(
             for key, value in fileargs.items():
                 confargs[key] = value
         else:
-            if (
-                "conf_mustload" in optiondict and optiondict["conf_mustload"]
-            ) or (
+            if ("conf_mustload" in optiondict and optiondict["conf_mustload"]) or (
                 "conf_mustload" in cmdlineargs and cmdlineargs["conf_mustload"]
             ):
-                raise Exception(
-                    "Missing config file: {}".format(conf_json_file)
-                )
+                raise Exception("Missing config file: {}".format(conf_json_file))
             else:
                 if disp_msg:
-                    logger.warning(
-                        "Skipped missing config file:%s", conf_json_file
-                    )
+                    logger.warning("Skipped missing config file:%s", conf_json_file)
     if conf_files_read:
         # populate the list of config files with the actual files read in
         optiondict["conf_json"] = conf_files_read
@@ -436,9 +426,7 @@ def kv_parse_command_line(
         print("is something set: ", (all_notall["all"] or all_notall["notall"]))
     # test to see if we set both at this level
     if all_notall["all"] and all_notall["notall"]:
-        raise ValueError(
-            "cannot set both [all] and [notall] to true - terminating"
-        )
+        raise ValueError("cannot set both [all] and [notall] to true - terminating")
     # only take action if we set an action to take (one of them must be true)
     if setat is not None and (all_notall["all"] or all_notall["notall"]):
         # display if asked
@@ -529,9 +517,7 @@ def kv_parse_command_line(
                 if debug:
                     print("type:", optiondictconfig[key]["type"])
                 if disp_msg:
-                    logger.debug(
-                        "Key:%stype:%s", key, optiondictconfig[key]["type"]
-                    )
+                    logger.debug("Key:%stype:%s", key, optiondictconfig[key]["type"])
 
             if "type" not in optiondictconfig[key]:
                 # user did not specify the type of this option
@@ -539,9 +525,7 @@ def kv_parse_command_line(
                 if debug:
                     print("type not in optiondictconfig[key]")
                 if disp_msg:
-                    logger.debug(
-                        "Type not in optiondictconfig[key] for key:%s", key
-                    )
+                    logger.debug("Type not in optiondictconfig[key] for key:%s", key)
             elif optiondictconfig[key]["type"] == "bool":
                 optiondict[key] = bool(strtobool(value))
             elif optiondictconfig[key]["type"] == "int":
@@ -557,13 +541,9 @@ def kv_parse_command_line(
             elif optiondictconfig[key]["type"] == "liststr":
                 optiondict[key] = value.split(",")
             elif optiondictconfig[key]["type"] == "date":
-                optiondict[key] = kvdate.datetime_from_str(
-                    value, disp_msg=disp_msg
-                )
+                optiondict[key] = kvdate.datetime_from_str(value, disp_msg=disp_msg)
             elif optiondictconfig[key]["type"] == "datetimezone":
-                optiondict[key] = kvdate.datetimezone_from_str(
-                    value, disp_msg=disp_msg
-                )
+                optiondict[key] = kvdate.datetimezone_from_str(value, disp_msg=disp_msg)
             elif optiondictconfig[key]["type"] == "inlist":
                 # value must be from a predefined list of acceptable values
                 if "valid" not in optiondictconfig[key]:
@@ -590,9 +570,7 @@ def kv_parse_command_line(
                             ":not in defined list of valid values:",
                             optiondictconfig[key]["valid"],
                         )
-                    logger.error(
-                        "Invalid value passed in for [%s]:%s", key, value
-                    )
+                    logger.error("Invalid value passed in for [%s]:%s", key, value)
                     logger.error(
                         "List of valid values are:%s",
                         optiondictconfig[key]["valid"],
@@ -644,9 +622,8 @@ def kv_parse_command_line(
     # raise error if we should
     if missingoption:
         kv_parse_command_line_display(optiondictconfig, debug=False)
-        errmsg = (
-            "System exitted - missing required option(s):\n    "
-            + "\n    ".join(missingoption)
+        errmsg = "System exitted - missing required option(s):\n    " + "\n    ".join(
+            missingoption
         )
         # print('\n'.join(missingoption))
         if debug:
@@ -669,9 +646,7 @@ def kv_parse_command_line(
     # other wise we assume processing is done outside of this routine
     if False and "all" in optiondict and optiondict["all"]:
         anysetnotall = [
-            k
-            for k, v in optiondictconfig.items()
-            if "notall" in v and v["notall"]
+            k for k, v in optiondictconfig.items() if "notall" in v and v["notall"]
         ]
         if anysetnotall:
             for k, v in optiondictconfig.items():
@@ -702,9 +677,7 @@ def kv_parse_command_line(
 
 
 # update the value of a two level deep key if it is not already set
-def set_when_not_set(
-    input_dict: dict, key1: Any, key2: Any, value: Any
-) -> bool:
+def set_when_not_set(input_dict: dict, key1: Any, key2: Any, value: Any) -> bool:
     """
     Set the value of a dictionary element that is two layers deep.
     We only set this value if the key1 exist and key 2 does not exist
@@ -914,9 +887,7 @@ def remove_filename(
 
     """
 
-    logger.debug(
-        "Remove:%s:calledfrom:%s:maxretry:%d", filename, calledfrom, maxretry
-    )
+    logger.debug("Remove:%s:calledfrom:%s:maxretry:%d", filename, calledfrom, maxretry)
     cnt = 0
     if calledfrom:
         calledfrom += ":"
@@ -925,22 +896,16 @@ def remove_filename(
         if debug:
             print(calledfrom, filename, ":exists:try to remove:cnt:", cnt)
         if disp_msg:
-            logger.debug(
-                "%s:%s:exists:try to remove:cnt:%d", calledfrom, filename, cnt
-            )
+            logger.debug("%s:%s:exists:try to remove:cnt:%d", calledfrom, filename, cnt)
         try:
             os.remove(filename)  # try to remove it directly
             if disp_msg:
-                logger.debug(
-                    "%s:%s:removed on count:%d", calledfrom, filename, cnt
-                )
+                logger.debug("%s:%s:removed on count:%d", calledfrom, filename, cnt)
         except OSError as e:
             if debug:
                 print(calledfrom, "errno:", e.errno, ":ENOENT:", errno.ENOENT)
             if disp_msg:
-                logger.debug(
-                    "%s:errno:%d:ENOENT:%d", calledfrom, e.errno, errno.ENOENT
-                )
+                logger.debug("%s:errno:%d:ENOENT:%d", calledfrom, e.errno, errno.ENOENT)
             if e.errno == errno.ENOENT:  # file doesn't exist
                 return
             if debug:
@@ -1015,9 +980,7 @@ def remove_dir(
         except OSError as e:
             if debug:
                 print(calledfrom, "errno:", e.errno, ":ENOENT:", errno.ENOENT)
-            logger.debug(
-                "%s:errno:%s:ENOENT:%s", calledfrom, e.errno, errno.ENOENT
-            )
+            logger.debug("%s:errno:%s:ENOENT:%s", calledfrom, e.errno, errno.ENOENT)
             if e.errno == errno.ENOENT:  # file doesn't exist
                 return
             if debug:
@@ -1059,9 +1022,7 @@ def dir_remove(
     """
     Rename of remove_dir() function
     """
-    return remove_dir(
-        dirname, calledfrom=calledfrom, debug=debug, maxretry=maxretry
-    )
+    return remove_dir(dirname, calledfrom=calledfrom, debug=debug, maxretry=maxretry)
 
 
 # define the filename used to create log files
@@ -1074,25 +1035,19 @@ def filename_log_day_of_month(
     path_override: str | None = None,
     disp_msg: bool = True,
 ) -> str:
-    file_path, base_filename, file_ext = filename_split(
-        filename, path_blank=True
-    )
+    file_path, base_filename, file_ext = filename_split(filename, path_blank=True)
     if ext_override:
         file_ext = ext_override
     if file_ext[:1] != ".":
         file_ext = "." + file_ext
     if path_override:
         file_path = path_override
-    day_filename = "{}{:02d}".format(
-        base_filename, datetime.datetime.today().day
-    )
+    day_filename = "{}{:02d}".format(base_filename, datetime.datetime.today().day)
     logfilename = os.path.join(file_path, day_filename + file_ext)
     if os.path.exists(logfilename):
         if (
             os.path.getmtime(logfilename)
-            < (
-                datetime.datetime.today() - datetime.timedelta(days=1)
-            ).timestamp()
+            < (datetime.datetime.today() - datetime.timedelta(days=1)).timestamp()
         ):
             # remove the file if it exists but has not been modified within the past 24 hours
             remove_filename(logfilename)
@@ -1128,7 +1083,7 @@ def filename_maxmin(
     # if we got no files - return none
     if not filelist:
         logger.debug("Return none")
-        return ''
+        return ""
         # eliminted returning none 2026-04-19
         # return None
     # if exclude in name filter the list down
@@ -1279,9 +1234,7 @@ def filename_list(
     if includelist_filename:
         flist = read_list_from_file_lines(includelist_filename, trim=True)
     if excludelist_filename:
-        exclude_list = read_list_from_file_lines(
-            excludelist_filename, trim=True
-        )
+        exclude_list = read_list_from_file_lines(excludelist_filename, trim=True)
     if excludefilenamelist:
         exclude_list.extend(excludefilenamelist)
     # read list from records provided
@@ -1354,31 +1307,21 @@ def filename_proper(
         else:
             # needs to be created - option not enabled - raise an error
             if debug:
-                print(
-                    "kvutil:filename_proper:directory does not exist:%s"
-                    % file_dir
-                )
+                print("kvutil:filename_proper:directory does not exist:%s" % file_dir)
             if debug:
                 logger.error("Directory does not exist:%s", file_dir)
             raise Exception(
-                "kvutil:filename_proper:directory does not exist:{}".format(
-                    file_dir
-                )
+                "kvutil:filename_proper:directory does not exist:{}".format(file_dir)
             )
 
     # check to see if the directory is writeable if the flag is set
     if write_check:
         if not os.access(file_dir, os.W_OK):
             if debug:
-                print(
-                    "kvutil:filename_proper:directory is not writeable:%s"
-                    % file_dir
-                )
+                print("kvutil:filename_proper:directory is not writeable:%s" % file_dir)
             logger.error("Directory is not writeable:%s", file_dir)
             raise Exception(
-                "kvutil:filename_proper:directory is not writeable:{}".format(
-                    file_dir
-                )
+                "kvutil:filename_proper:directory is not writeable:{}".format(file_dir)
             )
 
     # build a full filename
@@ -1504,9 +1447,7 @@ def filename_unique(
             default_options["base_filename"] = os.path.basename(
                 default_options["base_filename"]
             )
-            default_options["file_path"] = os.path.dirname(
-                default_options["file_path"]
-            )
+            default_options["file_path"] = os.path.dirname(default_options["file_path"])
 
     # force if blank fields
     for key in force_if_blank:
@@ -1556,9 +1497,7 @@ def filename_unique(
 
     # create a filename if it does not exist
     default_options["filename"] = os.path.normpath(
-        os.path.join(
-            default_options["base_filename"] + default_options["file_ext"]
-        )
+        os.path.join(default_options["base_filename"] + default_options["file_ext"])
     )
 
     # check the directory to see if it exists
@@ -1637,7 +1576,9 @@ def filename_unique(
     return filename_proper(filename, file_dir=default_options["file_path"])
 
 
-def filenames_rename(fname_list: list[str], func_rename: Callable, os: str='WIN') -> list[str]:
+def filenames_rename(
+    fname_list: list[str], func_rename: Callable, os: str = "WIN"
+) -> list[str]:
     """
     take in a list of filenames
     and a function that converts each string into its desired name
@@ -1652,18 +1593,20 @@ def filenames_rename(fname_list: list[str], func_rename: Callable, os: str='WIN'
     """
 
     if not isinstance(fname_list, list):
-        raise TypeError('fname_list must be a list but is: {}'.format(type(fname_list)))
+        raise TypeError("fname_list must be a list but is: {}".format(type(fname_list)))
     if not isinstance(func_rename, types.FunctionType):
-        raise TypeError('func_name must be a function but is: {}'.format(type(func_rename)))
-        
-    rename_cmd = 'REN'
-    if os != 'WIN':
-        rename_cmd = 'mv'
+        raise TypeError(
+            "func_name must be a function but is: {}".format(type(func_rename))
+        )
+
+    rename_cmd = "REN"
+    if os != "WIN":
+        rename_cmd = "mv"
 
     rename_list = []
     for fname in fname_list:
         new_fname = func_rename(fname)
-        rename_list.append(f"{rename_cmd} \"{fname}\" \"{new_fname}\"")
+        rename_list.append(f'{rename_cmd} "{fname}" "{new_fname}"')
 
     return rename_list
 
@@ -1984,9 +1927,7 @@ def create_multi_key_lookup(
     if src_data and not isinstance(src_data[0], dict):
         if disp_msg:
             print("src_data[0] must be a dict but is:  ", type(src_data[0]))
-        raise TypeError(
-            f"src_data must be a dict but is a: {type(src_data[0])}"
-        )
+        raise TypeError(f"src_data must be a dict but is a: {type(src_data[0])}")
     if not isinstance(fldlist, list):
         if disp_msg:
             print("fldlist must be type - list - but is: ", type(fldlist))
@@ -1999,9 +1940,7 @@ def create_multi_key_lookup(
         if not isinstance(copy_fields, list):
             if disp_msg:
                 print("copy_fields must be a list but is:  ", type(copy_fields))
-            raise TypeError(
-                f"copy_fields must be a list but is a: {type(copy_fields)}"
-            )
+            raise TypeError(f"copy_fields must be a list but is a: {type(copy_fields)}")
 
     # check that the fldlist keys are in the first record
     for fld in fldlist:
@@ -2086,8 +2025,7 @@ def copy_matched_data_cnt(
                 key_fields,
             )
         raise TypeError(
-            "key_fields must be of type list but is type: "
-            + str(type(key_fields))
+            "key_fields must be of type list but is type: " + str(type(key_fields))
         )
     # no work to do if there are no records to compare
     if not dst_data:
@@ -2109,8 +2047,7 @@ def copy_matched_data_cnt(
                 copy_fields,
             )
         raise TypeError(
-            "copy_fields must be of type list but is type: "
-            + str(type(copy_fields))
+            "copy_fields must be of type list but is type: " + str(type(copy_fields))
         )
     # check that the copy_fields keys are in the first record of dst_data
     # if we have not set force_copy_flds
@@ -2236,16 +2173,12 @@ def diff_matched_data(
     if diff_fields is not None:
         # we passed in value - check to see if it is a list
         if type(diff_fields) is not list:
-            print(
-                "diff_fields must be type - list - but is: ", type(diff_fields)
-            )
+            print("diff_fields must be type - list - but is: ", type(diff_fields))
             raise TypeError()
     else:
         # create the diff fields definition from dst_fields
         diff_fields = [
-            x
-            for x in dst_data[0].keys()
-            if x not in key_fields and x not in exc_fields
+            x for x in dst_data[0].keys() if x not in key_fields and x not in exc_fields
         ]
     # check that the key_fields keys are in the first record
     for fld in key_fields:
@@ -2344,9 +2277,7 @@ def extract_unmatched_data(
     return unmatched_recs
 
 
-def disp_dict_on_key_idx(
-    disp_dict: dict, idx: int, disp_dict_name: str | None = None
-):
+def disp_dict_on_key_idx(disp_dict: dict, idx: int, disp_dict_name: str | None = None):
     """
     display the dict record based on an idx (numberic value) on a key
     """
@@ -2381,9 +2312,8 @@ def disp_dict_on_key_value(
     except Exception as e:
         print("ERROR: ", e)
 
-def format_dict_sorted_by_value_key(
-        disp_dict: dict, indent: int, dictname: str
-) -> str:
+
+def format_dict_sorted_by_value_key(disp_dict: dict, indent: int, dictname: str) -> str:
     """
     take in a dict and create s string that is a display of this dict
     to put in your code sorted by value and then by key
@@ -2401,12 +2331,15 @@ def format_dict_sorted_by_value_key(
     indent_val = indent + 4
 
     dict_str_list = []
-    
-    dict_str_list.append(f"{' '*indent}{dictname} = \u007b")
-    for k, v in [x.split('|') for x in sorted([f"{v}|{k}" for k, v in disp_dict.items()])]:
-        dict_str_list.append(f"{' '*indent_val}'{v}': '{k}',")
-    dict_str_list.append(f"{' '*indent}\u007d")
+
+    dict_str_list.append(f"{' ' * indent}{dictname} = \u007b")
+    for k, v in [
+        x.split("|") for x in sorted([f"{v}|{k}" for k, v in disp_dict.items()])
+    ]:
+        dict_str_list.append(f"{' ' * indent_val}'{v}': '{k}',")
+    dict_str_list.append(f"{' ' * indent}\u007d")
 
     return "\n".join(dict_str_list)
+
 
 # eof

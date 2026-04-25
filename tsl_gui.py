@@ -1,10 +1,9 @@
-__version__ = '1.02'
+__version__ = "1.02"
 
 import PySimpleGUI as sg
 import tsl_func
 import os
 import kv_psg
-from attrdict import AttrDict
 import logging
 
 # may comment out in the future
@@ -34,18 +33,30 @@ def create_dump_data_window(settings, cfg_folder):
     def CheckboxFileSaveAs(text, key, default_text, default_folder):
         keychkbox = f"-{key.upper()}_CHKBOX-"
         key = f"-{key.upper()}-"
-        text = text + ':'
-        return [sg.Checkbox(text, default=False, key=keychkbox),
-                sg.Input(key=key, default_text=default_text), sg.FileSaveAs(initial_folder=default_folder, target=key)]
+        text = text + ":"
+        return [
+            sg.Checkbox(text, default=False, key=keychkbox),
+            sg.Input(key=key, default_text=default_text),
+            sg.FileSaveAs(initial_folder=default_folder, target=key),
+        ]
 
     layout = [
-        [sg.T('Select checkbox and enter file names of output files to generate', size=(50, 1))],
-        [sg.Checkbox('Display listing to screen', default=True, key=tsl_func.DISPLAY_KEY)],
-        CheckboxFileSaveAs('TS Dump file', 'ts_dump', 'ts_dump.xlsx', cfg_folder),
-        [sg.B('Ok'), sg.B('Exit')]
+        [
+            sg.T(
+                "Select checkbox and enter file names of output files to generate",
+                size=(50, 1),
+            )
+        ],
+        [
+            sg.Checkbox(
+                "Display listing to screen", default=True, key=tsl_func.DISPLAY_KEY
+            )
+        ],
+        CheckboxFileSaveAs("TS Dump file", "ts_dump", "ts_dump.xlsx", cfg_folder),
+        [sg.B("Ok"), sg.B("Exit")],
     ]
 
-    return sg.Window('e-Share Trusted Share Listing', layout)
+    return sg.Window("e-Share Trusted Share Listing", layout)
 
 
 def display_ts_listing_window(list_lines):
@@ -57,19 +68,19 @@ def display_ts_listing_window(list_lines):
     """
 
     layout = [
-        [sg.Output(size=(100, 10), key='ts_listing', font=('Courier', 11))],
-        [sg.Button('Done', disabled=True)]
+        [sg.Output(size=(100, 10), key="ts_listing", font=("Courier", 11))],
+        [sg.Button("Done", disabled=True)],
     ]
 
-    window = sg.Window('e-Share Trusted Share Listing', layout, finalize=True)
+    window = sg.Window("e-Share Trusted Share Listing", layout, finalize=True)
 
-    buffer = '\n'.join(list_lines)
+    buffer = "\n".join(list_lines)
 
     # fill in the data to the window
-    window['ts_listing'].update(value=buffer)
+    window["ts_listing"].update(value=buffer)
 
     # enable the done button
-    window['Done'].update(disabled=False)
+    window["Done"].update(disabled=False)
 
     # close the window when the button is selected
     window.read(close=True)
@@ -77,6 +88,7 @@ def display_ts_listing_window(list_lines):
 
 #
 #############################################################
+
 
 # this is an application specific implementation not a generic tool
 # but this is a pattern that is repeated
@@ -90,7 +102,7 @@ def tsl_main(settings, cfg_folder, obj_class, token, url):
     :param token: (string)
     :param url: (string)
 
-    may need to pass in a pointer to the object that we call 
+    may need to pass in a pointer to the object that we call
     that will get the list of ts and that generates the output
     I assume this routine will carry the save to file function
 
@@ -101,30 +113,31 @@ def tsl_main(settings, cfg_folder, obj_class, token, url):
     event, values = create_dump_data_window(settings, cfg_folder).read(close=True)
 
     # second level screen event handler
-    if event == 'Ok':
-
+    if event == "Ok":
         # set the value based on if we are going to display on the screen
         option_enabled = False if not values[tsl_func.DISPLAY_KEY] else True
 
         # update values based on what was entered in the screen
         # for things that generate output files
-        for opt in ['TS_DUMP']:
-            if not values[f'-{opt}_CHKBOX-']:
+        for opt in ["TS_DUMP"]:
+            if not values[f"-{opt}_CHKBOX-"]:
                 # not set to true - so clear out the value
-                values[f'-{opt}-'] = ''
+                values[f"-{opt}-"] = ""
             else:
                 # set the option if they selected one of the file outputs
                 option_enabled = True
                 # set to true - so lets make sure the filename is correct
-                if not os.path.dirname(values[f'-{opt}-']):
-                    values[f'-{opt}-'] = os.path.join(settings['cfg_folder'], values[f'-{opt}-'])
+                if not os.path.dirname(values[f"-{opt}-"]):
+                    values[f"-{opt}-"] = os.path.join(
+                        settings["cfg_folder"], values[f"-{opt}-"]
+                    )
 
         # debugging
         if AppDebug:
-            print('dump the data out to files')
-            print('settings:')
+            print("dump the data out to files")
+            print("settings:")
             pp.pprint(settings)
-            print('values:')
+            print("values:")
             pp.pprint(values)
 
         # validate an option is selected otherwise return
@@ -139,9 +152,9 @@ def tsl_main(settings, cfg_folder, obj_class, token, url):
             # now set up for logging to window
             logger_window = kv_psg.setup_logger_console_window()
             # run through steps to get the data and output files if we are outputtting files
-            kv_psg.output_logger_console_window(logger_window,
-                                                tsl_obj.ts_listing_steps,
-                                                values)
+            kv_psg.output_logger_console_window(
+                logger_window, tsl_obj.ts_listing_steps, values
+            )
 
             if values[tsl_func.DISPLAY_KEY]:
                 display_ts_listing_window(tsl_obj.ts_listing_lines)
@@ -161,4 +174,4 @@ def tsl_main(settings, cfg_folder, obj_class, token, url):
             # and call the routine that reads data from CWP and creates the output files
         except Exception as e:
             print(e)
-            sg.popup('ERROR - Failed to process trusted share listing', e)
+            sg.popup("ERROR - Failed to process trusted share listing", e)

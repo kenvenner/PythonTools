@@ -83,9 +83,7 @@ def datetime2utcdatetime(
 
     # check to see we have a valid timezone
     if not default_tz:
-        raise ValueError(
-            f"Unable to convert timezone string to timezone: {default_tz}"
-        )
+        raise ValueError(f"Unable to convert timezone string to timezone: {default_tz}")
 
     # convert the naive date to localize date
     local_dt = dt.replace(tzinfo=default_tz)
@@ -267,33 +265,23 @@ def datetimezone_from_str(
     import re
 
     # routines that clean up the data prior to processing
-    datefmtscleanup = (
-        (re.compile(r"(.*[+-])(\d{2}):(\d{2})$"), "remove-colon-2"),
-    )
+    datefmtscleanup = ((re.compile(r"(.*[+-])(\d{2}):(\d{2})$"), "remove-colon-2"),)
     # list of different dateformats we convert and the proper data conversion string for that match
     datefmts = (
         (
-            re.compile(
-                r"\d{4}-\d{1,2}-\d{1,2}T\d{1,2}:\d{1,2}:\d{1,2}\.\d+[+-]\d{4}$"
-            ),
+            re.compile(r"\d{4}-\d{1,2}-\d{1,2}T\d{1,2}:\d{1,2}:\d{1,2}\.\d+[+-]\d{4}$"),
             "%Y-%m-%dT%H:%M:%S.%f%z",
         ),
         (
-            re.compile(
-                r"\d{4}-\d{1,2}-\d{1,2} \d{1,2}:\d{1,2}:\d{1,2}\.\d+[+-]\d{4}$"
-            ),
+            re.compile(r"\d{4}-\d{1,2}-\d{1,2} \d{1,2}:\d{1,2}:\d{1,2}\.\d+[+-]\d{4}$"),
             "%Y-%m-%d %H:%M:%S.%f%z",
         ),
         (
-            re.compile(
-                r"\d{4}-\d{1,2}-\d{1,2}T\d{1,2}:\d{1,2}:\d{1,2}[+-]\d{4}$"
-            ),
+            re.compile(r"\d{4}-\d{1,2}-\d{1,2}T\d{1,2}:\d{1,2}:\d{1,2}[+-]\d{4}$"),
             "%Y-%m-%dT%H:%M:%S%z",
         ),
         (
-            re.compile(
-                r"\d{4}-\d{1,2}-\d{1,2} \d{1,2}:\d{1,2}:\d{1,2}[+-]\d{4}$"
-            ),
+            re.compile(r"\d{4}-\d{1,2}-\d{1,2} \d{1,2}:\d{1,2}:\d{1,2}[+-]\d{4}$"),
             "%Y-%m-%d %H:%M:%S%z",
         ),
         (
@@ -309,9 +297,7 @@ def datetimezone_from_str(
             return value
         else:
             raise Exception(
-                "Unable to convert to date time with timezone:[{}]".format(
-                    value
-                )
+                "Unable to convert to date time with timezone:[{}]".format(value)
             )
 
     # if we enabled skip blank - check for empty value
@@ -327,9 +313,7 @@ def datetimezone_from_str(
             return value
         else:
             raise Exception(
-                "Unable to convert to date time with timezone:[{}]".format(
-                    value
-                )
+                "Unable to convert to date time with timezone:[{}]".format(value)
             )
 
     # save the original value
@@ -385,7 +369,7 @@ def show_timezones(sublist: str | None = None, disp_msg: bool = False) -> list:
         tznames - list of timezone strings
     """
     if sublist is None:
-        sublist = ''
+        sublist = ""
     # extract out the timezone strings
     sorted_zonenames = sorted(list(get_zonefile_instance().zones))
     # break it up int sections
@@ -394,9 +378,7 @@ def show_timezones(sublist: str | None = None, disp_msg: bool = False) -> list:
     if sublist.capitalize() in sections:
         # passed in a sublist that when capitalized matches a section
         display_zonenames = [
-            x
-            for x in sorted_zonenames
-            if x.startswith(str(sublist.capitalize()) + "/")
+            x for x in sorted_zonenames if x.startswith(str(sublist.capitalize()) + "/")
         ]
     elif sublist.upper() in ("US", "USA"):
         # passed in that we are looking for US values

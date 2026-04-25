@@ -12,6 +12,7 @@ python t_kvmatch.py
 python t_kvutil.py
 python t_kvxls.py
 python t_kv_incver.py
+pytest test_kvargs.py
 rem python t_xlsx_diff.py
 rem
 rem Google Integration Tests

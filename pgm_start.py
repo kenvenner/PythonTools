@@ -1,4 +1,4 @@
-__version__ = '1.01'
+__version__ = "1.01"
 
 # import libraries that are being used
 import kvutil
@@ -9,6 +9,7 @@ import pprint
 # logging
 import sys
 import kvlogger
+
 pp = pprint.PrettyPrinter(indent=4)
 
 """
@@ -23,8 +24,10 @@ pp = pprint.PrettyPrinter(indent=4)
 
 # pick the log file structure from list below
 # single file that is rotated
-config = kvlogger.get_config(kvutil.filename_create(__file__, filename_ext='log', path_blank=True),
-                             loggerlevel='INFO')  # single file
+config = kvlogger.get_config(
+    kvutil.filename_create(__file__, filename_ext="log", path_blank=True),
+    loggerlevel="INFO",
+)  # single file
 # one file per day of month
 # config=kvlogger.get_config(kvutil.filename_log_day_of_month(__file__, ext_override='log'), 'logging.FileHandler') # one file per day of month
 kvlogger.dictConfig(config)
@@ -48,9 +51,9 @@ sys.excepthook = handle_exception
 
 # application variables
 optiondictconfig = {
-    'AppVersion': {
-        'value': '1.01',
-        'description': 'defines the version number for the app',
+    "AppVersion": {
+        "value": "1.01",
+        "description": "defines the version number for the app",
     },
 }
 
@@ -58,7 +61,7 @@ optiondictconfig = {
 
 
 # ---------------------------------------------------------------------------
-if __name__ == '__main__':
+if __name__ == "__main__":
     # capture the command line
     # optional setttings in code
     #   raise_error = True - if we have a problem parsing option we raise an error rather than pass silently

@@ -122,7 +122,7 @@ __version__ = "1.43"
 
 optiondictconfig = {
     "AppVersion": {
-        'value': '1.43',
+        "value": "1.43",
     },
     "debug": {
         "value": False,
@@ -507,9 +507,7 @@ def update_optiondict4json_create(optiondict: dict) -> None:
 
     # check the extension
     if fext.upper() != ".XLSX":
-        raise ValueError(
-            f"Not XLSX file extension - provided extension was [{fext}]"
-        )
+        raise ValueError(f"Not XLSX file extension - provided extension was [{fext}]")
 
     # default directory for the output file
     if not optiondict.get("fmt_dir"):
@@ -631,15 +629,10 @@ def validate_inputs(optiondict: dict) -> bool | None:
     # generate the remove and/or add filename
     for fld in ["rmv", "add", "out"]:
         # determine if we need to create a staring value - if they want to add on - we must create
-        if (
-            optiondict[fld + "_fname_append"]
-            or optiondict[fld + "_fname_uniqtype"]
-        ):
+        if optiondict[fld + "_fname_append"] or optiondict[fld + "_fname_uniqtype"]:
             # if fname not populated - take it from dst_fname
             if not optiondict[fld + "_fname"]:
-                optiondict[fld + "_fname"] = optiondict[
-                    optiondict["default_fname"]
-                ]
+                optiondict[fld + "_fname"] = optiondict[optiondict["default_fname"]]
 
         # we assume fname is set - that is done in validate_inputs()
         if optiondict[fld + "_fname_append"]:
@@ -708,9 +701,7 @@ def validate_inputs(optiondict: dict) -> bool | None:
     if "key_fields" not in optiondict:
         # output messages
         if optiondict["disp_msg"]:
-            print(
-                "Must define the fields that make the business keys in:  key_fields"
-            )
+            print("Must define the fields that make the business keys in:  key_fields")
         optiondict["error_msg"] = (
             "Must define the fields that make the business keys in:  key_fields"
         )
@@ -734,9 +725,7 @@ def validate_inputs(optiondict: dict) -> bool | None:
     if optiondict["internal_copy_fields"]:
         # if we have a dict - it shoudl have been a list - convert to a list with one dict entry
         if type(optiondict["internal_copy_fields"]) is dict:
-            optiondict["internal_copy_fields"] = [
-                optiondict["internal_copy_fields"]
-            ]
+            optiondict["internal_copy_fields"] = [optiondict["internal_copy_fields"]]
 
         # this shoudl have a list of dicts
         has_issues = False
@@ -809,9 +798,7 @@ def validate_inputs(optiondict: dict) -> bool | None:
         elif not optiondict["copy_fields"]:
             # output messages
             if optiondict["disp_msg"]:
-                print(
-                    "When [copy_fields] exists and it must have values and does not"
-                )
+                print("When [copy_fields] exists and it must have values and does not")
             optiondict["error_msg"] = (
                 "When [copy_fields] exists and it must have values and does not"
             )
@@ -868,9 +855,7 @@ def validate_inputs(optiondict: dict) -> bool | None:
 
         # check the list entries for this
         ruleissues = ""
-        for rulenum, copydict in enumerate(
-            optiondict["internal_compare_fields"]
-        ):
+        for rulenum, copydict in enumerate(optiondict["internal_compare_fields"]):
             if "dst" not in copydict:
                 msg = f"{rulenum} missing dst key\n"
                 ruleissues += msg
@@ -1131,9 +1116,7 @@ def src_to_dst_actions(
         return 0, 0, {}
 
     # generate lookup on source
-    src_lookup = kvutil.create_multi_key_lookup(
-        src_data, optiondict["key_fields"]
-    )
+    src_lookup = kvutil.create_multi_key_lookup(src_data, optiondict["key_fields"])
 
     # do nothing if we have nothing to do
     if (
@@ -1172,9 +1155,7 @@ def src_to_dst_actions(
     if optiondict["internal_copy_fields"]:
         # output messages
         if optiondict.get("disp_msg", False):
-            print(
-                "Copying data inside the file defined by internal_copy_fields"
-            )
+            print("Copying data inside the file defined by internal_copy_fields")
         # copy fields in the file we just read in
         for rec in dst_data:
             # for each record in destinatoin file - get the rules
@@ -1186,10 +1167,7 @@ def src_to_dst_actions(
                     # to copy over
                     continue
                 # second rule to fire - src_not_blank - copy over when not blank
-                if (
-                    copydict.get("src_not_blank", False)
-                    and not rec[copydict["src"]]
-                ):
+                if copydict.get("src_not_blank", False) and not rec[copydict["src"]]:
                     # skip this rule - we only copy over when the source is not blank
                     # but the source is blank - so no action here
                     continue
@@ -1201,9 +1179,7 @@ def src_to_dst_actions(
     if optiondict["internal_compare_fields"]:
         # output messages
         if optiondict.get("disp_msg", False):
-            print(
-                "Comparing data inside the file defined by internal_compare_fields"
-            )
+            print("Comparing data inside the file defined by internal_compare_fields")
         # copy fields in the file we just read in
         for rec in dst_data:
             # set the original value
@@ -1239,9 +1215,7 @@ def removed_records(
             + str(type(optiondict["key_fields"]))
         )
 
-    dst_lookup = kvutil.create_multi_key_lookup(
-        dst_data, optiondict["key_fields"]
-    )
+    dst_lookup = kvutil.create_multi_key_lookup(dst_data, optiondict["key_fields"])
     rmv_data = kvutil.extract_unmatched_data(
         src_data, dst_lookup, optiondict["key_fields"]
     )
@@ -1285,16 +1259,12 @@ def generate_out_output_file_not_formatted(
     """
     # output what we came up with
     if "out_fname" in optiondict and optiondict["out_fname"]:
-        full_filename = os.path.join(
-            optiondict["out_dir"], optiondict["out_fname"]
-        )
+        full_filename = os.path.join(optiondict["out_dir"], optiondict["out_fname"])
         kvxls.writelist2xls(full_filename, dst_data)
         if "debug" in optiondict and optiondict["debug"]:
             print("out_write:", full_filename)
     elif "dst_fname" in optiondict and optiondict["dst_fname"] and updated_recs:
-        full_filename = os.path.join(
-            optiondict["dst_dir"], optiondict["dst_fname"]
-        )
+        full_filename = os.path.join(optiondict["dst_dir"], optiondict["dst_fname"])
         kvxls.writelist2xls(full_filename, dst_data)
         if "debug" in optiondict and optiondict["debug"]:
             print("dst_write:", full_filename)
@@ -1308,9 +1278,7 @@ def generate_rmv_output_file_not_formatted(
     """
     # output what we came up with
     if "rmv_fname" in optiondict and optiondict["rmv_fname"] and rmv_data:
-        full_filename = os.path.join(
-            optiondict["rmv_dir"], optiondict["rmv_fname"]
-        )
+        full_filename = os.path.join(optiondict["rmv_dir"], optiondict["rmv_fname"])
         kvxls.writelist2xls(full_filename, rmv_data)
         if "debug" in optiondict and optiondict["debug"]:
             print("rmv_write:", str(full_filename))
@@ -1327,9 +1295,7 @@ def generate_add_output_file_not_formatted(
     """
     # output what we came up with
     if "add_fname" in optiondict and optiondict["add_fname"] and add_data:
-        full_filename = os.path.join(
-            optiondict["add_dir"], optiondict["add_fname"]
-        )
+        full_filename = os.path.join(optiondict["add_dir"], optiondict["add_fname"])
         kvxls.writelist2xls(full_filename, add_data)
         if "debug" in optiondict and optiondict["debug"]:
             print("add_write:", str(full_filename))
@@ -1394,9 +1360,7 @@ def format_output(optiondict):
             output["dst_ws"] = optiondict["src_ws"]
 
         # output this
-        full_filename = os.path.join(
-            optiondict["fmt_dir"], optiondict["fmt_fname"]
-        )
+        full_filename = os.path.join(optiondict["fmt_dir"], optiondict["fmt_fname"])
         kvutil.dump_dict_to_json_file(full_filename, output)
         # output messages
         if disp_msg:
@@ -1408,9 +1372,7 @@ def format_output(optiondict):
 
     # if we set fmt_fname then save this col width data
     if "fmt_fname" in optiondict and optiondict["fmt_fname"]:
-        full_filename = os.path.join(
-            optiondict["fmt_dir"], optiondict["fmt_fname"]
-        )
+        full_filename = os.path.join(optiondict["fmt_dir"], optiondict["fmt_fname"])
         kvutil.dump_dict_to_json_file(
             full_filename,
             {
@@ -1431,13 +1393,9 @@ def format_output(optiondict):
     if disp_msg:
         print("Performing output formatting")
     if "out_fname" in optiondict and optiondict["out_fname"]:
-        excel_filename = os.path.join(
-            optiondict["out_dir"], optiondict["out_fname"]
-        )
+        excel_filename = os.path.join(optiondict["out_dir"], optiondict["out_fname"])
     else:
-        excel_filename = os.path.join(
-            optiondict["dst_dir"], optiondict["dst_fname"]
-        )
+        excel_filename = os.path.join(optiondict["dst_dir"], optiondict["dst_fname"])
     if optiondict["debug"] or optiondict["no_fmt"]:
         # output messages
         if optiondict["disp_msg"]:
@@ -1466,11 +1424,7 @@ def format_output(optiondict):
             )
         return
     # messaging
-    if (
-        optiondict.get("format_auto")
-        and disp_msg
-        and not optiondict.get("col_width")
-    ):
+    if optiondict.get("format_auto") and disp_msg and not optiondict.get("col_width"):
         print("format_auto enabled and no col_width defined")
     # format this file with what is defined in col_width
     kv_excel.format_xlsx_with_filter_and_freeze(
@@ -1521,14 +1475,10 @@ def format_cell(optiondict):
 
     # define which file we are pulling from as the output/destination
     if optiondict["out_fname"]:
-        excel_filename = os.path.join(
-            optiondict["out_dir"], optiondict["out_fname"]
-        )
+        excel_filename = os.path.join(optiondict["out_dir"], optiondict["out_fname"])
         sheetname = optiondict["out_ws"]
     else:
-        excel_filename = os.path.join(
-            optiondict["dst_dir"], optiondict["dst_fname"]
-        )
+        excel_filename = os.path.join(optiondict["dst_dir"], optiondict["dst_fname"])
         sheetname = optiondict["dst_ws"]
 
     # debugging
@@ -1555,9 +1505,7 @@ def format_cell(optiondict):
     # pprint.pprint(src_lookup)
 
     # step through the output and find the equivalent input and then copy over the formatting
-    for row in range(
-        excel_dict_out["row_header"] + 1, excel_dict_out["sheetmaxrow"]
-    ):
+    for row in range(excel_dict_out["row_header"] + 1, excel_dict_out["sheetmaxrow"]):
         matched = True
         ptr = src_lookup
         for fld in optiondict["key_fields"]:
@@ -1586,9 +1534,7 @@ def format_cell(optiondict):
         # print('outrow: ', row, 'src_row:', src_row)
 
         # now copy formatting
-        kvxls.copyExcelCellFmtOnRow(
-            excel_dict_src, src_row, excel_dict_out, row
-        )
+        kvxls.copyExcelCellFmtOnRow(excel_dict_src, src_row, excel_dict_out, row)
 
     # done copying over - save this file
     kvxls.writexls(excel_dict_out, excel_filename)
@@ -1616,9 +1562,7 @@ if __name__ == "__main__":
     if optiondict["json_cfg_filename"]:
         pprint.pprint(optiondict)
         print("-" * 40)
-        kvutil.dump_dict_to_json_file(
-            optiondict["json_cfg_filename"], optiondict
-        )
+        kvutil.dump_dict_to_json_file(optiondict["json_cfg_filename"], optiondict)
         print("Created json_cfg file:  " + optiondict["json_cfg_filename"])
         sys.exit()
 
@@ -1635,29 +1579,19 @@ if __name__ == "__main__":
     # check for file existenace
     if optiondict["ignore_missing_src"]:
         # check for existence of the src file
-        full_filename = os.path.join(
-            optiondict["src_dir"], optiondict["src_fname"]
-        )
+        full_filename = os.path.join(optiondict["src_dir"], optiondict["src_fname"])
         if not os.path.exists(full_filename):
             # output messages
             if optiondict["disp_msg"]:
-                print(
-                    "SRC File does not exist - moving along: "
-                    + str(full_filename)
-                )
+                print("SRC File does not exist - moving along: " + str(full_filename))
             sys.exit()
     if optiondict["ignore_missing_dst"]:
         # check for existence of the dst file
-        full_filename = os.path.join(
-            optiondict["dst_dir"], optiondict["dst_fname"]
-        )
+        full_filename = os.path.join(optiondict["dst_dir"], optiondict["dst_fname"])
         if not os.path.exists(full_filename):
             # output messages
             if optiondict["disp_msg"]:
-                print(
-                    "DST File does not exist - moving along: "
-                    + str(full_filename)
-                )
+                print("DST File does not exist - moving along: " + str(full_filename))
             sys.exit()
 
     # load the sourced and destination data
@@ -1762,12 +1696,8 @@ if __name__ == "__main__":
 
     # update the hyperlink fields
     if optiondict["hyperlink_fields"]:
-        convert_hyperlink_values(
-            src_data, optiondict["hyperlink_fields"], optiondict
-        )
-        convert_hyperlink_values(
-            dst_data, optiondict["hyperlink_fields"], optiondict
-        )
+        convert_hyperlink_values(src_data, optiondict["hyperlink_fields"], optiondict)
+        convert_hyperlink_values(dst_data, optiondict["hyperlink_fields"], optiondict)
 
     # output when requested
     if optiondict["dump_recs"]:

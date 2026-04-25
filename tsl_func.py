@@ -1,9 +1,7 @@
-__version__ = '1.03'
+__version__ = "1.03"
 
 import pandas
-import os
 import copy
-from attrdict import AttrDict
 import logging
 
 # may comment out in the future
@@ -17,18 +15,27 @@ logger = logging.getLogger(__name__)
 # Constants
 
 # Columns output in the ts listing
-TS_DUMP_RAW_COLS = ['ts_name',
-                    'mount_id', 'share_guid', 'is_owner',
-                    'created', 'last_modified', 'expires_at',
-                    'category', 'type',
-                    'is_single_file', 'is_offline',
-                    'active']
+TS_DUMP_RAW_COLS = [
+    "ts_name",
+    "mount_id",
+    "share_guid",
+    "is_owner",
+    "created",
+    "last_modified",
+    "expires_at",
+    "category",
+    "type",
+    "is_single_file",
+    "is_offline",
+    "active",
+]
 
-DISPLAY_KEY = '-TS_DISPLAY_CHKBOX-'
-FILE_KEY = '-TS_DUMP-'
+DISPLAY_KEY = "-TS_DISPLAY_CHKBOX-"
+FILE_KEY = "-TS_DUMP-"
 
 
 # Generic functions used create/manage trusted share listings
+
 
 class TSListing(object):
     """
@@ -77,12 +84,12 @@ class TSListing(object):
         # 3 - if we have enabled display output - then generate the console listing
         if values[DISPLAY_KEY]:
             self.ts_listing_for_console()
-            logger.info('Close this window to get to the Trusted Share listing')
+            logger.info("Close this window to get to the Trusted Share listing")
 
     def ts_listing_for_console(self):
         """
         Create the strings that are used to display the trusted share listings
-        
+
         :uses self.ts_owner_list:
         :uses self.ts_collab_list:
 
@@ -91,21 +98,29 @@ class TSListing(object):
         self.ts_listing_lines = []
 
         # owned shares
-        self.ts_listing_lines.append('Trusted Shares you own')
-        self.ts_listing_lines.append('{:>10s} | {:50s}'.format('Mount', 'TS Description'))
-        self.ts_listing_lines.append('{:>10s} | {:50s}'.format('-' * 10, '-' * 50))
+        self.ts_listing_lines.append("Trusted Shares you own")
+        self.ts_listing_lines.append(
+            "{:>10s} | {:50s}".format("Mount", "TS Description")
+        )
+        self.ts_listing_lines.append("{:>10s} | {:50s}".format("-" * 10, "-" * 50))
         for rec in self.ts_owner_list:
-            self.ts_listing_lines.append('{:>10s} | {:50s}'.format(rec['mount_id'], rec['name']))
+            self.ts_listing_lines.append(
+                "{:>10s} | {:50s}".format(rec["mount_id"], rec["name"])
+            )
 
         # spacer between sections
-        self.ts_listing_lines.append('')
+        self.ts_listing_lines.append("")
 
         # recipient shares
-        self.ts_listing_lines.append('Trusted Shares you are a recipient of')
-        self.ts_listing_lines.append('{:>10s} | {:50s}'.format('Mount', 'TS Description'))
-        self.ts_listing_lines.append('{:>10s} | {:50s}'.format('-' * 10, '-' * 50))
+        self.ts_listing_lines.append("Trusted Shares you are a recipient of")
+        self.ts_listing_lines.append(
+            "{:>10s} | {:50s}".format("Mount", "TS Description")
+        )
+        self.ts_listing_lines.append("{:>10s} | {:50s}".format("-" * 10, "-" * 50))
         for rec in self.ts_collab_list:
-            self.ts_listing_lines.append('{:>10s} | {:50s}'.format(rec['mount_id'], rec['name']))
+            self.ts_listing_lines.append(
+                "{:>10s} | {:50s}".format(rec["mount_id"], rec["name"])
+            )
 
     def ts_listing_read(self, owner_only=None):
         """
@@ -117,25 +132,27 @@ class TSListing(object):
         if owner_only is None:
             owner_only = self.owner_only
 
-        self.ts_owner_list, self.ts_collab_list = self.eclient.ts_listing(owner_only=owner_only)
+        self.ts_owner_list, self.ts_collab_list = self.eclient.ts_listing(
+            owner_only=owner_only
+        )
 
     def ts_listing_dump(self, ts_dump_filename):
         """
         Write the trusted share information to the filename provided
-        
+
         :param ts_dump_filename: (string) - filename or path/filename to output file created
         """
 
         # owner
         df1 = pandas.DataFrame(self.ts_owner_list)
-        df1.rename(columns={'id': 'share_guid', 'name': 'ts_name'}, inplace=True)
-        df1['is_owner'] = True
-        df1['expires_at'] = ''
+        df1.rename(columns={"id": "share_guid", "name": "ts_name"}, inplace=True)
+        df1["is_owner"] = True
+        df1["expires_at"] = ""
 
         # recipient
         df2 = pandas.DataFrame(self.ts_collab_list)
-        df2.rename(columns={'share_id': 'share_guid', 'name': 'ts_name'}, inplace=True)
-        df2['is_owner'] = False
+        df2.rename(columns={"share_id": "share_guid", "name": "ts_name"}, inplace=True)
+        df2["is_owner"] = False
 
         # merge these two lists
         frames = [df1, df2]
@@ -146,4 +163,6 @@ class TSListing(object):
         df = df[output_cols]
 
         df.to_excel(ts_dump_filename, index=False)
-        logger.info('Created the trusted share secure view listing file:  %s', ts_dump_filename)
+        logger.info(
+            "Created the trusted share secure view listing file:  %s", ts_dump_filename
+        )

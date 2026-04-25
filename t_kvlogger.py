@@ -2,9 +2,10 @@ import pprint
 import logging
 import logging.config
 import kvlogger
-logger= logging.getLogger(__name__)
 
-'''
+logger = logging.getLogger(__name__)
+
+"""
 log_path='t_kvlogger.log'
 config = {
     'disable_existing_loggers': False,
@@ -38,12 +39,12 @@ config = {
     },
 }
 
-'''
+"""
 
-config=kvlogger.get_config('t_kvlogger.log')
-print('config:')
+config = kvlogger.get_config("t_kvlogger.log")
+print("config:")
 pprint.pprint(config)
 logging.config.dictConfig(config)
 # logger=kvlogger.get_logger(__name__, 't_kvutil.log')
-logger.debug('send out a message')
-logger.info('send out an info message')
+logger.debug("send out a message")
+logger.info("send out an info message")

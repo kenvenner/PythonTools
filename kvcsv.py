@@ -125,9 +125,7 @@ def writelist2csv(
 
     # open the output file and write out the dictionary
     with open(csvfile, mode=mode, newline="", encoding=encoding) as csv_file:
-        writer = csv.DictWriter(
-            csv_file, fieldnames=csvfields, extrasaction="ignore"
-        )
+        writer = csv.DictWriter(csv_file, fieldnames=csvfields, extrasaction="ignore")
 
         if header:
             writer.writeheader()
@@ -138,13 +136,13 @@ def writelist2csv(
 def writedict2csv(
     csvfile: str,
     csvdict: dict,
-    csvfields: list | None=None,
-    mode: str="w",
-    header: bool=True,
-    encoding: str="windows-1252",
-    maxcolumns: bool=False,
-    col_aref: list | None=None,
-    debug: bool=False,
+    csvfields: list | None = None,
+    mode: str = "w",
+    header: bool = True,
+    encoding: str = "windows-1252",
+    maxcolumns: bool = False,
+    col_aref: list | None = None,
+    debug: bool = False,
 ) -> None:
     """
     write out a list of dicts => records into a CSV
@@ -196,9 +194,7 @@ def writedict2csv(
 
     # open the output file and write out the dictionary
     with open(csvfile, mode=mode, newline="", encoding=encoding) as csv_file:
-        writer = csv.DictWriter(
-            csv_file, fieldnames=csvfields, extrasaction="ignore"
-        )
+        writer = csv.DictWriter(csv_file, fieldnames=csvfields, extrasaction="ignore")
 
         if header:
             writer.writeheader()
@@ -273,9 +269,7 @@ def readcsv2list(
 
     """
 
-    results, header = readcsv2list_with_header(
-        csvfile, headerlc, encoding, debug
-    )
+    results, header = readcsv2list_with_header(csvfile, headerlc, encoding, debug)
     return results
 
 
@@ -361,7 +355,7 @@ def readcsv2dict_with_header(
     if not dictkeys:
         raise ValueError("dictkeys must be populated and is not")
     if not isinstance(dictkeys, list):
-        raise TypeError("dictkeys must be a list but is: {type(dictkeys)}")
+        raise TypeError(f"dictkeys must be a list but is: {type(dictkeys)}")
 
     # read the records into a list
     results_list, header = readcsv2list_with_header(
@@ -486,9 +480,7 @@ def readcsv2dict_with_noheader(
         raise TypeError(f"header must be a list but is: {type(header)}")
     bad_dictkeys = [x for x in dictkeys if x not in header]
     if bad_dictkeys:
-        raise ValueError(
-            f"dictkeys that are not in header: {','.join(bad_dictkeys)}"
-        )
+        raise ValueError(f"dictkeys that are not in header: {','.join(bad_dictkeys)}")
 
     # read the records into a list
     results_list, header = readcsv2list_with_noheader(
@@ -632,14 +624,14 @@ def readcsv2list_findheader(
     logger.debug("col_aref:%s", col_aref)
 
     # set flags
-    col_header = (
-        False  # if true - we take the first row of the file as the header
-    )
+    col_header = False  # if true - we take the first row of the file as the header
     no_header = False  # if true - there are no headers read - we either return
     aref_result = False  # if true - we don't return dicts, we return a list
     save_row = False  # if true - then we append/save the XLSRow with the record
 
-    start_row = 0  # if passed in - we start the search at this row (starts at 1 or greater)
+    start_row = (
+        0  # if passed in - we start the search at this row (starts at 1 or greater)
+    )
 
     # create the list of misconfigured solutions
     badoptiondict = {
@@ -779,9 +771,7 @@ def readcsv2list_findheader(
         if False:
             if len(col_aref) < sheetmaxcol - sheetmincol:
                 # not enough entries - so we add more to the end
-                for colcnt in range(
-                    1, sheetmaxcol - sheetmincol - len(col_aref) + 1
-                ):
+                for colcnt in range(1, sheetmaxcol - sheetmincol - len(col_aref) + 1):
                     header.append("")
 
         # now pass the final information through remapped
@@ -909,13 +899,11 @@ def readcsv2dict_findheader(
     if not dictkeys:
         raise ValueError("dictkeys must be populated and is not")
     if not isinstance(dictkeys, list):
-        raise TypeError("dictkeys must be a list but is: {type(dictkeys)}")
+        raise TypeError(f"dictkeys must be a list but is: {type(dictkeys)}")
 
     # check processing
     if "no_header" in optiondict and optiondict["no_header"] and not col_aref:
-        raise ValueError(
-            "invalid setting optiondict[no_header] and no col_aref"
-        )
+        raise ValueError("invalid setting optiondict[no_header] and no col_aref")
     if "aref_result" in optiondict and optiondict["aref_result"]:
         raise ValueError("invalid setting optiondict[aref_result]")
 

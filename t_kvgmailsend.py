@@ -24,7 +24,10 @@ class TestKVGmailSend(unittest.TestCase):
 
     def testGmailSend_f01_init_invalid_sendfrom(self):
         with self.assertRaises(Exception) as context:
-            m = kvgmailsend.GmailSend("invalid.email.com", "password")
+            kvgmailsend.GmailSend("invalid.email.com", "password")
+        self.assertEqual(
+            str(context.exception), "Invalid email address 'invalid.email.com'"
+        )
 
     def testGmailSend_p01_setSubject(self):
         m = kvgmailsend.GmailSend("valid@email.com", "password")
@@ -256,12 +259,19 @@ class TestKVGmailSend(unittest.TestCase):
         with self.assertRaises(Exception) as context:
             m = kvgmailsend.GmailSend("valie@email.com", "password")
             m.send()
+        self.assertEqual(
+            str(context.exception),
+            "Error! Must specify at least one body type (HTML or Text)",
+        )
 
     def testGmailSend_f01_send_no_recipient(self):
         with self.assertRaises(Exception) as context:
             m = kvgmailsend.GmailSend("valid@email.com", "password")
             m.setTextBody("Field is populated")
             m.send()
+        self.assertEqual(
+            str(context.exception), "Must specify at least one recipient (to,cc,bcc)"
+        )
 
 
 if __name__ == "__main__":

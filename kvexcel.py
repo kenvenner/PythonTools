@@ -133,13 +133,9 @@ def update_excel_cells(
         raise TypeError(f"updates[0] must be dict but is:  {type(updates[0])}")
     # see if the updates definitions has the right set of keys
     # did not check for sheet as it is NOT a required field
-    missingkeys = [
-        x for x in ("row", "col", "value") if x not in updates[0].keys()
-    ]
+    missingkeys = [x for x in ("row", "col", "value") if x not in updates[0].keys()]
     if missingkeys:
-        raise ValueError(
-            f"updates[0] missing following keys: {','.join(missingkeys)}"
-        )
+        raise ValueError(f"updates[0] missing following keys: {','.join(missingkeys)}")
 
     # local variables
     opened_excel = False
@@ -204,11 +200,7 @@ def update_excel_cells(
         # make the updates
         try:
             # if sheet is populated - change to that sheet in this workbook - otherwise we just work the active sheet
-            ws = (
-                workbook.Sheets(sheet_name)
-                if sheet_name
-                else workbook.ActiveSheet
-            )
+            ws = workbook.Sheets(sheet_name) if sheet_name else workbook.ActiveSheet
             # set the value in the defined cell
             ws.Cells(row, col).Value = value
             if disp_msg:

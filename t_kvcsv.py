@@ -170,9 +170,7 @@ class TestKVCsv(unittest.TestCase):
 
     # max_column_list
     def test_max_column_list_p01_simple_1_1(self):
-        self.assertEqual(
-            kvcsv.max_column_list([{"Field1": "value1"}]), ["Field1"]
-        )
+        self.assertEqual(kvcsv.max_column_list([{"Field1": "value1"}]), ["Field1"])
 
     def test_max_column_list_p02_simple_1_2(self):
         self.assertEqual(
@@ -200,6 +198,9 @@ class TestKVCsv(unittest.TestCase):
     def test_max_column_list_f01_csvlist_dict(self):
         with self.assertRaises(Exception) as context:
             kvcsv.max_column_list({"a": 1})
+        self.assertEqual(
+            str(context.exception), "csvlist must be [list] but is: <class 'dict'>"
+        )
 
     def test_max_column_list_f02_csvlist_list_list(self):
         with self.assertRaises(Exception) as context:
@@ -209,13 +210,14 @@ class TestKVCsv(unittest.TestCase):
                     {"Field2", "value2", "Field3", "value3"},
                 ]
             )
+        self.assertEqual(
+            str(context.exception), "csvlist[0] must be [dict] but is: <class 'set'>"
+        )
 
     # writelist2csv
     def test_writelist2csv_p01_simple(self):
         kvcsv.writelist2csv(filename, RECORDS)
-        self.assertTrue(
-            os.path.exists(filename), "Did not create filename:" + filename
-        )
+        self.assertTrue(os.path.exists(filename), "Did not create filename:" + filename)
         results, header = kvcsv.readcsv2list_with_header(filename)
         self.assertEqual(RECORDS, results)
 
@@ -225,9 +227,7 @@ class TestKVCsv(unittest.TestCase):
         del templist[0]["LastSeen"]
         del templist[0]["Type"]
         kvcsv.writelist2csv(filename, templist)
-        self.assertTrue(
-            os.path.exists(filename), "Did not create filename:" + filename
-        )
+        self.assertTrue(os.path.exists(filename), "Did not create filename:" + filename)
         results, header = kvcsv.readcsv2list_with_header(filename)
         self.assertEqual(list(templist[0].keys()), header)
 
@@ -238,9 +238,7 @@ class TestKVCsv(unittest.TestCase):
         del templist[0]["LastSeen"]
         del templist[0]["Type"]
         kvcsv.writelist2csv(filename, templist, csvfields)
-        self.assertTrue(
-            os.path.exists(filename), "Did not create filename:" + filename
-        )
+        self.assertTrue(os.path.exists(filename), "Did not create filename:" + filename)
         results, header = kvcsv.readcsv2list_with_header(filename)
         self.assertEqual(header, list(RECORDS[0].keys()))
 
@@ -250,9 +248,7 @@ class TestKVCsv(unittest.TestCase):
         del templist[0]["LastSeen"]
         del templist[0]["Type"]
         kvcsv.writelist2csv(filename, templist, maxcolumns=True)
-        self.assertTrue(
-            os.path.exists(filename), "Did not create filename:" + filename
-        )
+        self.assertTrue(os.path.exists(filename), "Did not create filename:" + filename)
         results, header = kvcsv.readcsv2list_with_header(filename)
         # this was manually created and will be adjusted as we change logic
         maxcol_header = [
@@ -272,9 +268,7 @@ class TestKVCsv(unittest.TestCase):
         templist[0]["AddFld1"] = "AddFld1"
         templist[0]["AddFld2"] = "AddFld2"
         kvcsv.writelist2csv(filename, templist)
-        self.assertTrue(
-            os.path.exists(filename), "Did not create filename:" + filename
-        )
+        self.assertTrue(os.path.exists(filename), "Did not create filename:" + filename)
         results, header = kvcsv.readcsv2list_with_header(filename)
         # this was manually created and will be adjusted as we change logic
         maxcol_header = [
@@ -297,9 +291,7 @@ class TestKVCsv(unittest.TestCase):
         templist[0]["AddFld1"] = "AddFld1"
         templist[0]["AddFld2"] = "AddFld2"
         kvcsv.writelist2csv(filename, templist, csvfields)
-        self.assertTrue(
-            os.path.exists(filename), "Did not create filename:" + filename
-        )
+        self.assertTrue(os.path.exists(filename), "Did not create filename:" + filename)
         results, header = kvcsv.readcsv2list_with_header(filename)
         self.assertEqual(csvfields, header)
 
@@ -309,41 +301,29 @@ class TestKVCsv(unittest.TestCase):
         csvfields.append("AddFld1")
         csvfields.append("AddFld2")
         kvcsv.writelist2csv(filename, templist, csvfields)
-        self.assertTrue(
-            os.path.exists(filename), "Did not create filename:" + filename
-        )
+        self.assertTrue(os.path.exists(filename), "Did not create filename:" + filename)
         results, header = kvcsv.readcsv2list_with_header(filename)
         self.assertEqual(csvfields, header)
 
     def test_writelist2csv_p07_dictkeys(self):
         kvcsv.writelist2csv(filename, RECORDS, REQ_COLS)
-        self.assertTrue(
-            os.path.exists(filename), "Did not create filename:" + filename
-        )
+        self.assertTrue(os.path.exists(filename), "Did not create filename:" + filename)
         results, header = kvcsv.readcsv2list_with_header(filename)
         self.assertEqual(REQ_COLS, header)
 
     def test_writelist2csv_p08_noheader(self):
         kvcsv.writelist2csv(filename, RECORDS, header=False)
-        self.assertTrue(
-            os.path.exists(filename), "Did not create filename:" + filename
-        )
+        self.assertTrue(os.path.exists(filename), "Did not create filename:" + filename)
         csvfields = list(RECORDS[0].keys()) + ["RecID"]
-        results, header = kvcsv.readcsv2list_with_noheader(
-            filename, header=csvfields
-        )
+        results, header = kvcsv.readcsv2list_with_noheader(filename, header=csvfields)
         self.assertEqual(csvfields, header)
 
     def test_writelist2csv_p09_noheader_append(self):
         kvcsv.writelist2csv(filename, RECORDS, header=False)
         kvcsv.writelist2csv(filename, RECORDS, header=False, mode="a")
-        self.assertTrue(
-            os.path.exists(filename), "Did not create filename:" + filename
-        )
+        self.assertTrue(os.path.exists(filename), "Did not create filename:" + filename)
         csvfields = list(RECORDS[0].keys()) + ["RecID"]
-        results, header = kvcsv.readcsv2list_with_noheader(
-            filename, header=csvfields
-        )
+        results, header = kvcsv.readcsv2list_with_noheader(filename, header=csvfields)
         self.assertEqual(csvfields, header)
         self.assertEqual(len(results), 2 * len(RECORDS))
 
@@ -357,39 +337,45 @@ class TestKVCsv(unittest.TestCase):
     def test_writelist2csv_f01_empty_csvfile(self):
         with self.assertRaises(Exception) as context:
             kvcsv.writelist2csv("", RECORDS, debug=False)
+        self.assertEqual(str(context.exception), "csvfile must be populated")
 
     def test_writelist2csv_f02_not_list_csvlist(self):
         with self.assertRaises(Exception) as context:
             kvcsv.writelist2csv(filename, RECORDS_DICT, debug=False)
-
-    def test_writelist2csv_f03_not_list_csvlist(self):
-        with self.assertRaises(Exception) as context:
-            kvcsv.writelist2csv(filename, RECORDS_DICT, debug=False)
+        self.assertEqual(
+            str(context.exception), "csvlist must be [list] but is: <class 'dict'>"
+        )
 
     def test_writelist2csv_f04_list_csvlist_rec0_list(self):
         with self.assertRaises(Exception) as context:
-            kvcsv.writelist2csv(
-                filename, [[1, 2, 3], {"a": 1, "b": 2}], debug=False
-            )
+            kvcsv.writelist2csv(filename, [[1, 2, 3], {"a": 1, "b": 2}], debug=False)
+        self.assertEqual(
+            str(context.exception), "csvlist[0] must be [dict] but is: <class 'list'>"
+        )
 
     def test_writelist2csv_f05_not_list_csvfields(self):
         with self.assertRaises(Exception) as context:
             kvcsv.writelist2csv(filename, RECORDS, csvfields="ken", debug=False)
+        self.assertEqual(
+            str(context.exception), "csvfields must be [list] but is: <class 'str'>"
+        )
 
     def test_writelist2csv_f06_col_aref_not_list(self):
         with self.assertRaises(Exception) as context:
             kvcsv.writelist2csv(filename, RECORDS, col_aref="ken", debug=False)
+        self.assertEqual(
+            str(context.exception), "col_aref must be [list] but is: <class 'str'>"
+        )
 
     def test_writelist2csv_f07_bad_mode(self):
         with self.assertRaises(Exception) as context:
             kvcsv.writelist2csv(filename, RECORDS, mode=1, debug=False)
+        self.assertEqual(str(context.exception), "mode can only be [a, w] but is: 1")
 
     # writedict2csv
     def test_writedict2csv_p01_simple(self):
         kvcsv.writedict2csv(filename, RECORDS_DICT)
-        self.assertTrue(
-            os.path.exists(filename), "Did not create filename:" + filename
-        )
+        self.assertTrue(os.path.exists(filename), "Did not create filename:" + filename)
         results, header, dupcount = kvcsv.readcsv2dict_with_header(
             filename, [FLD_DICTKEY]
         )
@@ -404,9 +390,7 @@ class TestKVCsv(unittest.TestCase):
         del templist[key1]["Type"]
         csvfields = list(templist[key1].keys())
         kvcsv.writedict2csv(filename, templist)
-        self.assertTrue(
-            os.path.exists(filename), "Did not create filename:" + filename
-        )
+        self.assertTrue(os.path.exists(filename), "Did not create filename:" + filename)
         results, header, dupcount = kvcsv.readcsv2dict_with_header(
             filename, [FLD_DICTKEY]
         )
@@ -422,9 +406,7 @@ class TestKVCsv(unittest.TestCase):
         del templist[key1]["LastSeen"]
         del templist[key1]["Type"]
         kvcsv.writedict2csv(filename, templist, csvfields)
-        self.assertTrue(
-            os.path.exists(filename), "Did not create filename:" + filename
-        )
+        self.assertTrue(os.path.exists(filename), "Did not create filename:" + filename)
         results, header, dupcount = kvcsv.readcsv2dict_with_header(
             filename, [FLD_DICTKEY]
         )
@@ -435,14 +417,12 @@ class TestKVCsv(unittest.TestCase):
     def test_writedict2csv_p04_missing_dict_elements_maxcolumns(self):
         templist = copy.deepcopy(RECORDS_DICT)
         key1 = list(templist.keys())[0]
-        csvfields = list(templist[key1].keys())
+        # csvfields = list(templist[key1].keys())
         del templist[key1]["Company"]
         del templist[key1]["LastSeen"]
         del templist[key1]["Type"]
         kvcsv.writedict2csv(filename, templist, maxcolumns=True)
-        self.assertTrue(
-            os.path.exists(filename), "Did not create filename:" + filename
-        )
+        self.assertTrue(os.path.exists(filename), "Did not create filename:" + filename)
         # needed to set this manually due to order difference
         expected_header = [
             "Wine",
@@ -467,9 +447,7 @@ class TestKVCsv(unittest.TestCase):
         templist[key1]["AddFld1"] = "AddFld1"
         templist[key1]["AddFld2"] = "AddFld2"
         kvcsv.writedict2csv(filename, templist)
-        self.assertTrue(
-            os.path.exists(filename), "Did not create filename:" + filename
-        )
+        self.assertTrue(os.path.exists(filename), "Did not create filename:" + filename)
         results, header, dupcount = kvcsv.readcsv2dict_with_header(
             filename, [FLD_DICTKEY]
         )
@@ -484,9 +462,7 @@ class TestKVCsv(unittest.TestCase):
         templist[key1]["AddFld1"] = "AddFld1"
         templist[key1]["AddFld2"] = "AddFld2"
         kvcsv.writedict2csv(filename, templist, csvfields)
-        self.assertTrue(
-            os.path.exists(filename), "Did not create filename:" + filename
-        )
+        self.assertTrue(os.path.exists(filename), "Did not create filename:" + filename)
         results, header, dupcount = kvcsv.readcsv2dict_with_header(
             filename, [FLD_DICTKEY]
         )
@@ -496,15 +472,11 @@ class TestKVCsv(unittest.TestCase):
 
     def test_writedict2csv_p07_dictkeys(self):
         kvcsv.writedict2csv(filename, RECORDS_DICT, REQ_COLS)
-        self.assertTrue(
-            os.path.exists(filename), "Did not create filename:" + filename
-        )
+        self.assertTrue(os.path.exists(filename), "Did not create filename:" + filename)
 
     def test_writedict2csv_p08_noheader(self):
         kvcsv.writedict2csv(filename, RECORDS_DICT, header=False)
-        self.assertTrue(
-            os.path.exists(filename), "Did not create filename:" + filename
-        )
+        self.assertTrue(os.path.exists(filename), "Did not create filename:" + filename)
         csvfields = list(RECORDS[0].keys()) + ["RecID"]
         results, header, dupcount = kvcsv.readcsv2dict_with_noheader(
             filename, [FLD_DICTKEY], header=csvfields
@@ -515,9 +487,7 @@ class TestKVCsv(unittest.TestCase):
     def test_writedict2csv_p08_noheader_append(self):
         kvcsv.writedict2csv(filename, RECORDS_DICT, header=False)
         kvcsv.writedict2csv(filename, RECORDS_DICT, header=False, mode="a")
-        self.assertTrue(
-            os.path.exists(filename), "Did not create filename:" + filename
-        )
+        self.assertTrue(os.path.exists(filename), "Did not create filename:" + filename)
         csvfields = list(RECORDS[0].keys()) + ["RecID"]
         results, header, dupcount = kvcsv.readcsv2dict_with_noheader(
             filename, [FLD_DICTKEY], header=csvfields
@@ -530,9 +500,7 @@ class TestKVCsv(unittest.TestCase):
     def test_writedict2csv_p10_set_output_cols(self):
         col_aref = ["Wine", "Company", "Vintage"]
         col_aref.append(FLD_DICTKEY)
-        kvcsv.writedict2csv(
-            filename, RECORDS_DICT, col_aref=col_aref, debug=False
-        )
+        kvcsv.writedict2csv(filename, RECORDS_DICT, col_aref=col_aref, debug=False)
         results, header, dupcount = kvcsv.readcsv2dict_with_header(
             filename, [FLD_DICTKEY]
         )
@@ -542,30 +510,40 @@ class TestKVCsv(unittest.TestCase):
     def test_writedict2csv_f01_empty_csvfile(self):
         with self.assertRaises(Exception) as context:
             kvcsv.writedict2csv("", RECORDS, debug=False)
+        self.assertEqual(str(context.exception), "csvfile must be populated")
 
     def test_writedict2csv_f02_not_dict_csvdict(self):
         with self.assertRaises(Exception) as context:
             kvcsv.writedict2csv(filename, RECORDS, debug=False)
+        self.assertEqual(
+            str(context.exception), "csvdict must be [dict] but is: <class 'list'>"
+        )
 
     def test_writedict2csv_f04_dict_csvdict_key1_list(self):
         with self.assertRaises(Exception) as context:
             kvcsv.writedict2csv(filename, {"a": [1, 2, 3]}, debug=False)
+        self.assertEqual(
+            str(context.exception), "'list' object has no attribute 'keys'"
+        )
 
     def test_writedict2csv_f05_not_list_csvfields(self):
         with self.assertRaises(Exception) as context:
-            kvcsv.writedict2csv(
-                filename, RECORDS_DICT, csvfields="ken", debug=False
-            )
+            kvcsv.writedict2csv(filename, RECORDS_DICT, csvfields="ken", debug=False)
+        self.assertEqual(
+            str(context.exception), "csvfields must be [list] but is: <class 'str'>"
+        )
 
     def test_writedict2csv_f06_col_aref_not_list(self):
         with self.assertRaises(Exception) as context:
-            kvcsv.writedict2csv(
-                filename, RECORDS_DICT, col_aref="ken", debug=False
-            )
+            kvcsv.writedict2csv(filename, RECORDS_DICT, col_aref="ken", debug=False)
+        self.assertEqual(
+            str(context.exception), "col_aref must be [list] but is: <class 'str'>"
+        )
 
     def test_writedict2csv_f07_bad_mode(self):
         with self.assertRaises(Exception) as context:
             kvcsv.writedict2csv(filename, RECORDS_DICT, mode=1, debug=False)
+        self.assertEqual(str(context.exception), "mode can only be [a, w] but is: 1")
 
     # readcsv2list_with_header
     def test_readcsv2list_with_header_p01_simple(self):
@@ -586,6 +564,9 @@ class TestKVCsv(unittest.TestCase):
     def test_readcsv2list_with_header_f01_empty_csvfile(self):
         with self.assertRaises(Exception) as context:
             kvcsv.readcsv2list_with_header("", debug=False)
+        self.assertEqual(
+            str(context.exception), "[Errno 2] No such file or directory: ''"
+        )
 
     # readcsv2list
     def test_readcsv2list_p01_simple(self):
@@ -604,19 +585,19 @@ class TestKVCsv(unittest.TestCase):
     def test_readcsv2list_f01_empty_csvfile(self):
         with self.assertRaises(Exception) as context:
             kvcsv.readcsv2list("", debug=False)
+        self.assertEqual(
+            str(context.exception), "[Errno 2] No such file or directory: ''"
+        )
 
     ########################################
     # prior function: readcsv2list
     # the function name: def readcsv2list_with_noheader(
     # def test_readcsv2list_with_noheader_p01_pass(self):
-    
 
     # readcsv2dict_with_header
     def test_readcsv2dict_with_header_p01_simple(self):
         kvcsv.writelist2csv(filename, RECORDS)
-        result, header, dupcount = kvcsv.readcsv2dict_with_header(
-            filename, REQ_COLS
-        )
+        result, header, dupcount = kvcsv.readcsv2dict_with_header(filename, REQ_COLS)
         self.assertEqual(
             result[kvmatch.build_multifield_key(RECORDS[0], REQ_COLS)],
             RECORDS[0],
@@ -641,9 +622,7 @@ class TestKVCsv(unittest.TestCase):
         duprecords = copy.deepcopy(RECORDS)
         duprecords.append(RECORDS[0])
         kvcsv.writelist2csv(filename, duprecords)
-        result, header, dupcount = kvcsv.readcsv2dict_with_header(
-            filename, REQ_COLS
-        )
+        result, header, dupcount = kvcsv.readcsv2dict_with_header(filename, REQ_COLS)
         self.assertEqual(
             result[kvmatch.build_multifield_key(RECORDS[0], REQ_COLS)],
             RECORDS[0],
@@ -654,14 +633,23 @@ class TestKVCsv(unittest.TestCase):
     def test_readcsv2dict_with_header_f01_empty_csvfile(self):
         with self.assertRaises(Exception) as context:
             kvcsv.readcsv2dict_with_header("", [FLD_DICTKEY], debug=False)
+        self.assertEqual(
+            str(context.exception), "[Errno 2] No such file or directory: ''"
+        )
 
     def test_readcsv2dict_with_header_f02_empty_dictkeys(self):
         with self.assertRaises(Exception) as context:
             kvcsv.readcsv2dict_with_header(filename, [], debug=False)
+        self.assertEqual(
+            str(context.exception), "dictkeys must be populated and is not"
+        )
 
     def test_readcsv2dict_with_header_f03_dictkeys_not_list(self):
         with self.assertRaises(Exception) as context:
             kvcsv.readcsv2dict_with_header(filename, {"a": 1}, debug=False)
+        self.assertEqual(
+            str(context.exception), "dictkeys must be a list but is: <class 'dict'>"
+        )
 
     def test_readcsv2dict_with_header_f04_dupkeyfail_nowarning(self):
         duprecords = copy.deepcopy(RECORDS)
@@ -671,6 +659,7 @@ class TestKVCsv(unittest.TestCase):
             result, header, dupcount = kvcsv.readcsv2dict_with_header(
                 filename, REQ_COLS, dupkeyfail=True
             )
+        self.assertEqual(str(context.exception), "Duplicate key failure")
 
     def test_readcsv2dict_with_header_f05_dupkeyfail_warning(self):
         duprecords = copy.deepcopy(RECORDS)
@@ -680,6 +669,7 @@ class TestKVCsv(unittest.TestCase):
             result, header, dupcount = kvcsv.readcsv2dict_with_header(
                 filename, REQ_COLS, dupkeyfail=True, noshowwarning=True
             )
+        self.assertEqual(str(context.exception), "Duplicate key failure")
 
     # readcsv2dict
     def test_readcsv2dict_p01_simple(self):
@@ -714,16 +704,17 @@ class TestKVCsv(unittest.TestCase):
         duprecords.append(RECORDS[0])
         kvcsv.writelist2csv(filename, duprecords)
         with self.assertRaises(Exception) as context:
-            result = kvcsv.readcsv2dict(filename, REQ_COLS, dupkeyfail=True)
+            kvcsv.readcsv2dict(filename, REQ_COLS, dupkeyfail=True)
+        self.assertEqual(str(context.exception), "Duplicate key failure")
 
     def test_readcsv2dict_f02_dupkeyfail_warning(self):
         duprecords = copy.deepcopy(RECORDS)
         duprecords.append(RECORDS[0])
         kvcsv.writelist2csv(filename, duprecords)
         with self.assertRaises(Exception) as context:
-            result = kvcsv.readcsv2dict(
-                filename, REQ_COLS, dupkeyfail=True, noshowwarning=True
-            )
+            kvcsv.readcsv2dict(filename, REQ_COLS, dupkeyfail=True, noshowwarning=True)
+        print(str(context.exception))
+        self.assertEqual(str(context.exception), "Duplicate key failure")
 
     # readcsv2dict_with_noheader
     def test_readcsv2dict_with_noheader_p01_simple(self):
@@ -760,6 +751,9 @@ class TestKVCsv(unittest.TestCase):
             result, header, dupcount = kvcsv.readcsv2dict_with_noheader(
                 "", REQ_COLS, header
             )
+        self.assertEqual(
+            str(context.exception), "[Errno 2] No such file or directory: ''"
+        )
 
     def test_readcsv2dict_with_noheader_f02_empty_header(self):
         header = list()
@@ -767,27 +761,39 @@ class TestKVCsv(unittest.TestCase):
             result, header, dupcount = kvcsv.readcsv2dict_with_noheader(
                 filename, REQ_COLS, header
             )
+        self.assertEqual(str(context.exception), "header must be populated and is not")
 
     def test_readcsv2dict_with_noheader_f03_header_dict(self):
         header = {"a": 1}
         with self.assertRaises(Exception) as context:
             result, header, dupcount = kvcsv.readcsv2dict_with_noheader(
-                fileanem, REQ_COLS, header
+                filename, REQ_COLS, header
             )
+        self.assertEqual(
+            str(context.exception), "header must be a list but is: <class 'dict'>"
+        )
 
     def test_readcsv2dict_with_noheader_f04_dictkeys_empty(self):
         header = list(RECORDS[0].keys())
         with self.assertRaises(Exception) as context:
             result, header, dupcount = kvcsv.readcsv2dict_with_noheader(
-                fileanem, [], header
+                filename, [], header
             )
+        self.assertEqual(
+            str(context.exception), "dictkeys must be populated and is not"
+        )
 
     def test_readcsv2dict_with_noheader_f05_dictkeys_not_list(self):
         header = list(RECORDS[0].keys())
         with self.assertRaises(Exception) as context:
             result, header, dupcount = kvcsv.readcsv2dict_with_noheader(
-                fileanem, header, header
+                filename, header, header
             )
+        self.assertTrue(
+            str(context.exception).startswith(
+                "[Errno 2] No such file or directory: 't_kvcsvtest-"
+            )
+        )
 
     def test_readcsv2dict_with_noheader_f06_dupkeyfail_nowarning(self):
         duprecords = copy.deepcopy(RECORDS)
@@ -798,6 +804,7 @@ class TestKVCsv(unittest.TestCase):
             result, header, dupcount = kvcsv.readcsv2dict_with_noheader(
                 filename, REQ_COLS, header, dupkeyfail=True
             )
+        self.assertEqual(str(context.exception), "Duplicate key failure")
 
     # readcsv2list_findheader
     def test_readcsv2list_findheader_p01_reqcols_simple(self):
@@ -829,9 +836,7 @@ class TestKVCsv(unittest.TestCase):
             debug=False,
         )
 
-        self.assertEqual(
-            result[0], {x.upper(): y for x, y in RECORDS[0].items()}
-        )
+        self.assertEqual(result[0], {x.upper(): y for x, y in RECORDS[0].items()})
         self.assertEqual(len(result), len(RECORDS))
 
     def test_readcsv2list_findheader_p04_reqcols_save_row(self):
@@ -869,9 +874,7 @@ class TestKVCsv(unittest.TestCase):
         # add all the other data records
         aref.extend(RECORDS)
         # write this out with header as false
-        kvcsv.writelist2csv(
-            filename, aref, list(RECORDS[0].keys()), header=False
-        )
+        kvcsv.writelist2csv(filename, aref, list(RECORDS[0].keys()), header=False)
         # now load this finding the header line that is not at the top
         result, header_rtn = kvcsv.readcsv2list_findheader(
             filename, REQ_COLS, debug=False
@@ -887,9 +890,7 @@ class TestKVCsv(unittest.TestCase):
             aref.append(blankrec)
         aref.append(headerrec)
         aref.extend(RECORDS)
-        kvcsv.writelist2csv(
-            filename, aref, list(RECORDS[0].keys()), header=False
-        )
+        kvcsv.writelist2csv(filename, aref, list(RECORDS[0].keys()), header=False)
 
         result, header_rtn = kvcsv.readcsv2list_findheader(
             filename, REQ_COLS, optiondict={"start_row": 2}, debug=False
@@ -905,9 +906,7 @@ class TestKVCsv(unittest.TestCase):
             aref.append(blankrec)
         aref.append(headerrec)
         aref.extend(RECORDS)
-        kvcsv.writelist2csv(
-            filename, aref, list(RECORDS[0].keys()), header=False
-        )
+        kvcsv.writelist2csv(filename, aref, list(RECORDS[0].keys()), header=False)
 
         result, header_rtn = kvcsv.readcsv2list_findheader(
             filename, REQ_COLS, optiondict={"aref_result": True}, debug=False
@@ -993,6 +992,10 @@ class TestKVCsv(unittest.TestCase):
                 optiondict={"no_header": True},
                 debug=False,
             )
+        self.assertEqual(
+            str(context.exception),
+            "invalid setting optiondict[no_header] and no col_aref",
+        )
 
     def test_readcsv2dict_findheader_p06_reqcols_no_header_col_aref(self):
         kvcsv.writelist2csv(filename, RECORDS)
@@ -1015,9 +1018,7 @@ class TestKVCsv(unittest.TestCase):
             aref.append(blankrec)
         aref.append(headerrec)
         aref.extend(RECORDS)
-        kvcsv.writelist2csv(
-            filename, aref, list(RECORDS[0].keys()), header=False
-        )
+        kvcsv.writelist2csv(filename, aref, list(RECORDS[0].keys()), header=False)
         result, header_rtn, dupcount = kvcsv.readcsv2dict_findheader(
             filename, REQ_COLS, [FLD_DICTKEY], debug=False
         )
@@ -1032,9 +1033,7 @@ class TestKVCsv(unittest.TestCase):
             aref.append(blankrec)
         aref.append(headerrec)
         aref.extend(RECORDS)
-        kvcsv.writelist2csv(
-            filename, aref, list(RECORDS[0].keys()), header=False
-        )
+        kvcsv.writelist2csv(filename, aref, list(RECORDS[0].keys()), header=False)
 
         result, header_rtn, dupcount = kvcsv.readcsv2dict_findheader(
             filename,
@@ -1054,9 +1053,7 @@ class TestKVCsv(unittest.TestCase):
             aref.append(blankrec)
         aref.append(headerrec)
         aref.extend(RECORDS)
-        kvcsv.writelist2csv(
-            filename, aref, list(RECORDS[0].keys()), header=False
-        )
+        kvcsv.writelist2csv(filename, aref, list(RECORDS[0].keys()), header=False)
         with self.assertRaises(Exception) as context:
             result, header_rtn, dupcount = kvcsv.readcsv2dict_findheader(
                 filename,
@@ -1065,6 +1062,9 @@ class TestKVCsv(unittest.TestCase):
                 optiondict={"aref_result": True},
                 debug=False,
             )
+        self.assertEqual(
+            str(context.exception), "invalid setting optiondict[aref_result]"
+        )
 
 
 if __name__ == "__main__":

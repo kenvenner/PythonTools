@@ -123,9 +123,7 @@ def badoptiondict_check(
                     optiondict[badoptiondict[val]] = optiondict[val]
                     fixed = True
             # fixed or not create the warning
-            warnings.append(
-                badoption_msg(func, val, badoptiondict[val], fixed=fixed)
-            )
+            warnings.append(badoption_msg(func, val, badoptiondict[val], fixed=fixed))
             # display directly is appropriate
             if not noshowwarning:
                 print(warnings[-1])
@@ -167,27 +165,19 @@ class MatchRow(object):
     ):
         # validate input types
         if req_cols and not isinstance(req_cols, list):
-            raise ValueError(
-                "req_cols must be a list: {}".format(type(req_cols))
-            )
+            raise ValueError("req_cols must be a list: {}".format(type(req_cols)))
         if xlatdict is None:
             xlatdict = {}
         elif not isinstance(xlatdict, dict):
-            raise Exception(
-                "xlatdict must be a dict: {}".format(type(xlatdict))
-            )
+            raise Exception("xlatdict must be a dict: {}".format(type(xlatdict)))
         if optiondict is None:
             optiondict = {}
         elif not isinstance(optiondict, dict):
-            raise Exception(
-                "optiondict must be a dict: {}".format(type(optiondict))
-            )
+            raise Exception("optiondict must be a dict: {}".format(type(optiondict)))
         if optiondict2 is None:
             optiondict2 = {}
         elif not isinstance(optiondict2, dict):
-            raise Exception(
-                "optiondict2 must be a dict: {}".format(type(optiondict2))
-            )
+            raise Exception("optiondict2 must be a dict: {}".format(type(optiondict2)))
 
         # setup variables
         self._req_cols = req_cols[
@@ -221,9 +211,7 @@ class MatchRow(object):
             False  # if true - we must have unqiue columns in the final result
         )
         self.max_rows = 10  # max number of rows to check
-        self.no_warnings = (
-            False  # if true - we supress sending out warning message
-        )
+        self.no_warnings = False  # if true - we supress sending out warning message
         self.dieonbadoption = False  # if true - we raise error on bad options
         self.fix_missing = False  # if true - we fix, if None display no msg
 
@@ -366,12 +354,8 @@ class MatchRow(object):
 
                 # debugging
                 if debug:
-                    print(
-                        "xlatdict:val:", val, ":xladict:", self._xlatdict[val]
-                    )
-                logger.debug(
-                    "xlatdict:val:%s:xladict:%s", val, self._xlatdict[val]
-                )
+                    print("xlatdict:val:", val, ":xladict:", self._xlatdict[val])
+                logger.debug("xlatdict:val:%s:xladict:%s", val, self._xlatdict[val])
                 # coverts directly
                 remapped.append(self._xlatdict[val])
             elif self.nocase and val.lower() in self._xlatdict_lower:
@@ -461,9 +445,9 @@ class MatchRow(object):
             logger.debug("rowcount > max_rows - set variables and return None")
             self.search_failed = True
             self.search_exceeded = True
-            self.error_msg = (
-                "Max search row count [%s] exceeded at row [%s]"
-                % (self.max_rows, self.rowcount)
+            self.error_msg = "Max search row count [%s] exceeded at row [%s]" % (
+                self.max_rows,
+                self.rowcount,
             )
             return None
 
@@ -501,10 +485,7 @@ class MatchRow(object):
                 if debug:
                     print("matchRowList:increment match_count for val:", val)
                 logger.debug("increment match_count for val:%s", val)
-            elif (
-                val in self._xlatdict
-                and self._xlatdict[val] in self._match_count
-            ):
+            elif val in self._xlatdict and self._xlatdict[val] in self._match_count:
                 self._match_count[self._xlatdict[val]] += 1
                 # debugging
                 if debug:
@@ -601,9 +582,7 @@ class MatchRow(object):
 
             # final test - check to see if we required unique columns
             if self.unique_column:
-                duplicate_col = self._unique_values(
-                    self._data_mapped, debug=debug
-                )
+                duplicate_col = self._unique_values(self._data_mapped, debug=debug)
 
                 # now test to see if we have duplicates
                 if duplicate_col:

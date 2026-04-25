@@ -4,6 +4,8 @@ import os
 import sys
 import datetime
 import dateutil
+import kvlogger
+
 
 """
 Test to add 
@@ -12,8 +14,6 @@ Test to add
 
 
 # logging
-import kvlogger
-
 config = kvlogger.get_config("t_kvutil.log")
 kvlogger.dictConfig(config)
 logger = kvlogger.getLogger(__name__)
@@ -66,12 +66,12 @@ def file_setup(startfilename="t_kvdate_tst", ext_range=4):
     )
     for fname in generate_test_filenames(startfilename, ext_range):
         if not os.path.exists(fname):
-            with open(fname, "w") as t:
+            with open(fname, "w"):
                 pass
 
 
 # test class
-class TestKvdateFilenames(unittest.TestCase):
+class TestKvDate(unittest.TestCase):
     # the function name: def current_timezone_string():
     def test_current_timezone_string_p01_pass(self):
         self.assertTrue(isinstance(kvdate.current_timezone_string(), str))
@@ -114,6 +114,10 @@ class TestKvdateFilenames(unittest.TestCase):
             n_dt = datetime.datetime(2016, 1, 1, 11, 30)
             tz = "Invalid-TZ-String"
             kvdate.datetime2utcdatetime(n_dt, tz)
+        self.assertEqual(
+            str(context.exception),
+            "Unable to convert timezone string to timezone: None",
+        )
 
     # datetime from string
     def test_datetime_from_str_p01_zero_padded(self):
@@ -248,26 +252,41 @@ class TestKvdateFilenames(unittest.TestCase):
     def test_datetime_from_str_f01_invalid_date(self):
         with self.assertRaises(Exception) as context:
             kvdate.datetime_from_str("20/1/19")
+        self.assertEqual(
+            str(context.exception),
+            "time data '20/1/19' does not match format '%m/%d/%y'",
+        )
 
     def test_datetime_from_str_f02_no_matching_format(self):
         with self.assertRaises(Exception) as context:
             kvdate.datetime_from_str("1/1/20019")
+        self.assertEqual(
+            str(context.exception), "Unable to convert to date time:[1/1/20019]"
+        )
 
     def test_datetime_from_str_f03_blank_date_not_skip_blank(self):
         with self.assertRaises(Exception) as context:
             kvdate.datetime_from_str("")
+        self.assertEqual(str(context.exception), "Unable to convert to date time:[]")
 
     def test_datetime_from_str_f04_force_conversion_int(self):
         with self.assertRaises(Exception) as context:
             kvdate.datetime_from_str(1, force_conversion=True)
+        self.assertEqual(str(context.exception), "Unable to convert to date time:[1]")
 
     def test_datetime_from_str_f05_force_conversion_dict(self):
         with self.assertRaises(Exception) as context:
             kvdate.datetime_from_str({"a": 1}, force_conversion=True)
+        self.assertEqual(
+            str(context.exception), "Unable to convert to date time:[{'a': 1}]"
+        )
 
     def test_datetime_from_str_f06_force_conversion_list(self):
         with self.assertRaises(Exception) as context:
             kvdate.datetime_from_str([1, 2, 3], force_conversion=True)
+        self.assertEqual(
+            str(context.exception), "Unable to convert to date time:[[1, 2, 3]]"
+        )
 
     # datetimezone from string
     def test_datetimezone_from_str_p01_zero_padded_no_colon_neg_TZ(self):
@@ -696,18 +715,33 @@ class TestKvdateFilenames(unittest.TestCase):
     def test_datetimezone_from_str_f01_invalid_date(self):
         with self.assertRaises(Exception) as context:
             kvdate.datetimezone_from_str("2019-19-01 01:01:01.0101-0700")
+        self.assertEqual(
+            str(context.exception),
+            "time data '2019-19-01 01:01:01.0101-0700' does not match format '%Y-%m-%d %H:%M:%S.%f%z'",
+        )
 
     def test_datetimezone_from_str_f02_no_matching_format(self):
         with self.assertRaises(Exception) as context:
             kvdate.datetimezone_from_str("20019-19-01 01:01:01.0101-0700")
+        self.assertEqual(
+            str(context.exception),
+            "Unable to convert to date time with timezone:20019-19-01 01:01:01.0101-0700",
+        )
 
     def test_datetimezone_from_str_f03_blank(self):
         with self.assertRaises(Exception) as context:
             kvdate.datetimezone_from_str("")
+        self.assertEqual(
+            str(context.exception), "Unable to convert to date time with timezone:"
+        )
 
     def test_datetimezone_from_str_f04_datetime_notz(self):
         with self.assertRaises(Exception) as context:
             kvdate.datetimezone_from_str(datetime.datetime(2016, 1, 1, 19, 30))
+        self.assertEqual(
+            str(context.exception),
+            "Unable to convert to date time with timezone:[2016-01-01 19:30:00]",
+        )
 
     # def test_valid_tz_string
     def test_valid_tz_string_p01_valid(self):

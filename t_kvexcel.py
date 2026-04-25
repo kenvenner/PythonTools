@@ -129,9 +129,7 @@ class TestUpdateExcelCells(unittest.TestCase):
     def test_update_excel_cells_f04_updates_missing_keys(self):
         """Pass in invalid list of dict missing keys updates"""
         with self.assertRaises(Exception):
-            kvexcel.update_excel_cells(
-                "dummy.xlsx", [{"sheet": "sheet", "row": 1}]
-            )
+            kvexcel.update_excel_cells("dummy.xlsx", [{"sheet": "sheet", "row": 1}])
 
     # tried mocking out the attribute - it works but it is clearer if we just test with a real and known file
     # def test_ensure_onedrive_file_local_p01_success(self, mock_exists, mock_GetFileAttributesW):
@@ -163,9 +161,7 @@ class TestUpdateExcelCells(unittest.TestCase):
         mock_dispatch.return_value = mock_excel
 
         with self.assertRaises(Exception):
-            kvexcel.update_excel_cells(
-                "bad.xlsx", [{"row": 2, "col": 2, "value": "B"}]
-            )
+            kvexcel.update_excel_cells("bad.xlsx", [{"row": 2, "col": 2, "value": "B"}])
 
     ########################################
     # the function name: def normalize_excel_path(path: str) -> str:

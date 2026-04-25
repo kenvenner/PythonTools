@@ -75,23 +75,21 @@ BuildVersion = \'9\'
 
 # - double quote equivalents
 build_match_lines_dblq = build_match_lines.replace("'", '"')
-major_minor_match_lines_version_dblq = major_minor_match_lines_version.replace(
+major_minor_match_lines_version_dblq = major_minor_match_lines_version.replace("'", '"')
+major_minor_match_lines_appversion_dblq = major_minor_match_lines_appversion.replace(
     "'", '"'
 )
-major_minor_match_lines_appversion_dblq = (
-    major_minor_match_lines_appversion.replace("'", '"')
-)
-major_minor_match_lines_at_version_dblq = (
-    major_minor_match_lines_at_version.replace("'", '"')
+major_minor_match_lines_at_version_dblq = major_minor_match_lines_at_version.replace(
+    "'", '"'
 )
 major_minor_match_lines_at_version_quote_dblq = (
     major_minor_match_lines_at_version_quote.replace("'", '"')
 )
-major_minor_match_lines_optversion_dblq = (
-    major_minor_match_lines_optversion.replace("'", '"')
+major_minor_match_lines_optversion_dblq = major_minor_match_lines_optversion.replace(
+    "'", '"'
 )
-major_minor_match_lines_optvalue_dblq = (
-    major_minor_match_lines_optvalue.replace("'", '"')
+major_minor_match_lines_optvalue_dblq = major_minor_match_lines_optvalue.replace(
+    "'", '"'
 )
 file_create_test_lines_dblq = file_create_test_lines.replace("'", '"')
 file_create_header_lines_dblq = file_create_header_lines.replace("'", '"')
@@ -203,9 +201,7 @@ class TestKVIncver(unittest.TestCase):
     def test_major_minor_version_update_p01_match_version_found_version_(self):
         for line in major_minor_match_lines_version.split("\n"):
             version_found = True
-            opt_ver_found = (
-                False  ## we did not previously find a opt_ver_found values
-            )
+            opt_ver_found = False  ## we did not previously find a opt_ver_found values
             new_app_ver = NEWAPPVERSIONMINOR
 
             (
@@ -228,9 +224,7 @@ class TestKVIncver(unittest.TestCase):
     ):
         for line in major_minor_match_lines_at_version.split("\n"):
             version_found = True
-            opt_ver_found = (
-                False  ## we did not previously find a opt_ver_found values
-            )
+            opt_ver_found = False  ## we did not previously find a opt_ver_found values
             new_app_ver = NEWAPPVERSIONMINOR
 
             (
@@ -337,9 +331,7 @@ class TestKVIncver(unittest.TestCase):
     ):
         for line in major_minor_match_lines_appversion.split("\n"):
             version_found = True
-            opt_ver_found = (
-                False  ## we did not previously find a opt_ver_found values
-            )
+            opt_ver_found = False  ## we did not previously find a opt_ver_found values
             new_app_ver = NEWAPPVERSIONMINOR
 
             (
@@ -362,9 +354,7 @@ class TestKVIncver(unittest.TestCase):
     ):
         for line in major_minor_match_lines_version.split("\n"):
             version_found = False
-            opt_ver_found = (
-                False  ## we did not previously find a opt_ver_found values
-            )
+            opt_ver_found = False  ## we did not previously find a opt_ver_found values
             new_app_ver = ""
 
             (
@@ -387,9 +377,7 @@ class TestKVIncver(unittest.TestCase):
     ):
         for line in major_minor_match_lines_at_version.split("\n"):
             version_found = False
-            opt_ver_found = (
-                False  ## we did not previously find a opt_ver_found values
-            )
+            opt_ver_found = False  ## we did not previously find a opt_ver_found values
             new_app_ver = ""
 
             (
@@ -498,9 +486,7 @@ class TestKVIncver(unittest.TestCase):
     ):
         for line in major_minor_match_lines_appversion.split("\n"):
             version_found = False
-            opt_ver_found = (
-                False  ## we did not previously find a opt_ver_found values
-            )
+            opt_ver_found = False  ## we did not previously find a opt_ver_found values
             new_app_ver = ""
 
             (
@@ -628,9 +614,7 @@ class TestKVIncver(unittest.TestCase):
     ):
         for line in major_minor_match_lines_version_dblq.split("\n"):
             version_found = True
-            opt_ver_found = (
-                False  ## we did not previously find a opt_ver_found values
-            )
+            opt_ver_found = False  ## we did not previously find a opt_ver_found values
             new_app_ver = NEWAPPVERSIONMINOR
 
             (
@@ -653,9 +637,7 @@ class TestKVIncver(unittest.TestCase):
     ):
         for line in major_minor_match_lines_at_version_dblq.split("\n"):
             version_found = True
-            opt_ver_found = (
-                False  ## we did not previously find a opt_ver_found values
-            )
+            opt_ver_found = False  ## we did not previously find a opt_ver_found values
             new_app_ver = NEWAPPVERSIONMINOR
 
             (
@@ -764,9 +746,7 @@ class TestKVIncver(unittest.TestCase):
     ):
         for line in major_minor_match_lines_appversion_dblq.split("\n"):
             version_found = True
-            opt_ver_found = (
-                False  ## we did not previously find a opt_ver_found values
-            )
+            opt_ver_found = False  ## we did not previously find a opt_ver_found values
             new_app_ver = NEWAPPVERSIONMINOR
 
             (
@@ -789,9 +769,7 @@ class TestKVIncver(unittest.TestCase):
     ):
         for line in major_minor_match_lines_version_dblq.split("\n"):
             version_found = False
-            opt_ver_found = (
-                False  ## we did not previously find a opt_ver_found values
-            )
+            opt_ver_found = False  ## we did not previously find a opt_ver_found values
             new_app_ver = ""
 
             (
@@ -814,9 +792,7 @@ class TestKVIncver(unittest.TestCase):
     ):
         for line in major_minor_match_lines_at_version_dblq.split("\n"):
             version_found = False
-            opt_ver_found = (
-                False  ## we did not previously find a opt_ver_found values
-            )
+            opt_ver_found = False  ## we did not previously find a opt_ver_found values
             new_app_ver = ""
 
             (
@@ -927,9 +903,7 @@ class TestKVIncver(unittest.TestCase):
     ):
         for line in major_minor_match_lines_appversion_dblq.split("\n"):
             version_found = False
-            opt_ver_found = (
-                False  ## we did not previously find a opt_ver_found values
-            )
+            opt_ver_found = False  ## we did not previously find a opt_ver_found values
             new_app_ver = ""
 
             (
@@ -988,9 +962,7 @@ class TestKVIncver(unittest.TestCase):
             debug = False
             # call the routine
             appVer, newAppVer, filename, file_bak, bldVer, newBldVer = (
-                k.update_file_version(
-                    file_tmp, major_update, build_only, test, debug
-                )
+                k.update_file_version(file_tmp, major_update, build_only, test, debug)
             )
 
             # self.assertEqual(appVer, '1.2')
@@ -1025,9 +997,7 @@ class TestKVIncver(unittest.TestCase):
             debug = False
             # call the routine
             appVer, newAppVer, filename, file_bak, bldVer, newBldVer = (
-                k.update_file_version(
-                    file_tmp, major_update, build_only, test, debug
-                )
+                k.update_file_version(file_tmp, major_update, build_only, test, debug)
             )
 
             # self.assertEqual(appVer, '1.2')
@@ -1062,9 +1032,7 @@ class TestKVIncver(unittest.TestCase):
             debug = False
             # call the routine
             appVer, newAppVer, filename, file_bak, bldVer, newBldVer = (
-                k.update_file_version(
-                    file_tmp, major_update, build_only, test, debug
-                )
+                k.update_file_version(file_tmp, major_update, build_only, test, debug)
             )
 
             # self.assertEqual(appVer, '1.2')
@@ -1100,9 +1068,7 @@ class TestKVIncver(unittest.TestCase):
             debug = False
             # call the routine
             appVer, newAppVer, filename, file_bak, bldVer, newBldVer = (
-                k.update_file_version(
-                    file_tmp, major_update, build_only, test, debug
-                )
+                k.update_file_version(file_tmp, major_update, build_only, test, debug)
             )
 
             # self.assertEqual(appVer, '1.2')
@@ -1137,9 +1103,7 @@ class TestKVIncver(unittest.TestCase):
             debug = False
             # call the routine
             appVer, newAppVer, filename, file_bak, bldVer, newBldVer = (
-                k.update_file_version(
-                    file_tmp, major_update, build_only, test, debug
-                )
+                k.update_file_version(file_tmp, major_update, build_only, test, debug)
             )
 
             # self.assertEqual(appVer, '1.2')
@@ -1174,9 +1138,7 @@ class TestKVIncver(unittest.TestCase):
             debug = False
             # call the routine
             appVer, newAppVer, filename, file_bak, bldVer, newBldVer = (
-                k.update_file_version(
-                    file_tmp, major_update, build_only, test, debug
-                )
+                k.update_file_version(file_tmp, major_update, build_only, test, debug)
             )
 
             # self.assertEqual(appVer, '1.2')

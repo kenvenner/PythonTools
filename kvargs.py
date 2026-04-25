@@ -24,8 +24,8 @@ pp = pprint.PrettyPrinter(indent=4)
 
 logger = logging.getLogger(__name__)
 
-AppVersion = '1.17'
-__version__ = '1.17'
+AppVersion = "1.17"
+__version__ = "1.17"
 
 
 def load_json_file_to_dict(filename):
@@ -37,25 +37,29 @@ def load_json_file_to_dict(filename):
 
     :returns json_data: (dict) of the json data loaded
     """
-    with open(filename, 'r') as json_in:
+    with open(filename, "r") as json_in:
         try:
             json_dict = json.load(json_in)
         except json.decoder.JSONDecodeError as e:
-            with open(filename, 'r') as json_error:
+            with open(filename, "r") as json_error:
                 json_lines = json_error.readlines()
-            err_line = re.search(r'line\s+(\d+)\s+', str(e))
-            print('-' * 40)
+            err_line = re.search(r"line\s+(\d+)\s+", str(e))
+            print("-" * 40)
             if err_line:
                 err_line_int = int(err_line.group(1))
                 if err_line_int < len(json_lines):
-                    print('Error on line: ', err_line_int)
+                    print("Error on line: ", err_line_int)
                     print(json_lines[err_line_int - 1])
-                    logger.error('Error loading JSON file: %s',
-                                 {'filename': filename,
-                                  'error_line': err_line.group(1),
-                                  'json_line': json_lines[err_line_int - 1],
-                                  'error': str(e)})
-            print('-' * 40)
+                    logger.error(
+                        "Error loading JSON file: %s",
+                        {
+                            "filename": filename,
+                            "error_line": err_line.group(1),
+                            "json_line": json_lines[err_line_int - 1],
+                            "error": str(e),
+                        },
+                    )
+            print("-" * 40)
             raise
     return json_dict
 
@@ -86,7 +90,7 @@ def conf_settings(conf_files=None):
     # create the object that will carry the conf_settings
     #    args_conf = AttrDict()
     args_conf = dict()
-    
+
     # load the configuration files if the exist
     conf_added = list()
     conf_loaded = list()
@@ -99,22 +103,22 @@ def conf_settings(conf_files=None):
                     fileargs = load_json_file_to_dict(conffile)
                 except json.decoder.JSONDecodeError:
                     # this error is handled in the function call
-                    logger.info('Skipped using: %s', conffile)
+                    logger.info("Skipped using: %s", conffile)
                     continue
                 except Exception as e:
-                    logger.error('Skipped using: %s : due to error: %s', conffile, e)
+                    logger.error("Skipped using: %s : due to error: %s", conffile, e)
                     continue
                 # loaded it - so add this to the list we loaded
                 conf_loaded.append(conffile)
-                if 'conf' in fileargs:
+                if "conf" in fileargs:
                     # this configuration file has more conf files to be loaded
                     # add this to the list of things added
-                    conf_added.append(fileargs['conf'])
+                    conf_added.append(fileargs["conf"])
                 # update the current setting with these new settings
                 args_conf.update(fileargs)
 
                 # now capture what was set
-                conf_update = 'conf:' + conffile
+                conf_update = "conf:" + conffile
                 for key in fileargs:
                     updated_by(vargs_updated_by, key, conf_update)
 
@@ -123,13 +127,15 @@ def conf_settings(conf_files=None):
 
         # new conf files to be loaded as defined in these files
         # add them to the be loaded list if we have not already seen them
-        conf_files = [x for x in conf_added if x not in conf_files and x not in conf_loaded]
+        conf_files = [
+            x for x in conf_added if x not in conf_files and x not in conf_loaded
+        ]
 
         # and clear the added conf file array
         conf_added = list()
 
     if add_vargs_conf_files:
-        args_conf['conf_files_loaded'] = conf_loaded
+        args_conf["conf_files_loaded"] = conf_loaded
 
     # return back the final definition of values set by configuration file
     return args_conf, conf_loaded, vargs_updated_by
@@ -167,8 +173,8 @@ def merge_settings(args, conf_files=None, args_default=None):
     if not isinstance(args, dict):
         # args = AttrDict(vars(args))
         args = vars(args)
-#    elif not isinstance(args, AttrDict):
-#        args = AttrDict(args)
+    #    elif not isinstance(args, AttrDict):
+    #        args = AttrDict(args)
 
     # and make a deep copy of this into vargs
     vargs = copy.deepcopy(args)
@@ -176,7 +182,7 @@ def merge_settings(args, conf_files=None, args_default=None):
     # get the configuration file settings
     args_conf, conf_loaded, args_updated_by = conf_settings(conf_files)
 
-    # now merge command line and configuratoin 
+    # now merge command line and configuratoin
     for k, v in args_conf.items():
         if k in vargs and vargs[k] is not None:
             # key was set by command line so skip the update
@@ -191,9 +197,9 @@ def merge_settings(args, conf_files=None, args_default=None):
 
     # create a configuration variable to capture files that were loaded
     if conf_loaded:
-        logger.info('Loaded conf files: %s', conf_loaded)
-        if 'conf_files_loaded' not in vargs:
-            vargs['conf_files_loaded'] = conf_loaded
+        logger.info("Loaded conf files: %s", conf_loaded)
+        if "conf_files_loaded" not in vargs:
+            vargs["conf_files_loaded"] = conf_loaded
 
     return vargs
 
@@ -211,29 +217,29 @@ def parser_defaults(parser, set_to_none=None):
                dest = setting this updates (can be the same as the key)
                value = the default value
                cmd = command line switch
-               const = bool defining if this is a const 
+               const = bool defining if this is a const
                first = bool the first default found for dest
     """
     # args_parser_default = AttrDict()
     args_parser_default = dict()
     dest_found = list()
-    for cmd in parser.__dict__['_option_string_actions']:
-        parser_obj = parser.__dict__['_option_string_actions'][cmd]
-        cmd_str = cmd.replace('-', '')
+    for cmd in parser.__dict__["_option_string_actions"]:
+        parser_obj = parser.__dict__["_option_string_actions"][cmd]
+        cmd_str = cmd.replace("-", "")
         dest = parser_obj.dest
         default = parser.get_default(dest)
         const = parser_obj.const
 
         # skip this if the default is NOne
-        if default is None or default == '==SUPPRESS==':
+        if default is None or default == "==SUPPRESS==":
             continue
 
         args_parser_default[cmd_str] = {
-            'dest': dest,
-            'value': default,
-            'cmd': cmd,
-            'const': const is not None,
-            'first': dest not in dest_found
+            "dest": dest,
+            "value": default,
+            "cmd": cmd,
+            "const": const is not None,
+            "first": dest not in dest_found,
         }
 
         # tracking when we first see the destination
@@ -257,7 +263,7 @@ def updated_by(updated_dict, key, value):
 
     """
     if not isinstance(updated_dict, dict):
-        raise TypeError('updated_dict not type dict')
+        raise TypeError("updated_dict not type dict")
 
     if key not in updated_dict:
         updated_dict[key] = []
@@ -267,8 +273,14 @@ def updated_by(updated_dict, key, value):
         updated_dict[key].append(value)
 
 
-def parser_merge_settings(parser, args, conf_files=None, args_default=None, args_parser_default=None,
-                          test_args_conf=None):
+def parser_merge_settings(
+    parser,
+    args,
+    conf_files=None,
+    args_default=None,
+    args_parser_default=None,
+    test_args_conf=None,
+):
     """
     Merge the values from the command line, configuration files, and default_values
 
@@ -297,8 +309,8 @@ def parser_merge_settings(parser, args, conf_files=None, args_default=None, args
     if not isinstance(args, dict):
         # args_cmdline = AttrDict(vars(args))
         args_cmdline = vars(args)
-#    elif not isinstance(args, AttrDict):
-#        args_cmdline = AttrDict(args)
+    #    elif not isinstance(args, AttrDict):
+    #        args_cmdline = AttrDict(args)
     else:
         args_cmdline = args
 
@@ -307,12 +319,12 @@ def parser_merge_settings(parser, args, conf_files=None, args_default=None, args
 
     # DEBUGGING
     if False:
-        print('args:', args)
-        print('args_cmdline:', args_cmdline)
-        print('args_cmdline_set:', args_cmdline_set)
-    
+        print("args:", args)
+        print("args_cmdline:", args_cmdline)
+        print("args_cmdline_set:", args_cmdline_set)
+
     # -- GET DEFAULT ARGS / SET VARGS --
-    
+
     # we build up the answer by updating
     # args_default
     # args_parser_default - that are not set in args_default
@@ -330,7 +342,7 @@ def parser_merge_settings(parser, args, conf_files=None, args_default=None, args
 
     # define what is set by args
     for k in vargs:
-        updated_by(vargs_updated_by, k, 'args_default')
+        updated_by(vargs_updated_by, k, "args_default")
 
     # -- GET ARGS CONFIGURATION  --
 
@@ -339,11 +351,11 @@ def parser_merge_settings(parser, args, conf_files=None, args_default=None, args
         # get the configuration file settings
         args_conf, conf_loaded, args_updated_by = conf_settings(conf_files)
     else:
-        logger.warning('Running with test_args_conf: %s', test_args_conf)
+        logger.warning("Running with test_args_conf: %s", test_args_conf)
         args_conf = copy.deepcopy(test_args_conf)
-        conf_loaded = 'test_args_conf'
-        args_conf['conf_files_loaded'] = [conf_loaded]
-        args_updated_by = {k: ['conf:test_args_conf'] for k in test_args_conf}
+        conf_loaded = "test_args_conf"
+        args_conf["conf_files_loaded"] = [conf_loaded]
+        args_updated_by = {k: ["conf:test_args_conf"] for k in test_args_conf}
 
     # print('cmd:', args_cmdline)
     # print('cmdset:', args_cmdline_set)
@@ -356,10 +368,9 @@ def parser_merge_settings(parser, args, conf_files=None, args_default=None, args
     # not already set in args_default.
     # if set in args_default - that is the master
     for k, v in args_parser_default.items():
-        if v['dest'] not in args_default and \
-                v['first']:
-            vargs[v['dest']] = v['value']
-            updated_by(vargs_updated_by, v['dest'], 'args_parser_default')
+        if v["dest"] not in args_default and v["first"]:
+            vargs[v["dest"]] = v["value"]
+            updated_by(vargs_updated_by, v["dest"], "args_parser_default")
 
     # print('vargs1-def-parser:', vargs)
 
@@ -377,17 +388,17 @@ def parser_merge_settings(parser, args, conf_files=None, args_default=None, args
     # args_conf - for keys where not const, and dest (or key) in args_conf copy value
     for k, v in args_parser_default.items():
         # print('args_conf-not-const:k,v:', k, v)
-        if not v['const'] and v['first']:
+        if not v["const"] and v["first"]:
             # print('match')
-            if v['dest'] in args_conf:
+            if v["dest"] in args_conf:
                 # print('setting-vargs-conf-dest:', dest)
-                vargs[v['dest']] = args_conf[v['dest']]
-                updated_by(vargs_updated_by, v['dest'], args_updated_by[v['dest']])
-                del args_conf[v['dest']]
+                vargs[v["dest"]] = args_conf[v["dest"]]
+                updated_by(vargs_updated_by, v["dest"], args_updated_by[v["dest"]])
+                del args_conf[v["dest"]]
             elif k in args_conf:
                 # print('setting-vargs-conf-k:', k)
-                vargs[v['dest']] = args_conf[k]
-                updated_by(vargs_updated_by, v['dest'], args_updated_by[k])
+                vargs[v["dest"]] = args_conf[k]
+                updated_by(vargs_updated_by, v["dest"], args_updated_by[k])
                 del args_conf[k]
 
     # update vargs
@@ -395,21 +406,19 @@ def parser_merge_settings(parser, args, conf_files=None, args_default=None, args
     # print('vargs-conf-not-const:', vargs)
 
     # args_conf - for keys where const, execute these command option if value = True and not in args_cmdline_set
-    #args_update = AttrDict()
+    # args_update = AttrDict()
     args_update = dict()
     for k, v in args_parser_default.items():
         # print('k:v', k, v)
-        if v['const'] and \
-                k in args_conf and \
-                k not in args_cmdline_set:
+        if v["const"] and k in args_conf and k not in args_cmdline_set:
             # print('updates from const-conf:', v['cmd'], k)
             args_update[k] = v
 
     # update vargs
     if False:
-        print('args-conf-for-conf-const:', args_conf)
-        print('vargs-conf-const:', vargs)
-        print('args_update:', args_update)
+        print("args-conf-for-conf-const:", args_conf)
+        print("vargs-conf-const:", vargs)
+        print("args_update:", args_update)
 
     # been through all - if we have any that need to be called call them
     # so that they process like they were done on the commadn line
@@ -419,16 +428,16 @@ def parser_merge_settings(parser, args, conf_files=None, args_default=None, args
     # print('args_update:', args_update)
     if args_update:
         # get the list of command line commands
-        parser_list = [v['cmd'] for v in args_update.values()]
+        parser_list = [v["cmd"] for v in args_update.values()]
         # DEBUGGING
         if False:
-            print('parser_list:', parser_list)
-            print('sys.argv:', sys.argv)
+            print("parser_list:", parser_list)
+            print("sys.argv:", sys.argv)
         # pull in the original command line arguments add them to this
         # as their may be required values we need to parse
         # exclude the program that was called in position 0
         if False:
-            print('sys.argv[1:]:', sys.argv[1:])
+            print("sys.argv[1:]:", sys.argv[1:])
         parser_list.extend(sys.argv[1:])
         # print('parser_list:', parser_list)
         # parse them to get their values
@@ -439,9 +448,9 @@ def parser_merge_settings(parser, args, conf_files=None, args_default=None, args
             # print('k:v:vdest:', k, v, v['dest'])
             # print('args:', args)
             # print('args_parser_k:', args_parser_default[k])
-            if args[v['dest']] is not None:
-                vargs[v['dest']] = args[v['dest']]
-                updated_by(vargs_updated_by, v['dest'], args_updated_by[k])
+            if args[v["dest"]] is not None:
+                vargs[v["dest"]] = args[v["dest"]]
+                updated_by(vargs_updated_by, v["dest"], args_updated_by[k])
                 # remove the args_conf entry for this command line option
                 # print('del args_conf:', k,  v['cmd'], v, args_update)
                 del args_conf[k]
@@ -454,7 +463,7 @@ def parser_merge_settings(parser, args, conf_files=None, args_default=None, args
     # that remain because we have already removed the ones we
     # processed earlier
     for k, v in args_conf.items():
-        if k in ('vargs_updated_by',):
+        if k in ("vargs_updated_by",):
             continue
         if k not in args_cmdline_set:
             vargs[k] = v
@@ -468,7 +477,7 @@ def parser_merge_settings(parser, args, conf_files=None, args_default=None, args
     vargs.update(args_cmdline_set)
     # print('v5:', vargs)
     for k, v in args_cmdline_set.items():
-        updated_by(vargs_updated_by, k, 'cmdline')
+        updated_by(vargs_updated_by, k, "cmdline")
 
     # now apply settings from argscmdline
     for k, v in args_cmdline.items():
@@ -478,15 +487,15 @@ def parser_merge_settings(parser, args, conf_files=None, args_default=None, args
     # print('v6:', vargs)
 
     # add  the updated by into vargs
-    vargs['vargs_updated_by'] = vargs_updated_by
+    vargs["vargs_updated_by"] = vargs_updated_by
 
     return vargs
 
 
 def parser_extract_default_and_set_to_none(parser, args_default=None):
     """
-    Pull the default values from parser for each 
-    command line argument, and put these values 
+    Pull the default values from parser for each
+    command line argument, and put these values
     in args_default, then set the default to None
 
     args_default is updated in place
@@ -500,15 +509,15 @@ def parser_extract_default_and_set_to_none(parser, args_default=None):
     if args_default is None:
         args_default = dict()
 
-    for cmd in parser.__dict__['_option_string_actions']:
-        parser_obj = parser.__dict__['_option_string_actions'][cmd]
+    for cmd in parser.__dict__["_option_string_actions"]:
+        parser_obj = parser.__dict__["_option_string_actions"][cmd]
 
         # cmd_str = cmd.replace('-', '')
         dest = parser_obj.dest
         default = parser.get_default(dest)
 
         # because of help we need to skp some
-        if default == '==SUPPRESS==':
+        if default == "==SUPPRESS==":
             continue
 
         # only update the defaults if they set a value
@@ -536,8 +545,13 @@ def parser_extract_default_and_set_to_none(parser, args_default=None):
     return args_default
 
 
-def parse_and_parser_merge_settings(parser, args_default=None, args_parser_default=None,
-                                    cmd_line=None, test_args_conf=None):
+def parse_and_parser_merge_settings(
+    parser,
+    args_default=None,
+    args_parser_default=None,
+    cmd_line=None,
+    test_args_conf=None,
+):
     """
     Merge the values from the command line, configuration files, and default_values
 
@@ -548,7 +562,7 @@ def parse_and_parser_merge_settings(parser, args_default=None, args_parser_defau
     :param args_default: (dict) default values for arguments
     :param args_parser_default: (dict) default values for arguments
 
-    :param cmd_line: (list) - only used for testing - but when passed in we pass this to 
+    :param cmd_line: (list) - only used for testing - but when passed in we pass this to
                               parse_args() function rather than calling the command line
                               parser
     :param test_args_conf: (dict) - values that would have been read from the file used for testing
@@ -563,12 +577,16 @@ def parse_and_parser_merge_settings(parser, args_default=None, args_parser_defau
         args = parser.parse_args(cmd_line)
 
     args_dict = vars(args)
-    conf_files = args_dict.get('conf', None)
+    conf_files = args_dict.get("conf", None)
 
-    return parser_merge_settings(parser, args, conf_files, args_default, args_parser_default, test_args_conf)
+    return parser_merge_settings(
+        parser, args, conf_files, args_default, args_parser_default, test_args_conf
+    )
 
 
-def prep_parse_and_merge_settings(parser, args_default=None, cmd_line=None, test_args_conf=None):
+def prep_parse_and_merge_settings(
+    parser, args_default=None, cmd_line=None, test_args_conf=None
+):
     """
     prep - extract data about the parser
     parse - call the command line parser
@@ -577,7 +595,7 @@ def prep_parse_and_merge_settings(parser, args_default=None, cmd_line=None, test
     :param parser: (obj) ArgParser object
     :param args_default: (dict) default values for arguments
 
-    :param cmd_line: (list) - only used for testing - but when passed in we pass this to 
+    :param cmd_line: (list) - only used for testing - but when passed in we pass this to
                               parse_args() function rather than calling the command line
                               parser
     :param test_args_conf: (dict) - values that would have been read from the file used for testing
@@ -592,6 +610,9 @@ def prep_parse_and_merge_settings(parser, args_default=None, cmd_line=None, test
     args_parser_default = parser_defaults(parser, set_to_none=True)
 
     # parse and merge - return vargs
-    return parse_and_parser_merge_settings(parser, args_default, args_parser_default, cmd_line, test_args_conf)
+    return parse_and_parser_merge_settings(
+        parser, args_default, args_parser_default, cmd_line, test_args_conf
+    )
+
 
 # eof
