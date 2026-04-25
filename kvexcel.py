@@ -45,7 +45,8 @@ def is_same_workbook(path1: str, path2: str) -> bool:
         p1 = normalize_excel_path(path1)
         p2 = normalize_excel_path(path2)
         return p1.endswith(p2) or p2.endswith(p1)
-    except Exception as e:
+    except Exception:
+        # any type of failure they are not the same but we swallow the error
         return False
 
 
@@ -96,7 +97,8 @@ def bring_excel_to_front(excel):
         hwnd = excel.Application.Hwnd
         ctypes.windll.user32.ShowWindow(hwnd, 5)  # SW_SHOW
         ctypes.windll.user32.SetForegroundWindow(hwnd)
-    except Exception as e:
+    except Exception:
+        # if we have a failure we eat it and move on
         pass
 
 
@@ -154,7 +156,7 @@ def update_excel_cells(
         excel = win32.GetActiveObject("Excel.Application")
         if disp_msg:
             print("Attached to existing Excel instance.")
-    except Exception as e:
+    except Exception:
         excel = win32.Dispatch("Excel.Application")
         opened_excel = True
         if disp_msg:

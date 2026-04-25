@@ -86,7 +86,7 @@ class TestUpdateExcelCells(unittest.TestCase):
         # cleanup
         os.remove(excel_file)
 
-    def test_update_excel_cells_p01_basic(self, mock_ensure, mock_dispatch):
+    def test_update_excel_cells_p04_basic(self, mock_ensure, mock_dispatch):
         """Test basic cell updates in Excel workbook."""
         mock_excel = MagicMock()
         mock_workbook = MagicMock()

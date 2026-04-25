@@ -1,16 +1,12 @@
 import kvutil
 import t_kvutil
-import sys
+import kvlogger
 
-import pprint
 
 import copy_comments
 
 import unittest
 
-import time
-import copy
-import os
 
 """
 Updated test as of 2026-01-19
@@ -30,7 +26,6 @@ calculation of a key with create_json is enabled and no keys are provided
 """
 
 # logging
-import kvlogger
 config=kvlogger.get_config('t_kvcsv.log')
 kvlogger.dictConfig(config)
 logger=kvlogger.getLogger(__name__)

@@ -464,13 +464,13 @@ class TestKVUtilFilenames(unittest.TestCase):
             clear_argv()
             set_argv(1,'onlygtdate=string') # push value onto command line (string)
             kvutil.kv_parse_command_line( optiondictconfig, disp_msg=False )
-    def test_kv_parse_command_line_f12_config_set_type_inlist_bad01(self):
+    def test_kv_parse_command_line_f12_config_set_type_inlist_bad03(self):
         with self.assertRaises(Exception) as context:
             optiondictconfig = { 'AppVersion' : { 'value' : '1.01' } }
             clear_argv()
             set_argv(1,'log_level=NOTINLIST') # push value onto command line (string)
             kvutil.kv_parse_command_line( optiondictconfig, disp_msg=False )
-    def test_kv_parse_command_line_f12_config_set_type_inlist_bad01(self):
+    def test_kv_parse_command_line_f12_config_set_type_inlist_bad02(self):
         with self.assertRaises(Exception) as context:
             optiondictconfig = { 'no_valid_defined' : { 'value' : '1.01', 'type' : 'inlist' } }
             clear_argv()

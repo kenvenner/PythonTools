@@ -9,7 +9,6 @@ This library provides tools used when interacting with sharepoint sites and loca
 
 import os
 import time
-import sys
 
 import kvxls
 import kvutil
@@ -36,9 +35,7 @@ ONEDRIVE_DIR_OPTIONS_BY_OS_NAME = {
 # ----------------------------------------
 
 
-def sp_synched_dir_path(
-    sp_path, onedrive_path=None, local_path=None, debug=False
-):
+def sp_synched_dir_path(sp_path, onedrive_path=None, local_path=None, debug=False):
     """
     For mac and windows return back the path to the synched folder in sharepoint of interest
 
@@ -258,9 +255,7 @@ def save_and_log_exception_rpt(
         if not cc_args:
             cc_args = {}
         elif type(cc_args) is not dict:
-            raise KeyError(
-                "cc_args must be a dictionary but is a: " + type(cc_args)
-            )
+            raise KeyError("cc_args must be a dictionary but is a: " + type(cc_args))
         else:
             # make a local copy so we don't change upper level values
             cc_args = cc_args.copy()
@@ -287,9 +282,7 @@ def save_and_log_exception_rpt(
         )
 
         # force the out variables to match the file you passed in
-        fpath, fname, fext = kvutil.filename_split(
-            excel_file_path, path_blank=True
-        )
+        fpath, fname, fext = kvutil.filename_split(excel_file_path, path_blank=True)
         if "out_fname" in cc_optiondict:
             fld = "out"
         else:
@@ -374,10 +367,8 @@ def save_and_log_exception_rpt(
             copy_comments.read_src_file_format(cc_optiondict)
 
             # update the destination arrray based on source data
-            matched_recs, updated_recs, src_lookup = (
-                copy_comments.src_to_dst_actions(
-                    src_data, result, cc_optiondict
-                )
+            matched_recs, updated_recs, src_lookup = copy_comments.src_to_dst_actions(
+                src_data, result, cc_optiondict
             )
 
             # if we want to save out the removed records then do that analysis
@@ -542,9 +533,7 @@ def save_lot_serial_csv_exception_rpt(
             if outflds:
                 if fldmapping:
                     # we have limited fields and we have one or more field mappings
-                    new_rec = {
-                        fldmapping.get(fld, fld): x[fld] for fld in outflds
-                    }
+                    new_rec = {fldmapping.get(fld, fld): x[fld] for fld in outflds}
                 else:
                     # we have limited fields and not field mapping
                     new_rec = {fld: x[fld] for fld in outflds}

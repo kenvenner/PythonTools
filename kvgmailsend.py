@@ -1,10 +1,10 @@
-'''
+"""
 @author:   Ken Venner
 @contact:  ken@venerllc.com
 @version:  1.03
 
 Library of tools used send out message through gmail
-'''
+"""
 
 from email import encoders
 from email.mime.audio import MIMEAudio
@@ -16,7 +16,6 @@ import mimetypes
 import os
 import re
 import smtplib
-import sys
 
 # logging
 import logging
@@ -24,7 +23,7 @@ import logging
 logger = logging.getLogger(__name__)
 
 # version number
-AppVersion = '1.03'
+AppVersion = "1.03"
 
 
 class GmailSend:
@@ -41,12 +40,13 @@ class GmailSend:
 
         @param sendfrom: the email address of the account being used to send the email
         @type smtpServer: String
- 
+
         @param sendpass: the password of the account being used to send the email
         @type smtpServer: String
         """
         self._reEmail = re.compile(
-            "^([\\w \\._]+\\<[a-z0-9!#$%&'*+/=?^_`{|}~-]+(?:\\.[a-z0-9!#$%&'*+/=?^_`{|}~-]+)*@(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\\.)+[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\\>|[a-z0-9!#$%&'*+/=?^_`{|}~-]+(?:\\.[a-z0-9!#$%&'*+/=?^_`{|}~-]+)*@(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\\.)+[a-z0-9](?:[a-z0-9-]*[a-z0-9])?)$")
+            "^([\\w \\._]+\\<[a-z0-9!#$%&'*+/=?^_`{|}~-]+(?:\\.[a-z0-9!#$%&'*+/=?^_`{|}~-]+)*@(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\\.)+[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\\>|[a-z0-9!#$%&'*+/=?^_`{|}~-]+(?:\\.[a-z0-9!#$%&'*+/=?^_`{|}~-]+)*@(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\\.)+[a-z0-9](?:[a-z0-9-]*[a-z0-9])?)$"
+        )
 
         if not self.validateEmailAddress(sendfrom):
             raise Exception("Invalid email address '%s'" % sendfrom)
@@ -95,22 +95,22 @@ class GmailSend:
             ctype, encoding = mimetypes.guess_type(fname)
             if ctype is None or encoding is not None:
                 # No guess could be made so use a binary type.
-                ctype = 'application/octet-stream'
-            maintype, subtype = ctype.split('/', 1)
-            if maintype == 'text':
+                ctype = "application/octet-stream"
+            maintype, subtype = ctype.split("/", 1)
+            if maintype == "text":
                 fp = open(fname)
                 attach = MIMEText(fp.read(), _subtype=subtype)
                 fp.close()
-            elif maintype == 'image':
-                fp = open(fname, 'rb')
+            elif maintype == "image":
+                fp = open(fname, "rb")
                 attach = MIMEImage(fp.read(), _subtype=subtype)
                 fp.close()
-            elif maintype == 'audio':
-                fp = open(fname, 'rb')
+            elif maintype == "audio":
+                fp = open(fname, "rb")
                 attach = MIMEAudio(fp.read(), _subtype=subtype)
                 fp.close()
             else:
-                fp = open(fname, 'rb')
+                fp = open(fname, "rb")
                 attach = MIMEBase(maintype, subtype)
                 attach.set_payload(fp.read())
                 fp.close()
@@ -121,20 +121,20 @@ class GmailSend:
                 filename = os.path.basename(fname)
             else:
                 filename = attachname
-            attach.add_header('Content-Disposition', 'attachment', filename=filename)
+            attach.add_header("Content-Disposition", "attachment", filename=filename)
             msg.attach(attach)
         # Some header stuff
-        msg['Subject'] = self._subject
-        msg['From'] = self._from
+        msg["Subject"] = self._subject
+        msg["From"] = self._from
         if self._replyto:
-            msg['Reply-to'] = self._replyto
+            msg["Reply-to"] = self._replyto
         # address prep
         sendtolist = []
         if self._to:
-            msg['To'] = ", ".join(self._to)
+            msg["To"] = ", ".join(self._to)
             sendtolist.extend(self._to)
         if self._cc:
-            msg['Cc'] = ", ".join(self._cc)
+            msg["Cc"] = ", ".join(self._cc)
             sendtolist.extend(self._cc)
         if self._bcc:
             sendtolist.extend(self._bcc)
@@ -178,14 +178,14 @@ class GmailSend:
         @param addrtype: the recipient type to be cleared (to,cc,bcc)
         @type smtpServer: String
         """
-        if addrtype is None or addrtype.lower() == 'to':
+        if addrtype is None or addrtype.lower() == "to":
             self._to = []
-        if addrtype is None or addrtype.lower() == 'cc':
+        if addrtype is None or addrtype.lower() == "cc":
             self._cc = []
-        if addrtype is None or addrtype.lower() == 'bcc':
+        if addrtype is None or addrtype.lower() == "bcc":
             self._bcc = []
 
-    def addRecipient(self, address: str, addrtype='to'):
+    def addRecipient(self, address: str, addrtype="to"):
         """
         Add a new recipient to the email message.
         Add to the 'to' field unless addrtype parameter is set
@@ -195,14 +195,14 @@ class GmailSend:
         """
         if not self.validateEmailAddress(address):
             raise Exception("Invalid email address '%s'" % address)
-        if addrtype.lower() == 'to':
+        if addrtype.lower() == "to":
             self._to.append(address)
-        elif addrtype.lower() == 'cc':
+        elif addrtype.lower() == "cc":
             self._cc.append(address)
         else:
             self._bcc.append(address)
 
-    def addRecipients(self, addresses: list, addrtype='to'):
+    def addRecipients(self, addresses: list, addrtype="to"):
         """
         Add a list new recipient to the email message.
         Add to the 'to' field unless addrtype parameter is set
@@ -234,9 +234,9 @@ class GmailSend:
         @param type: the body type to be cleared (text, plain, html )
         @type smtpServer: String
         """
-        if type is None or type.lower() == 'text' or type.lower() == 'plain':
+        if type is None or type.lower() == "text" or type.lower() == "plain":
             self._textBody = None
-        if type is None or type.lower() == 'html':
+        if type is None or type.lower() == "html":
             self._htmlBody = None
 
     def clearAttachments(self):
@@ -265,7 +265,7 @@ class GmailSend:
     def validateEmailAddress(self, address: str):
         """
         Validate the specified email address.
-        
+
         @return: True if valid, False otherwise
         @rtype: Boolean
         """
@@ -279,9 +279,15 @@ if __name__ == "__main__":
     import kvutil
 
     optiondict = kvutil.kv_parse_command_line(
-        {"email_user": {}, "email_password": {}, "conf_json": {"value": "gmail-wines.json"}}, debug=False)
-    fromaddr = optiondict['email_user']
-    password = optiondict['email_password']
+        {
+            "email_user": {},
+            "email_password": {},
+            "conf_json": {"value": "gmail-wines.json"},
+        },
+        debug=False,
+    )
+    fromaddr = optiondict["email_user"]
+    password = optiondict["email_password"]
     mFrom = "Test User <test@mydomain.com>"
     mTo = "ken@vennerllc.com"
 
@@ -296,7 +302,7 @@ if __name__ == "__main__":
 
     # Plain text + attachment
     m.setSubject("Text plus attachment")
-    m.addAttachment('winetodayattune.csv')
+    m.addAttachment("winetodayattune.csv")
     m.send()
 
     # Simple HTML Email
@@ -308,7 +314,7 @@ if __name__ == "__main__":
 
     # HTML + attachment
     m.setSubject("HTML plus attachment")
-    m.addAttachment('winetodayattune.csv')
+    m.addAttachment("winetodayattune.csv")
     m.send()
 
     # Text + HTML
@@ -321,19 +327,19 @@ if __name__ == "__main__":
 
     # Text + HTML + attachment
     m.setSubject("HTML + Text + attachment")
-    m.addAttachment('winetodayattune.csv')
+    m.addAttachment("winetodayattune.csv")
     m.send()
 
     # Text + HTML + attachments
     m.setSubject("HTML + Text + attachments (csv + xlsx)")
-    m.addAttachment('winetodayattune.xlsx')
+    m.addAttachment("winetodayattune.xlsx")
     m.send()
 
     # Simple Text CC only Email
     m.clearAttachments()
     m.clearRecipients()
     m.clearBody()
-    m.addRecipient(mTo, 'cc')
+    m.addRecipient(mTo, "cc")
     m.setSubject("Text Email + Cc Only")
     m.setTextBody("This is a plain text email <b>I should not be bold</b>")
     m.send()
@@ -342,7 +348,7 @@ if __name__ == "__main__":
     m.clearAttachments()
     m.clearRecipients()
     m.clearBody()
-    m.addRecipient(mTo, 'bcc')
+    m.addRecipient(mTo, "bcc")
     m.setSubject("Text Email + Bcc Only")
     m.setTextBody("This is a plain text email <b>I should not be bold</b>")
     m.send()
@@ -352,7 +358,7 @@ if __name__ == "__main__":
     m.clearRecipients()
     m.clearBody()
     m.addRecipient(mTo)
-    m.setReplyTo('ken_venner@yahoo.com')
+    m.setReplyTo("ken_venner@yahoo.com")
     m.setSubject("Text Email + ReplyTo")
     m.setTextBody("This is a plain text email <b>I should not be bold</b>")
     m.send()

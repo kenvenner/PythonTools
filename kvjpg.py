@@ -1,10 +1,10 @@
-'''
+"""
 @author:   Ken Venner
 @contact:  ken@venerllc.com
 @version:  1.13
 
 Library of tools used to process JPG image files
-'''
+"""
 
 import piexif
 import datetime
@@ -19,17 +19,17 @@ import logging
 logger = logging.getLogger(__name__)
 
 # global variables
-AppVersion = '1.13'
+AppVersion = "1.13"
 
 debug = False
 
-cntstrfmt = 'CNT%04d0-'
-datestrfmt = '%Y-%m-%d-'
+cntstrfmt = "CNT%04d0-"
+datestrfmt = "%Y-%m-%d-"
 
-cntstrre = re.compile(r'CNT(\d+)-')
-datestrre = re.compile(r'(\d\d\d\d-\d\d-\d\d)-')
+cntstrre = re.compile(r"CNT(\d+)-")
+datestrre = re.compile(r"(\d\d\d\d-\d\d-\d\d)-")
 
-defaultdatetime = datetime.datetime.strptime('1901:01:01 00:00:01', '%Y:%m:%d %H:%M:%S')
+defaultdatetime = datetime.datetime.strptime("1901:01:01 00:00:01", "%Y:%m:%d %H:%M:%S")
 
 
 # take the string that was passed in on the command line and make needed variables
@@ -42,19 +42,19 @@ defaultdatetime = datetime.datetime.strptime('1901:01:01 00:00:01', '%Y:%m:%d %H
 #  range2_int - int (optional) ending number of phone file that matches the RE
 #
 def parse_optiondict_timedelta(timedeltastr, debug=False):
-    (compile_str, offset_sec, *range_str) = timedeltastr.split(':')
+    (compile_str, offset_sec, *range_str) = timedeltastr.split(":")
     # debugging
     if debug:
-        print('compile_str:', compile_str)
-        print('offset_sec:', offset_sec)
-        print('range_str:', range_str)
-        print('range_str[0]:', range_str[0])
-        print('len:', len(range_str))
-    logger.debug('compile_str:%s', compile_str)
-    logger.debug('offset_sec:%s', offset_sec)
-    logger.debug('range_str:%s', range_str)
-    logger.debug('range_str[0]:%s', range_str[0])
-    logger.debug('len:%d', len(range_str))
+        print("compile_str:", compile_str)
+        print("offset_sec:", offset_sec)
+        print("range_str:", range_str)
+        print("range_str[0]:", range_str[0])
+        print("len:", len(range_str))
+    logger.debug("compile_str:%s", compile_str)
+    logger.debug("offset_sec:%s", offset_sec)
+    logger.debug("range_str:%s", range_str)
+    logger.debug("range_str[0]:%s", range_str[0])
+    logger.debug("len:%d", len(range_str))
 
     re_compile = re.compile(compile_str)
     timedelta = int(offset_sec)
@@ -64,7 +64,7 @@ def parse_optiondict_timedelta(timedeltastr, debug=False):
         pic_range = range(int(range_str[0]), int(range_str[1]))
     else:
         pic_range = int(range_str[0])
-    logger.debug('pic_range:%s', pic_range)
+    logger.debug("pic_range:%s", pic_range)
     return (re_compile, timedelta, pic_range)
 
 
@@ -75,39 +75,45 @@ def parse_date_from_filename(filename, defaultdate=defaultdatetime, debug=False)
     s = re.search(cntstrre, filename)
     # debug
     if debug:
-        print('filename:', filename)
-        print('m', m)
-        if m:  print('m.group0:', m.group(0))
-        if m:  print('m.group1:', m.group(1))
-        print('s', s)
-        if s:  print('s.group0:', s.group(0))
-        if s:  print('s.group1:', s.group(1))
-    logger.debug('filename:%s', filename)
-    logger.debug('m:%s', m)
+        print("filename:", filename)
+        print("m", m)
+        if m:
+            print("m.group0:", m.group(0))
+        if m:
+            print("m.group1:", m.group(1))
+        print("s", s)
+        if s:
+            print("s.group0:", s.group(0))
+        if s:
+            print("s.group1:", s.group(1))
+    logger.debug("filename:%s", filename)
+    logger.debug("m:%s", m)
     if m:
-        logger.debug('m.group0:%s', m.group(0))
-        logger.debug('m.group1:%s', m.group(1))
-    logger.debug('s:%s', s)
+        logger.debug("m.group0:%s", m.group(0))
+        logger.debug("m.group1:%s", m.group(1))
+    logger.debug("s:%s", s)
     if s:
-        logger.debug('s.group0:%s', s.group(0))
-        logger.debug('s.group1:%s', s.group(1))
+        logger.debug("s.group0:%s", s.group(0))
+        logger.debug("s.group1:%s", s.group(1))
 
     # check for match on date in filename
     if m:
         # check for match on count in filename
         if s:
             # debugging
-            logger.debug('date and count to build the time')
+            logger.debug("date and count to build the time")
             # we are using filename date and cnt to build the time
-            return datetime.datetime.strptime(m.group(1), '%Y-%m-%d') + datetime.timedelta(seconds=int(s.group(1)))
+            return datetime.datetime.strptime(
+                m.group(1), "%Y-%m-%d"
+            ) + datetime.timedelta(seconds=int(s.group(1)))
         else:
             # debugging
-            logger.debug('date only builds the time')
+            logger.debug("date only builds the time")
             # we are using justfilename date to build the time
-            return datetime.datetime.strptime(m.group(1), '%Y-%m-%d')
+            return datetime.datetime.strptime(m.group(1), "%Y-%m-%d")
     else:
         # debugging
-        logger.debug('default date builds the time:%s', defaultdate)
+        logger.debug("default date builds the time:%s", defaultdate)
         # we are using the default date to build the time
         return defaultdate
 
@@ -117,23 +123,25 @@ def parse_cleanup_filename(filename, debug=False):
     # split the filename up
     (dirname, basename) = os.path.split(filename)
     if debug:
-        print('parse_cleanup_filename:filename:', filename)
-        print('parse_cleanup_filename:dirname:', dirname)
-        print('parse_cleanup_filename:basename:', basename)
-    logger.debug('filename:%s', filename)
-    logger.debug('dirname:%s', dirname)
-    logger.debug('basename:%s', basename)
+        print("parse_cleanup_filename:filename:", filename)
+        print("parse_cleanup_filename:dirname:", dirname)
+        print("parse_cleanup_filename:basename:", basename)
+    logger.debug("filename:%s", filename)
+    logger.debug("dirname:%s", dirname)
+    logger.debug("basename:%s", basename)
     # make dirname normal path
     dirname = os.path.normpath(dirname)
-    logger.debug('dirname-normpath:%s', dirname)
+    logger.debug("dirname-normpath:%s", dirname)
     # remove CNT in the basename string if it exists
-    basename = re.sub(cntstrre, '', basename)
-    if debug:  print('parse_cleanup_filename:basename-post-cnt:', basename)
-    logger.debug('basename-post-cnt:%s', basename)
+    basename = re.sub(cntstrre, "", basename)
+    if debug:
+        print("parse_cleanup_filename:basename-post-cnt:", basename)
+    logger.debug("basename-post-cnt:%s", basename)
     # remove DATESTR in the basename string if it exists
-    basename = re.sub(datestrre, '', basename)
-    if debug:  print('parse_cleanup_filename:basename-post-date:', basename)
-    logger.debug('basename-post-date:%s', basename)
+    basename = re.sub(datestrre, "", basename)
+    if debug:
+        print("parse_cleanup_filename:basename-post-date:", basename)
+    logger.debug("basename-post-date:%s", basename)
     # return results
     return (dirname, basename)
 
@@ -148,57 +156,77 @@ def parse_cleanup_filename(filename, debug=False):
 # this routine can be used when two cameras don't have the same date/time in them.  using this will move the time
 # date of one cameras picture to align with the timedate of the other camera
 #
-def datetime_offset_for_matching_filename(filename_row, re_filename, timedelta_offset, filerange, debug=False):
+def datetime_offset_for_matching_filename(
+    filename_row, re_filename, timedelta_offset, filerange, debug=False
+):
     if debug:
-        print('datetime_offset_for_matching_filename:filename_row:', filename_row)
-        print('datetime_offset_for_matching_filename:re_filename:', re_filename)
-        print('datetime_offset_for_matching_filename:timedelta_offset:', timedelta_offset)
-        print('datetime_offset_for_matching_filename:filerange:', filerange)
-        print('datetime_offset_for_matching_filename:filename_row[1]:', filename_row[1])
-    logger.debug('filename_row:%s', filename_row)
-    logger.debug('re_filename:%s', re_filename)
-    logger.debug('timedelta_offset:%s', timedelta_offset)
-    logger.debug('filerange:%s', filerange)
-    logger.debug('filename_row[1]:%s', filename_row[1])
+        print("datetime_offset_for_matching_filename:filename_row:", filename_row)
+        print("datetime_offset_for_matching_filename:re_filename:", re_filename)
+        print(
+            "datetime_offset_for_matching_filename:timedelta_offset:", timedelta_offset
+        )
+        print("datetime_offset_for_matching_filename:filerange:", filerange)
+        print("datetime_offset_for_matching_filename:filename_row[1]:", filename_row[1])
+    logger.debug("filename_row:%s", filename_row)
+    logger.debug("re_filename:%s", re_filename)
+    logger.debug("timedelta_offset:%s", timedelta_offset)
+    logger.debug("filerange:%s", filerange)
+    logger.debug("filename_row[1]:%s", filename_row[1])
 
     m = re.search(re_filename, filename_row[1])
     if m:
         picture = int(m.group(1))
         if debug:
-            print('datetime_offset_for_matching_filename:filename-match: true')
-            print('datetime_offset_for_matching_filename:picture:', picture)
-            print('datetime_offset_for_matching_filename:filename_row[0]-before:', filename_row[0])
-        logger.debug('filename-match: true')
-        logger.debug('picture:%s', picture)
-        logger.debug('filename_row[0]-before:%s', filename_row[0])
+            print("datetime_offset_for_matching_filename:filename-match: true")
+            print("datetime_offset_for_matching_filename:picture:", picture)
+            print(
+                "datetime_offset_for_matching_filename:filename_row[0]-before:",
+                filename_row[0],
+            )
+        logger.debug("filename-match: true")
+        logger.debug("picture:%s", picture)
+        logger.debug("filename_row[0]-before:%s", filename_row[0])
 
         if picture == filerange or picture in filerange:
             # filename match - change the timedate record by offset
             filename_row[0] += timedelta_offset
             if debug:
-                print('datetime_offset_for_matching_filename:filename_row[0]-after:', filename_row[0])
-            logger.debug('filename_row[0]-after:%s', filename_row[0])
+                print(
+                    "datetime_offset_for_matching_filename:filename_row[0]-after:",
+                    filename_row[0],
+                )
+            logger.debug("filename_row[0]-after:%s", filename_row[0])
         elif debug:
-            print('datetime_offset_for_matching_filename:filerange-match: false')            
-                
-        
+            print("datetime_offset_for_matching_filename:filerange-match: false")
+
+
 # display all exif attributes for the file passed in
 def display_exif_attributes(filename, debug=False):
     exif_dict = piexif.load(filename)
-    print('ifds:', exif_dict.keys())
-    print('ifd : tag : name : value')
+    print("ifds:", exif_dict.keys())
+    print("ifd : tag : name : value")
     for ifd in ("0th", "Exif", "GPS", "1st"):
         for tag in exif_dict[ifd]:
-            print(ifd, ':', tag, ':', piexif.TAGS[ifd][tag]["name"], ':', exif_dict[ifd][tag])
+            print(
+                ifd,
+                ":",
+                tag,
+                ":",
+                piexif.TAGS[ifd][tag]["name"],
+                ":",
+                exif_dict[ifd][tag],
+            )
 
 
 # default:  get the DateTime out of JPG meta data
-def get_exif_attribute_from_jpg(fn, ifd='0th', tag=306, debug=False):
+def get_exif_attribute_from_jpg(fn, ifd="0th", tag=306, debug=False):
     exif_dict = piexif.load(fn)
     # convert the attributes to a datetime object if its name is datetime
-    if 'DateTime' in piexif.TAGS[ifd][tag]["name"]:
+    if "DateTime" in piexif.TAGS[ifd][tag]["name"]:
         try:
-            return datetime.datetime.strptime(exif_dict[ifd][tag].decode("utf-8"), '%Y:%m:%d %H:%M:%S')
+            return datetime.datetime.strptime(
+                exif_dict[ifd][tag].decode("utf-8"), "%Y:%m:%d %H:%M:%S"
+            )
         except Exception:
             return datetime.datetime.now()
     # if not converted - return the value
@@ -206,19 +234,23 @@ def get_exif_attribute_from_jpg(fn, ifd='0th', tag=306, debug=False):
 
 
 # get the DateTime out of JPG meta data
-def get_exif_datetime_attribute_from_jpg(fn, ifd='0th', tag=306, defaultdate=datetime.datetime.now(), debug=False):
+def get_exif_datetime_attribute_from_jpg(
+    fn, ifd="0th", tag=306, defaultdate=datetime.datetime.now(), debug=False
+):
     # load file into library
     exif_dict = piexif.load(fn)
     # convert the attributes to a datetime object if its name is datetime
-    if 'DateTime' in piexif.TAGS[ifd][tag]["name"]:
-        logger.debug('DateTime string exists - parse it')
+    if "DateTime" in piexif.TAGS[ifd][tag]["name"]:
+        logger.debug("DateTime string exists - parse it")
         try:
-            return datetime.datetime.strptime(exif_dict[ifd][tag].decode("utf-8"), '%Y:%m:%d %H:%M:%S')
+            return datetime.datetime.strptime(
+                exif_dict[ifd][tag].decode("utf-8"), "%Y:%m:%d %H:%M:%S"
+            )
         except Exception:
-            logger.debug('failed to convert DateTime - used default')
+            logger.debug("failed to convert DateTime - used default")
             return defaultdate
     # if not converted - return the value
-    logger.debug('not datetime converted')
+    logger.debug("not datetime converted")
     return exif_dict[ifd][tag]
 
 
@@ -244,34 +276,40 @@ def sorted_filelist_by_cleanedup_filename(filelist):
 #   nonjpgdatefrom - specifies where we get the date from non JPG files when datefrom=jpg, or reset to match datefrom value
 #     << same values as datefrom without jpg or jpgdefault as valid values>>
 #
-def get_date_sorted_filelists(fileglob, datefrom='jpg', nonjpgdatefrom='filecreate',
-                              defaultdate=datetime.datetime.now(), debug=False):
+def get_date_sorted_filelists(
+    fileglob,
+    datefrom="jpg",
+    nonjpgdatefrom="filecreate",
+    defaultdate=datetime.datetime.now(),
+    debug=False,
+):
     # local variable
     datefilelist = []
 
     # debugging
-    logger.debug('fileglob:%s', fileglob)
-    logger.debug('datefrom:%s', datefrom)
-    logger.debug('nonjpgdatefrom:%s', nonjpgdatefrom)
-    logger.debug('defaultdate:%s', defaultdate)
+    logger.debug("fileglob:%s", fileglob)
+    logger.debug("datefrom:%s", datefrom)
+    logger.debug("nonjpgdatefrom:%s", nonjpgdatefrom)
+    logger.debug("defaultdate:%s", defaultdate)
 
     # set the default date for jpg file lookup
     jpgdefaultdate = None
-    if datefrom == 'jpgdefault':   jpgdefaultdate = defaultdate
-    logger.debug('jgpdefaultdate:%s', jpgdefaultdate)
+    if datefrom == "jpgdefault":
+        jpgdefaultdate = defaultdate
+    logger.debug("jgpdefaultdate:%s", jpgdefaultdate)
 
     # update/change nonjpgdatefrom if datefrom is not jpg
-    if 'jpg' not in datefrom:
+    if "jpg" not in datefrom:
         nonjpgdatefrom = datefrom
-        logger.debug('set nonjpgdatefrom to value from datefrom:%s', datefrom)
+        logger.debug("set nonjpgdatefrom to value from datefrom:%s", datefrom)
 
     # pull the filelist and sort by filename from filesystem
     filelist = sorted(glob.glob(fileglob))
 
     # if we running in cleanup mode, then resort the list
-    if datefrom == 'cleanup':
+    if datefrom == "cleanup":
         filelist = sorted_filelist_by_cleanedup_filename(filelist)
-        logger.debug('resort the file list with cleanedup filenames')
+        logger.debug("resort the file list with cleanedup filenames")
 
     # step through this list of files - and grab a date associated with each file
     filecnt = 0
@@ -279,53 +317,60 @@ def get_date_sorted_filelists(fileglob, datefrom='jpg', nonjpgdatefrom='filecrea
         filecnt += 1
         fdate = None
         # JPG processing first
-        if fname.lower().endswith('.jpg') and 'jpg' in datefrom:
+        if fname.lower().endswith(".jpg") and "jpg" in datefrom:
             # get file date of the picture form meta data
             # and set the default date properl
             try:
-                fdate = get_exif_datetime_attribute_from_jpg(fname, defaultdate=jpgdefaultdate)
+                fdate = get_exif_datetime_attribute_from_jpg(
+                    fname, defaultdate=jpgdefaultdate
+                )
             except Exception:
                 fdate = parse_date_from_filename(fname, defaultdate)
 
         # if the fdate is set, save it and loop again
         if fdate:
-            logger.debug('fdate set by jpg meta data:%s:%s', fname, fdate)
+            logger.debug("fdate set by jpg meta data:%s:%s", fname, fdate)
             datefilelist.append([fdate, fname])
             continue
 
         # if the fdate is not set - lets set the fdate based on the nonjpgdatefrom strategy
-        if nonjpgdatefrom == 'filename':
+        if nonjpgdatefrom == "filename":
             # the date we use is pulled from the filename
             fdate = parse_date_from_filename(fname, defaultdate)
             # debugging
-            logger.debug('fdate set by %s:%s:%s', nonjpgdatefrom, fname, fdate)
-        elif nonjpgdatefrom == 'filecreate':
+            logger.debug("fdate set by %s:%s:%s", nonjpgdatefrom, fname, fdate)
+        elif nonjpgdatefrom == "filecreate":
             # the date is pulled from the file create date
             # works for windows os - not sure this will work on linux/macos
             # TODO - update this to be platform independent
             fdate = datetime.datetime.fromtimestamp(os.path.getctime(fname))
-            logger.debug('fdate set by %s:%s:%s', nonjpgdatefrom, fname, fdate)
-        elif nonjpgdatefrom in ('forced', 'cleanup'):
+            logger.debug("fdate set by %s:%s:%s", nonjpgdatefrom, fname, fdate)
+        elif nonjpgdatefrom in ("forced", "cleanup"):
             # we are forcing the date to the same date - that which was passed in
             # are adding a second to each entry to give us a sort order that aligns with how this list is storted
             fdate = defaultdate + datetime.timedelta(seconds=filecnt)
-            logger.debug('fdate set by %s:%s:%s', nonjpgdatefrom, fname, fdate)
+            logger.debug("fdate set by %s:%s:%s", nonjpgdatefrom, fname, fdate)
         else:
             # we have a defaultdate type we don't know - raise exception
-            raise Exception('unknown defaultdate:%s', nonjpgdatefrom)
+            raise Exception("unknown defaultdate:%s", nonjpgdatefrom)
 
         # add this record to list
         datefilelist.append([fdate, fname])
 
     # create sorted list
     datefilelistsorted = sorted(datefilelist)
-    logger.debug('sorted file list based on datetime')
+    logger.debug("sorted file list based on datetime")
 
     # determine if they are different orders based on date/time sort and flag if they are
     sameorder = True
     for idx in range(len(datefilelist)):
         if datefilelistsorted[idx][1] != datefilelist[idx][1]:
-            logger.debug('not same order:%s:%s:%s', idx, datefilelistsorted[idx][1], datefilelist[idx][1])
+            logger.debug(
+                "not same order:%s:%s:%s",
+                idx,
+                datefilelistsorted[idx][1],
+                datefilelist[idx][1],
+            )
             sameorder = False
             break
 
@@ -334,24 +379,26 @@ def get_date_sorted_filelists(fileglob, datefrom='jpg', nonjpgdatefrom='filecrea
 
 
 # create list of actions to be taken
-def create_file_action_list(datefilelistsorted, copytodir=None, adddate=False, addcnt=True, debug=False):
-    logger.debug('len(datefilelistsorted):%d', len(datefilelistsorted))
-    logger.debug('copytodir:%s', copytodir)
-    logger.debug('adddate:%s', adddate)
-    logger.debug('addcnt:%s', addcnt)
+def create_file_action_list(
+    datefilelistsorted, copytodir=None, adddate=False, addcnt=True, debug=False
+):
+    logger.debug("len(datefilelistsorted):%d", len(datefilelistsorted))
+    logger.debug("copytodir:%s", copytodir)
+    logger.debug("adddate:%s", adddate)
+    logger.debug("addcnt:%s", addcnt)
 
-    datestr = ''
-    cntstr = ''
+    datestr = ""
+    cntstr = ""
     if copytodir:
-        actionstr = 'copy'
+        actionstr = "copy"
         copytodir = os.path.normpath(copytodir)
     else:
-        actionstr = 'ren'
+        actionstr = "ren"
     filecnt = 0
     actionline = []
 
     # step through the files
-    for (fdate, fname) in datefilelistsorted:
+    for fdate, fname in datefilelistsorted:
         # increment the file counter
         filecnt += 1
 
@@ -373,7 +420,7 @@ def create_file_action_list(datefilelistsorted, copytodir=None, adddate=False, a
         fname = os.path.normpath(fname)
 
         # create the new basename
-        basenamenew = ''.join((datestr, cntstr, basename))
+        basenamenew = "".join((datestr, cntstr, basename))
 
         # create the output filename
         if copytodir:
@@ -392,17 +439,17 @@ def create_file_action_list(datefilelistsorted, copytodir=None, adddate=False, a
 
 # take action list nad write it out of a file
 def write_action_list_to_file(filename, actionlist, workingdir=None, debug=False):
-    with open(filename, 'w') as out:
+    with open(filename, "w") as out:
         if workingdir:
             out.write('cd "' + workingdir + '"\n')
-        out.write('\n'.join(actionlist))
+        out.write("\n".join(actionlist))
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     # filelist = build_bat_reorder_by_datetaken( '*.*' )
-    (filelist, sortedfilelist) = get_date_sorted_filelists('*.*')
-    print('filelist:', filelist)
-    print('sortedfilelist:', sortedfilelist)
+    (filelist, sortedfilelist) = get_date_sorted_filelists("*.*")
+    print("filelist:", filelist)
+    print("sortedfilelist:", sortedfilelist)
     # save_file_change(sortedfilelist, 'file.bat', True)
 
     jpgdate = get_exif_attribute_from_jpg("IMG_2666.JPG")
