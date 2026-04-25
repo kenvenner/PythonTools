@@ -480,14 +480,14 @@ def expand_dir_env_var(optiondict: dict, dir: str) -> None:
         )
 
     # messaging
-    if optiondict["disp_msg"]:
+    if optiondict.get("disp_msg"):
         val_before = optiondict[dir]
 
     # update the value in the line
     optiondict[dir] = optiondict[dir].replace(m.group(1), env_var_value)
 
     # messaging
-    if optiondict["disp_msg"]:
+    if optiondict.get("disp_msg"):
         print(f"[{dir}]:{val_before}:{optiondict[dir]}")
 
 
@@ -1102,6 +1102,10 @@ def src_to_dst_actions(
             + str(type(optiondict["key_fields"]))
         )
 
+    # output messages
+    if optiondict.get("disp_msg", False):
+        print("disp_msg is enabled")
+
     # set up keys with None if they don't exist
     for fld in [
         "copy_fields",
@@ -1161,7 +1165,10 @@ def src_to_dst_actions(
             # for each record in destinatoin file - get the rules
             for copydict in optiondict["internal_copy_fields"]:
                 # first rule - is_blank - only update when dst is blank
-                if copydict.get("is_blank", False) and rec[copydict["dst"]]:
+                if copydict.get("is_blank", False) and rec.get(copydict["dst"], ""):
+                    # output messages
+                    if optiondict.get("disp_msg", False):
+                        print(f"Skip update is_blank:True and fld:{copydict["dst"]} is populated")
                     # skip this rule - because we have the rule enabled
                     # and there is a value already in the dst column so no need
                     # to copy over

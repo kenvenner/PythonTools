@@ -11,7 +11,7 @@ rem
 rem define the name of the test case we are working with and running
 rem last line in this list will be the test that runs
 SET TEST=
-SET TEST=test_validate_src_to_dst_actions_f02_key_fields_wrong_type
+SET TEST=test_src_to_dst_actions_p04_internal_copy_fields
 rem
 rem now run this single test
 @echo on

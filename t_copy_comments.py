@@ -6,6 +6,7 @@ import kvlogger
 import copy_comments
 
 import unittest
+import os
 
 
 """
@@ -69,8 +70,30 @@ base_optiondict = {
 # Testing class
 class TestCopyComment(unittest.TestCase):
     # the function name: def expand_dir_env_var(optiondict: dict, dir: str) -> None:
-    # def test_expand_dir_env_var_p01_pass(self):
-
+    def test_expand_dir_env_var_p01_pass_no_change(self):
+        optiondict = {
+            'add_dir': 'will not match',
+        }
+        copy_comments.expand_dir_env_var(optiondict, 'add_dir')
+        self.assertEqual(optiondict['add_dir'], 'will not match')
+    def test_expand_dir_env_var_p02_match_env_var(self):
+        optiondict = {
+            'add_dir': '%HOMEDRIVE%',
+        }
+        home = os.environ.get('HOMEDRIVE')
+        copy_comments.expand_dir_env_var(optiondict, 'add_dir')
+        self.assertEqual(optiondict['add_dir'], home)
+    def test_expand_dir_env_var_f01_match_env_var(self):
+        optiondict = {
+            'add_dir': '%MISSING_VAR%',
+        }
+        with self.assertRaises(Exception) as context:
+            copy_comments.expand_dir_env_var(optiondict, 'add_dir')
+        self.assertEqual(
+            str(context.exception),
+            'Did not find env var [MISSING_VAR] in [add_dir] line: %MISSING_VAR%',
+        )
+        
     def test_update_optiondict4json_create_p01_only_create_json(self):
         # set a value to just get a value set
         optiondict = {
@@ -644,8 +667,184 @@ class TestCopyComment(unittest.TestCase):
             ["e", "f"],
         )
 
+    ########################################
+    # the function name: def convert_hyperlink_values(
+    def test_convert_hyperlink_values_p01_pass(self):
+        pass
+    
+    ########################################
+    # the function name: def src_to_dst_actions(
+    def test_src_to_dst_actions_p01_copy_fields(self):
+        optiondict = {
+            'key_fields': ['a'],
+            'copy_fields': ['c', 'd'],
+        }
+        src_data = [
+            {"a": 1, "b": 2, "c": 3, "d": 4},
+            {"a": 2, "b": 2, "c": 3, "d": 4},
+        ]
+        dst_data = [
+            {"a": 1, "b": 2, "c": 1, "d": 1},
+            {"a": 2, "b": 2, "c": 1, "d": 1},
+        ]
+        matched_recs, updated_recs, src_lookup = copy_comments.src_to_dst_actions(src_data, dst_data, optiondict)
+        self.assertEqual(matched_recs, 2)
+        self.assertEqual(updated_recs, 2)
+        self.assertEqual(src_data, dst_data)
+    def test_src_to_dst_actions_p02_copy_fields_empty_src_data(self):
+        optiondict = {
+            'key_fields': ['a'],
+            'copy_fields': ['c', 'd'],
+        }
+        src_data = [
+        ]
+        dst_data = [
+            {"a": 1, "b": 2, "c": 1, "d": 1},
+            {"a": 2, "b": 2, "c": 1, "d": 1},
+        ]
+        matched_recs, updated_recs, src_lookup = copy_comments.src_to_dst_actions(src_data, dst_data, optiondict)
+        self.assertEqual(matched_recs, 0)
+        self.assertEqual(updated_recs, 0)
+    def test_src_to_dst_actions_p03_copy_fields_force_copy(self):
+        optiondict = {
+            'key_fields': ['a'],
+            'copy_fields': ['c', 'd'],
+            'force_copy_flds': True,
+        }
+        src_data = [
+            {"a": 1, "b": 2, "c": 3, "d": 4},
+            {"a": 2, "b": 2, "c": 3, "d": 4},
+        ]
+        dst_data = [
+            {"a": 1, "b": 2},
+            {"a": 2, "b": 2},
+        ]
+        matched_recs, updated_recs, src_lookup = copy_comments.src_to_dst_actions(src_data, dst_data, optiondict)
+        self.assertEqual(matched_recs, 2)
+        self.assertEqual(updated_recs, 2)
+        self.assertEqual(src_data, dst_data)
+    def test_src_to_dst_actions_p04_internal_copy_fields(self):
+        optiondict = {
+            'key_fields': ['a'],
+            'copy_fields': None,
+            'internal_copy_fields': [{'src': 'd', 'dst': 'e', 'src_not_blank': False, 'is_blank': False }],
+        }
+        src_data = [
+            {"a": 1, "b": 2, "c": 3, "d": 4},
+            {"a": 2, "b": 2, "c": 3, "d": 4},
+        ]
+        dst_data = [
+            {"a": 1, "b": 2, "c": 3, "d": 4, "e": 0},
+            {"a": 2, "b": 2, "c": 3, "d": 4, "e": 0},
+        ]
+        res_data = [
+            {"a": 1, "b": 2, "c": 3, "d": 4, "e": 4},
+            {"a": 2, "b": 2, "c": 3, "d": 4, "e": 4},
+        ]
+        matched_recs, updated_recs, src_lookup = copy_comments.src_to_dst_actions(src_data, dst_data, optiondict)
+        self.assertEqual(matched_recs, 0)
+        self.assertEqual(updated_recs, 0)
+        self.assertEqual(res_data, dst_data)
+    def test_src_to_dst_actions_p05_internal_copy_fields_is_blank(self):
+        optiondict = {
+            'key_fields': ['a'],
+            'copy_fields': None,
+            'internal_copy_fields': [{'src': 'd', 'dst': 'e', 'src_not_blank': False, 'is_blank': True }],
+        }
+        src_data = [
+            {"a": 1, "b": 2, "c": 3, "d": 4},
+            {"a": 2, "b": 2, "c": 3, "d": 4},
+        ]
+        dst_data = [
+            {"a": 1, "b": 2, "c": 3, "d": 4},
+            {"a": 2, "b": 2, "c": 3, "d": 4},
+        ]
+        res_data = [
+            {"a": 1, "b": 2, "c": 3, "d": 4, "e": 4},
+            {"a": 2, "b": 2, "c": 3, "d": 4, "e": 4},
+        ]
+        matched_recs, updated_recs, src_lookup = copy_comments.src_to_dst_actions(src_data, dst_data, optiondict)
+        self.assertEqual(matched_recs, 0)
+        self.assertEqual(updated_recs, 0)
+        self.assertEqual(res_data, dst_data)
+    def test_src_to_dst_actions_p06_internal_copy_fields_is_blank_dst_populated(self):
+        optiondict = {
+            'key_fields': ['a'],
+            'copy_fields': None,
+            'internal_copy_fields': [{'src': 'd', 'dst': 'e', 'src_not_blank': False, 'is_blank': True }],
+        }
+        src_data = [
+            {"a": 1, "b": 2, "c": 3, "d": 4},
+            {"a": 2, "b": 2, "c": 3, "d": 4},
+        ]
+        dst_data = [
+            {"a": 1, "b": 2, "c": 3, "d": 4, "e": 99},
+            {"a": 2, "b": 2, "c": 3, "d": 4, "e": 99},
+        ]
+        res_data = [
+            {"a": 1, "b": 2, "c": 3, "d": 4, "e": 99},
+            {"a": 2, "b": 2, "c": 3, "d": 4, "e": 99},
+        ]
+        matched_recs, updated_recs, src_lookup = copy_comments.src_to_dst_actions(src_data, dst_data, optiondict)
+        self.assertEqual(matched_recs, 0)
+        self.assertEqual(updated_recs, 0)
+        self.assertEqual(res_data, dst_data)
+
+        
+    ########################################
+    # the function name: def removed_records(
+    # def test_removed_records_p01_pass(self):
+    ########################################
+    # the function name: def added_records(
+    # def test_added_records_p01_pass(self):
+    ########################################
+    # the function name: def generate_out_output_file_not_formatted(
+    # def test_generate_out_output_file_not_formatted_p01_pass(self):
+    ########################################
+    # the function name: def generate_rmv_output_file_not_formatted(
+    # def test_generate_rmv_output_file_not_formatted_p01_pass(self):
+    ########################################
+    # the function name: def generate_add_output_file_not_formatted(
+    # def test_generate_add_output_file_not_formatted_p01_pass(self):
+    ########################################
+    # the function name: def format_output(optiondict):
+    # def test_format_output_p01_pass(self):
+    ########################################
+    # the function name: def format_cell(optiondict):
+    # def test_format_cell_p01_pass(self):
+    ########################################
+    # the function name: def generate_out_output_file_formatted(dst_data, optiondict, updated_recs):
+    # def test_generate_out_output_file_formatted_p01_pass(self):
+        
     # the function name: def create_flds_in_records(loaded_data: list[dict], fields: list) -> None:
-    # def test_create_flds_in_records_p01_pass(self):
+    def test_create_flds_in_records_p01_pass(self):
+        input_list = [
+            {'a':1, 'b':2},
+            {'a':1, 'b':2},
+            {'a':1, 'b':2},
+        ]
+        fld_list = ['c', 'd']
+        out_list = []
+        for x in input_list:
+            new_rec = x.copy()
+            for fld in fld_list:
+                new_rec[fld] = ""
+            out_list.append(new_rec)
+        copy_comments.create_flds_in_records(input_list, fld_list)
+        self.assertEqual(input_list, out_list)
+    def test_create_flds_in_records_p02_not_updated(self):
+        input_list = [
+            {'a':1, 'b':2, 'c': 3, 'd': 4},
+            {'a':1, 'b':2, 'c': 3, 'd': 4},
+            {'a':1, 'b':2, 'c': 3, 'd': 4},
+        ]
+        fld_list = ['c', 'd']
+        out_list = []
+        for x in input_list:
+            new_rec = x.copy()
+            out_list.append(new_rec)
+        copy_comments.create_flds_in_records(input_list, fld_list)
+        self.assertEqual(input_list, out_list)
 
     def test_validate_src_to_dst_actions_p01_set_actions_in_optiondict(self):
         optiondict = {"key_fields": ["a", "b"]}
