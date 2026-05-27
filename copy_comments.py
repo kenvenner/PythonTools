@@ -1216,9 +1216,9 @@ def removed_records(
         raise Exception("key_fields not defined in optiondict")
     if not optiondict["key_fields"]:
         raise Exception("key_fields defined and empty in optiondict")
-    if type(optiondict["key_fields"]) is not list:
+    if not isinstance(optiondict["key_fields"], list):
         raise TypeError(
-            "key_fields defined and not list but type: "
+            "key_fields in optiondict not defined as list but as: "
             + str(type(optiondict["key_fields"]))
         )
 
@@ -1246,7 +1246,7 @@ def added_records(
         raise Exception("key_fields defined and empty in optiondict")
     if type(optiondict["key_fields"]) is not list:
         raise TypeError(
-            "key_fields defined and not list but type: "
+            "key_fields in optiondict not defined as list but as: "
             + str(type(optiondict["key_fields"]))
         )
 
@@ -1458,8 +1458,22 @@ def format_cell(optiondict):
     """
 
     # if they want to copy over formatting
-    if "format_cell" not in optiondict or not optiondict["format_cell"]:
+    if not optiondict.get("format_cell", False):
         return
+
+    # validate inputs exist and populated
+    if not optiondict.get('src_dir'):
+        raise ValueError('optiondict[\'src_dir\'] must be populated')
+    if not optiondict.get('src_fname'):
+        raise ValueError('optiondict[\'src_fname\'] must be populated')
+    if optiondict.get('out_fname'):
+        if not optiondict.get('out_dir'):
+            raise ValueError('optiondict[\'out_dir\'] must be populated')
+    else:
+        if not optiondict.get('dst_dir'):
+            raise ValueError('optiondict[\'dst_dir\'] must be populated')
+        if not optiondict.get('dst_fname'):
+            raise ValueError('optiondict[\'dst_fname\'] must be populated')
 
     # display we are cell formatting
     if optiondict["disp_msg"]:
@@ -1481,7 +1495,7 @@ def format_cell(optiondict):
     )
 
     # define which file we are pulling from as the output/destination
-    if optiondict["out_fname"]:
+    if optiondict.get("out_fname"):
         excel_filename = os.path.join(optiondict["out_dir"], optiondict["out_fname"])
         sheetname = optiondict["out_ws"]
     else:

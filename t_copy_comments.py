@@ -73,12 +73,14 @@ class TestCopyComment(unittest.TestCase):
     def test_expand_dir_env_var_p01_pass_no_change(self):
         optiondict = {
             'add_dir': 'will not match',
+            'disp_msg': False,
         }
         copy_comments.expand_dir_env_var(optiondict, 'add_dir')
         self.assertEqual(optiondict['add_dir'], 'will not match')
     def test_expand_dir_env_var_p02_match_env_var(self):
         optiondict = {
             'add_dir': '%HOMEDRIVE%',
+            'disp_msg': False,
         }
         home = os.environ.get('HOMEDRIVE')
         copy_comments.expand_dir_env_var(optiondict, 'add_dir')
@@ -86,6 +88,7 @@ class TestCopyComment(unittest.TestCase):
     def test_expand_dir_env_var_f01_match_env_var(self):
         optiondict = {
             'add_dir': '%MISSING_VAR%',
+            'disp_msg': False,
         }
         with self.assertRaises(Exception) as context:
             copy_comments.expand_dir_env_var(optiondict, 'add_dir')
@@ -98,6 +101,7 @@ class TestCopyComment(unittest.TestCase):
         # set a value to just get a value set
         optiondict = {
             "create_json": "test_file.xlsx",
+            'disp_msg': False,
         }
         # create the file
         with open(optiondict["create_json"], "w") as f:
@@ -119,12 +123,17 @@ class TestCopyComment(unittest.TestCase):
             "src_width": True,
             "no_fmt": True,
             "format_output": True,
+            'disp_msg': False,
         }
         self.assertEqual(optiondict, answer)
 
     def test_update_optiondict4json_create_p02_fmt_dir(self):
         # set a value to just get a value set
-        optiondict = {"create_json": "test_file.xlsx", "fmt_dir": "batch"}
+        optiondict = {
+            "create_json": "test_file.xlsx",
+            "fmt_dir": "batch",
+            'disp_msg': False,
+        }
         # create the file
         with open(optiondict["create_json"], "w") as f:
             f.write("")
@@ -145,12 +154,17 @@ class TestCopyComment(unittest.TestCase):
             "src_width": True,
             "no_fmt": True,
             "format_output": True,
+            'disp_msg': False,
         }
         self.assertEqual(optiondict, answer)
 
     def test_update_optiondict4json_create_p03_fmt_fname(self):
         # set a value to just get a value set
-        optiondict = {"create_json": "test_file.xlsx", "fmt_fname": "batch.json"}
+        optiondict = {
+            "create_json": "test_file.xlsx",
+            "fmt_fname": "batch.json",
+            'disp_msg': False,
+        }
         # create the file
         with open(optiondict["create_json"], "w") as f:
             f.write("")
@@ -171,6 +185,7 @@ class TestCopyComment(unittest.TestCase):
             "src_width": True,
             "no_fmt": True,
             "format_output": True,
+            'disp_msg': False,
         }
         self.assertEqual(optiondict, answer)
 
@@ -179,6 +194,7 @@ class TestCopyComment(unittest.TestCase):
         optiondict = {
             "create_json": "test_file.xlsx",
             "dst_dir": "batch",
+            'disp_msg': False,
         }
         # create the file
         with open(optiondict["create_json"], "w") as f:
@@ -200,6 +216,7 @@ class TestCopyComment(unittest.TestCase):
             "src_width": True,
             "no_fmt": True,
             "format_output": True,
+            'disp_msg': False,
         }
         self.assertEqual(optiondict, answer)
 
@@ -210,6 +227,7 @@ class TestCopyComment(unittest.TestCase):
             "src_width": False,
             "no_fmt": False,
             "format_output": False,
+            'disp_msg': False,
         }
         # create the file
         with open(optiondict["create_json"], "w") as f:
@@ -231,6 +249,7 @@ class TestCopyComment(unittest.TestCase):
             "src_width": True,
             "no_fmt": True,
             "format_output": True,
+            'disp_msg': False,
         }
         self.assertEqual(optiondict, answer)
 
@@ -252,6 +271,8 @@ class TestCopyComment(unittest.TestCase):
         optiondict = kvutil.kv_parse_command_line(
             copy_comments.optiondictconfig
         )  # , keymapdict=keymapdict )
+        # do not show messages
+        optiondict["disp_msg"] = False
         # remove the setting
         del optiondict["disp_msg"]
         # set the command line
@@ -264,6 +285,8 @@ class TestCopyComment(unittest.TestCase):
         optiondict = kvutil.kv_parse_command_line(
             copy_comments.optiondictconfig
         )  # , keymapdict=keymapdict )
+        # do not show messages
+        optiondict["disp_msg"] = False
         # clear the value
         optiondict["src_dir"] = ""
         # set a value to just get a value set
@@ -280,6 +303,8 @@ class TestCopyComment(unittest.TestCase):
         optiondict = kvutil.kv_parse_command_line(
             copy_comments.optiondictconfig
         )  # , keymapdict=keymapdict )
+        # do not show messages
+        optiondict["disp_msg"] = False
         # clear the value
         optiondict["out_dir"] = "outdir"
         # set a value to just get a value set
@@ -295,6 +320,8 @@ class TestCopyComment(unittest.TestCase):
         optiondict = kvutil.kv_parse_command_line(
             copy_comments.optiondictconfig
         )  # , keymapdict=keymapdict )
+        # do not show messages
+        optiondict["disp_msg"] = False
         # clear the value
         optiondict["dst_dir"] = "dstdir"
         # set a value to just get a value set
@@ -310,6 +337,8 @@ class TestCopyComment(unittest.TestCase):
         optiondict = kvutil.kv_parse_command_line(
             copy_comments.optiondictconfig
         )  # , keymapdict=keymapdict )
+        # do not show messages
+        optiondict["disp_msg"] = False
         # clear the value
         optiondict["out_dir"] = "outdir"
         optiondict["dst_dir"] = "dstdir"
@@ -326,6 +355,8 @@ class TestCopyComment(unittest.TestCase):
         optiondict = kvutil.kv_parse_command_line(
             copy_comments.optiondictconfig
         )  # , keymapdict=keymapdict )
+        # do not show messages
+        optiondict["disp_msg"] = False
         # clear the value
         optiondict["src_dir"] = "srcdir"
         # set a value to just get a value set
@@ -353,6 +384,8 @@ class TestCopyComment(unittest.TestCase):
         optiondict = kvutil.kv_parse_command_line(
             copy_comments.optiondictconfig
         )  # , keymapdict=keymapdict )
+        # do not show messages
+        optiondict["disp_msg"] = False
         # clear the value
         optiondict["src_dir"] = "srcdir"
         # set a value to just get a value set
@@ -380,6 +413,8 @@ class TestCopyComment(unittest.TestCase):
         optiondict = kvutil.kv_parse_command_line(
             copy_comments.optiondictconfig
         )  # , keymapdict=keymapdict )
+        # do not show messages
+        optiondict["disp_msg"] = False
         # clear the value
         optiondict["src_dir"] = "srcdir"
         # set a value to just get a value set
@@ -407,6 +442,8 @@ class TestCopyComment(unittest.TestCase):
         optiondict = kvutil.kv_parse_command_line(
             copy_comments.optiondictconfig
         )  # , keymapdict=keymapdict )
+        # do not show messages
+        optiondict["disp_msg"] = False
         # make sure there is a value for this defautl_fname
         optiondict["dst_fname"] = "default-filename.txt"
         # set the command line
@@ -418,6 +455,8 @@ class TestCopyComment(unittest.TestCase):
         optiondict = kvutil.kv_parse_command_line(
             copy_comments.optiondictconfig
         )  # , keymapdict=keymapdict )
+        # do not show messages
+        optiondict["disp_msg"] = False
         optiondict["default_fname"] = "invalid"
         # make sure there is a value for this defautl_fname
         optiondict["dst_fname"] = "default-filename.txt"
@@ -432,6 +471,8 @@ class TestCopyComment(unittest.TestCase):
         optiondict = kvutil.kv_parse_command_line(
             copy_comments.optiondictconfig
         )  # , keymapdict=keymapdict )
+        # do not show messages
+        optiondict["disp_msg"] = False
         # set the default filename
         optiondict["dst_fname"] = "default-filename.txt"
         # set the append variable
@@ -450,6 +491,8 @@ class TestCopyComment(unittest.TestCase):
         optiondict = kvutil.kv_parse_command_line(
             copy_comments.optiondictconfig
         )  # , keymapdict=keymapdict )
+        # do not show messages
+        optiondict["disp_msg"] = False
         # set the default filename
         optiondict["dst_fname"] = "default-filename.txt"
         # set the default glob
@@ -466,6 +509,8 @@ class TestCopyComment(unittest.TestCase):
         optiondict = kvutil.kv_parse_command_line(
             copy_comments.optiondictconfig
         )  # , keymapdict=keymapdict )
+        # do not show messages
+        optiondict["disp_msg"] = False
         # set the default filename
         optiondict["dst_fname"] = "default-filename.txt"
         # set the default glob
@@ -481,6 +526,8 @@ class TestCopyComment(unittest.TestCase):
         optiondict = kvutil.kv_parse_command_line(
             copy_comments.optiondictconfig
         )  # , keymapdict=keymapdict )
+        # do not show messages
+        optiondict["disp_msg"] = False
         # set the default filename
         optiondict["dst_fname"] = "default-filename.txt"
         # remove key_fields from the dict
@@ -495,6 +542,8 @@ class TestCopyComment(unittest.TestCase):
         optiondict = kvutil.kv_parse_command_line(
             copy_comments.optiondictconfig
         )  # , keymapdict=keymapdict )
+        # do not show messages
+        optiondict["disp_msg"] = False
         # set the default filename
         optiondict["dst_fname"] = "default-filename.txt"
         # key_fields not list
@@ -509,6 +558,8 @@ class TestCopyComment(unittest.TestCase):
         optiondict = kvutil.kv_parse_command_line(
             copy_comments.optiondictconfig
         )  # , keymapdict=keymapdict )
+        # do not show messages
+        optiondict["disp_msg"] = False
         # set the default filename
         optiondict["dst_fname"] = "default-filename.txt"
         # key_fields not list
@@ -555,6 +606,8 @@ class TestCopyComment(unittest.TestCase):
         optiondict = kvutil.kv_parse_command_line(
             copy_comments.optiondictconfig
         )  # , keymapdict=keymapdict )
+        # do not show messages
+        optiondict["disp_msg"] = False
         # set the default filename
         optiondict["dst_fname"] = "default-filename.txt"
         # key_fields not list
@@ -569,6 +622,8 @@ class TestCopyComment(unittest.TestCase):
         optiondict = kvutil.kv_parse_command_line(
             copy_comments.optiondictconfig
         )  # , keymapdict=keymapdict )
+        # do not show messages
+        optiondict["disp_msg"] = False
         # set the default filename
         optiondict["dst_fname"] = "default-filename.txt"
         # key_fields not list
@@ -584,6 +639,8 @@ class TestCopyComment(unittest.TestCase):
         optiondict = kvutil.kv_parse_command_line(
             copy_comments.optiondictconfig
         )  # , keymapdict=keymapdict )
+        # do not show messages
+        optiondict["disp_msg"] = False
         # set the default filename
         optiondict["dst_fname"] = "default-filename.txt"
         # key_fields not list
@@ -599,6 +656,8 @@ class TestCopyComment(unittest.TestCase):
             optiondict = kvutil.kv_parse_command_line(
                 copy_comments.optiondictconfig
             )  # , keymapdict=keymapdict )
+            # do not show messages
+            optiondict["disp_msg"] = False
             # set the default filename
             optiondict["dst_fname"] = "default-filename.txt"
             # process the command line
@@ -616,6 +675,8 @@ class TestCopyComment(unittest.TestCase):
             optiondict = kvutil.kv_parse_command_line(
                 copy_comments.optiondictconfig
             )  # , keymapdict=keymapdict )
+            # do not show messages
+            optiondict["disp_msg"] = False
             # set the default filename
             optiondict["dst_fname"] = "default-filename.txt"
             # process the command line
@@ -635,6 +696,8 @@ class TestCopyComment(unittest.TestCase):
             optiondict = kvutil.kv_parse_command_line(
                 copy_comments.optiondictconfig
             )  # , keymapdict=keymapdict )
+            # do not show messages
+            optiondict["disp_msg"] = False
             # set the default filename
             optiondict["dst_fname"] = "default-filename.txt"
             # process the command line
@@ -652,7 +715,10 @@ class TestCopyComment(unittest.TestCase):
     # def test_read_src_file_format_p01_pass(self):
 
     def test_validate_missing_columns_p01_all_columns_there(self):
-        optiondict = {"req_cols": ["a", "b", "c"]}
+        optiondict = {
+            "req_cols": ["a", "b", "c"],
+            'disp_msg': False,
+        }
         loaded_data = [{"a": 1, "b": 2, "c": 3, "d": 4}]
         self.assertEqual(
             copy_comments.validate_missing_columns(loaded_data, optiondict, "req_cols"),
@@ -660,7 +726,10 @@ class TestCopyComment(unittest.TestCase):
         )
 
     def test_validate_missing_columns_p02_missing_columns(self):
-        optiondict = {"req_cols": ["a", "b", "e", "f"]}
+        optiondict = {
+            "req_cols": ["a", "b", "e", "f"],
+            'disp_msg': False,
+        }
         loaded_data = [{"a": 1, "b": 2, "c": 3, "d": 4}]
         self.assertEqual(
             copy_comments.validate_missing_columns(loaded_data, optiondict, "req_cols"),
@@ -678,6 +747,7 @@ class TestCopyComment(unittest.TestCase):
         optiondict = {
             'key_fields': ['a'],
             'copy_fields': ['c', 'd'],
+            'disp_msg': False,
         }
         src_data = [
             {"a": 1, "b": 2, "c": 3, "d": 4},
@@ -695,6 +765,7 @@ class TestCopyComment(unittest.TestCase):
         optiondict = {
             'key_fields': ['a'],
             'copy_fields': ['c', 'd'],
+            'disp_msg': False,
         }
         src_data = [
         ]
@@ -710,6 +781,7 @@ class TestCopyComment(unittest.TestCase):
             'key_fields': ['a'],
             'copy_fields': ['c', 'd'],
             'force_copy_flds': True,
+            'disp_msg': False,
         }
         src_data = [
             {"a": 1, "b": 2, "c": 3, "d": 4},
@@ -728,6 +800,7 @@ class TestCopyComment(unittest.TestCase):
             'key_fields': ['a'],
             'copy_fields': None,
             'internal_copy_fields': [{'src': 'd', 'dst': 'e', 'src_not_blank': False, 'is_blank': False }],
+            'disp_msg': False,
         }
         src_data = [
             {"a": 1, "b": 2, "c": 3, "d": 4},
@@ -750,6 +823,7 @@ class TestCopyComment(unittest.TestCase):
             'key_fields': ['a'],
             'copy_fields': None,
             'internal_copy_fields': [{'src': 'd', 'dst': 'e', 'src_not_blank': False, 'is_blank': True }],
+            'disp_msg': False,
         }
         src_data = [
             {"a": 1, "b": 2, "c": 3, "d": 4},
@@ -772,6 +846,7 @@ class TestCopyComment(unittest.TestCase):
             'key_fields': ['a'],
             'copy_fields': None,
             'internal_copy_fields': [{'src': 'd', 'dst': 'e', 'src_not_blank': False, 'is_blank': True }],
+            'disp_msg': False,
         }
         src_data = [
             {"a": 1, "b": 2, "c": 3, "d": 4},
@@ -790,22 +865,217 @@ class TestCopyComment(unittest.TestCase):
         self.assertEqual(updated_recs, 0)
         self.assertEqual(res_data, dst_data)
 
+    def test_src_to_dst_actions_f01_missing_key_fields(self):
+        optiondict = {
+            'copy_fields': None,
+            'internal_copy_fields': [{'src': 'd', 'dst': 'e', 'src_not_blank': False, 'is_blank': True }],
+            'disp_msg': False,
+        }
+        src_data = [
+            {"a": 1, "b": 2, "c": 3, "d": 4},
+            {"a": 2, "b": 2, "c": 3, "d": 4},
+        ]
+        dst_data = [
+            {"a": 1, "b": 2, "c": 3, "d": 4, "e": 99},
+            {"a": 2, "b": 2, "c": 3, "d": 4, "e": 99},
+        ]
+        res_data = [
+            {"a": 1, "b": 2, "c": 3, "d": 4, "e": 99},
+            {"a": 2, "b": 2, "c": 3, "d": 4, "e": 99},
+        ]
+        with self.assertRaises(Exception) as context:
+            copy_comments.src_to_dst_actions(src_data, dst_data, optiondict)
+        self.assertEqual(
+            str(context.exception),
+            'key_fields not defined in optiondict',
+        )
+
+    def test_src_to_dst_actions_f02_key_fields_not_list(self):
+        optiondict = {
+            'copy_fields': None,
+            'key_fields': 'a',
+            'internal_copy_fields': [{'src': 'd', 'dst': 'e', 'src_not_blank': False, 'is_blank': True }],
+            'disp_msg': False,
+        }
+        src_data = [
+            {"a": 1, "b": 2, "c": 3, "d": 4},
+            {"a": 2, "b": 2, "c": 3, "d": 4},
+        ]
+        dst_data = [
+            {"a": 1, "b": 2, "c": 3, "d": 4, "e": 99},
+            {"a": 2, "b": 2, "c": 3, "d": 4, "e": 99},
+        ]
+        res_data = [
+            {"a": 1, "b": 2, "c": 3, "d": 4, "e": 99},
+            {"a": 2, "b": 2, "c": 3, "d": 4, "e": 99},
+        ]
+        with self.assertRaises(Exception) as context:
+            copy_comments.src_to_dst_actions(src_data, dst_data, optiondict)
+        self.assertEqual(
+            str(context.exception),
+            'key_fields in optiondict not defined as list but as: <class \'str\'>',
+        )
+
         
     ########################################
     # the function name: def removed_records(
-    # def test_removed_records_p01_pass(self):
+    def test_removed_records_p01_pass(self):
+        optiondict = {
+            'key_fields': ['a'],
+            'disp_msg': False,
+        }
+        src_data = [
+            {"a": 1, "b": 2, "c": 3, "d": 4},
+            {"a": 2, "b": 2, "c": 3, "d": 4},
+        ]
+        dst_data = [
+            {"a": 2, "b": 2, "c": 3, "d": 4, "e": 99},
+        ]
+        res_data = [
+            {"a": 1, "b": 2, "c": 3, "d": 4},
+        ]
+        rmv_data, dst_lookup = copy_comments.removed_records(src_data, dst_data, optiondict)
+        self.assertEqual(rmv_data, res_data)
+        
+    def test_removed_records_f01_missing_key_fields(self):
+        optiondict = {
+            'copy_fields': None,
+            'internal_copy_fields': [{'src': 'd', 'dst': 'e', 'src_not_blank': False, 'is_blank': True }],
+            'disp_msg': False,
+        }
+        src_data = [
+            {"a": 1, "b": 2, "c": 3, "d": 4},
+            {"a": 2, "b": 2, "c": 3, "d": 4},
+        ]
+        dst_data = [
+            {"a": 1, "b": 2, "c": 3, "d": 4, "e": 99},
+            {"a": 2, "b": 2, "c": 3, "d": 4, "e": 99},
+        ]
+        res_data = [
+            {"a": 1, "b": 2, "c": 3, "d": 4, "e": 99},
+            {"a": 2, "b": 2, "c": 3, "d": 4, "e": 99},
+        ]
+        with self.assertRaises(Exception) as context:
+            copy_comments.removed_records(src_data, dst_data, optiondict)
+        self.assertEqual(
+            str(context.exception),
+            'key_fields not defined in optiondict',
+        )
+    def test_removed_records_f03_key_fields_empty(self):
+        optiondict = {
+            'copy_fields': None,
+            'key_fields': '',
+            'internal_copy_fields': [{'src': 'd', 'dst': 'e', 'src_not_blank': False, 'is_blank': True }],
+            'disp_msg': False,
+        }
+        src_data = [
+            {"a": 1, "b": 2, "c": 3, "d": 4},
+            {"a": 2, "b": 2, "c": 3, "d": 4},
+        ]
+        dst_data = [
+            {"a": 1, "b": 2, "c": 3, "d": 4, "e": 99},
+            {"a": 2, "b": 2, "c": 3, "d": 4, "e": 99},
+        ]
+        res_data = [
+            {"a": 1, "b": 2, "c": 3, "d": 4, "e": 99},
+            {"a": 2, "b": 2, "c": 3, "d": 4, "e": 99},
+        ]
+        with self.assertRaises(Exception) as context:
+            copy_comments.removed_records(src_data, dst_data, optiondict)
+        self.assertEqual(
+            str(context.exception),
+            'key_fields defined and empty in optiondict'
+        )
+
+        
+        
     ########################################
     # the function name: def added_records(
-    # def test_added_records_p01_pass(self):
+    def test_added_records_p01_pass(self):
+        optiondict = {
+            'key_fields': ['a'],
+            'disp_msg': False,
+        }
+        src_data = [
+            {"a": 1, "b": 2, "c": 3, "d": 4},
+            {"a": 2, "b": 2, "c": 3, "d": 4},
+        ]
+        dst_data = [
+            {"a": 2, "b": 2, "c": 3, "d": 4, "e": 99},
+            {"a": 3, "b": 2, "c": 3, "d": 4, "e": 99},
+        ]
+        res_data = [
+            {"a": 3, "b": 2, "c": 3, "d": 4, "e": 99},
+        ]
+        matched_recs, updated_recs, src_lookup = copy_comments.src_to_dst_actions(src_data, dst_data, optiondict)
+        add_data = copy_comments.added_records(src_data, dst_data, src_lookup, optiondict)
+        self.assertEqual(add_data, res_data)
+        
+    def test_added_records_f01_missing_key_fields(self):
+        optiondict = {
+            'copy_fields': None,
+            'internal_copy_fields': [{'src': 'd', 'dst': 'e', 'src_not_blank': False, 'is_blank': True }],
+            'disp_msg': False,
+        }
+        src_data = [
+            {"a": 1, "b": 2, "c": 3, "d": 4},
+            {"a": 2, "b": 2, "c": 3, "d": 4},
+        ]
+        dst_data = [
+            {"a": 2, "b": 2, "c": 3, "d": 4, "e": 99},
+            {"a": 3, "b": 2, "c": 3, "d": 4, "e": 99},
+        ]
+        res_data = [
+            {"a": 3, "b": 2, "c": 3, "d": 4, "e": 99},
+        ]
+        src_lookup = {x['a']:x for x in src_data}
+        with self.assertRaises(Exception) as context:
+            copy_comments.added_records(src_data, dst_data, src_lookup, optiondict)
+        self.assertEqual(
+            str(context.exception),
+            'key_fields not defined in optiondict',
+        )
+    def test_added_records_f03_key_fields_empty(self):
+        optiondict = {
+            'copy_fields': None,
+            'key_fields': '',
+            'internal_copy_fields': [{'src': 'd', 'dst': 'e', 'src_not_blank': False, 'is_blank': True }],
+            'disp_msg': False,
+        }
+        src_data = [
+            {"a": 1, "b": 2, "c": 3, "d": 4},
+            {"a": 2, "b": 2, "c": 3, "d": 4},
+        ]
+        dst_data = [
+            {"a": 2, "b": 2, "c": 3, "d": 4, "e": 99},
+            {"a": 3, "b": 2, "c": 3, "d": 4, "e": 99},
+        ]
+        res_data = [
+            {"a": 3, "b": 2, "c": 3, "d": 4, "e": 99},
+        ]
+        src_lookup = {x['a']:x for x in src_data}
+        with self.assertRaises(Exception) as context:
+            copy_comments.added_records(src_data, dst_data, src_lookup, optiondict)
+        self.assertEqual(
+            str(context.exception),
+            'key_fields defined and empty in optiondict'
+        )
+
     ########################################
     # the function name: def generate_out_output_file_not_formatted(
-    # def test_generate_out_output_file_not_formatted_p01_pass(self):
+    def test_generate_out_output_file_not_formatted_p01_pass(self):
+        pass
+    
     ########################################
     # the function name: def generate_rmv_output_file_not_formatted(
-    # def test_generate_rmv_output_file_not_formatted_p01_pass(self):
+    def test_generate_rmv_output_file_not_formatted_p01_pass(self):
+        pass
+    
     ########################################
     # the function name: def generate_add_output_file_not_formatted(
-    # def test_generate_add_output_file_not_formatted_p01_pass(self):
+    def test_generate_add_output_file_not_formatted_p01_pass(self):
+        pass
+    
     ########################################
     # the function name: def format_output(optiondict):
     # def test_format_output_p01_pass(self):
@@ -847,7 +1117,10 @@ class TestCopyComment(unittest.TestCase):
         self.assertEqual(input_list, out_list)
 
     def test_validate_src_to_dst_actions_p01_set_actions_in_optiondict(self):
-        optiondict = {"key_fields": ["a", "b"]}
+        optiondict = {
+            "key_fields": ["a", "b"],
+            'disp_msg': False,
+        }
         src_data = []
         dst_data = []
         matched_recs, updated_recs, src_lookup = copy_comments.src_to_dst_actions(
@@ -861,7 +1134,10 @@ class TestCopyComment(unittest.TestCase):
         self.assertEqual(src_lookup, {})
 
     def test_validate_src_to_dst_actions_p02_set_actions_create_lookup(self):
-        optiondict = {"key_fields": ["a", "b"]}
+        optiondict = {
+            "key_fields": ["a", "b"],
+            'disp_msg': False,
+        }
         src_data = [{"a": 1, "b": 2, "c": 3}, {"a": 2, "b": 2, "c": 3}]
         dst_data = []
         src_result = {
@@ -882,6 +1158,7 @@ class TestCopyComment(unittest.TestCase):
         optiondict = {
             "key_fields": ["a", "b"],
             "internal_copy_fields": [{"src": "d", "dst": "c", "src_not_blank": True}],
+            'disp_msg': False,
         }
         src_data = [{"a": 1, "b": 2, "c": 3, "d": ""}, {"a": 2, "b": 2, "c": 3, "d": 4}]
         dst_data = [{"a": 1, "b": 2, "c": 3, "d": ""}, {"a": 2, "b": 2, "c": 3, "d": 4}]
@@ -898,6 +1175,7 @@ class TestCopyComment(unittest.TestCase):
         optiondict = {
             "key_fields": ["a", "b"],
             "internal_copy_fields": [{"src": "d", "dst": "c", "is_blank": True}],
+            'disp_msg': False,
         }
         src_data = [{"a": 1, "b": 2, "c": 3, "d": ""}, {"a": 2, "b": 2, "c": 3, "d": 4}]
         dst_data = [{"a": 1, "b": 2, "c": 3, "d": ""}, {"a": 2, "b": 2, "c": 3, "d": 4}]
@@ -914,6 +1192,7 @@ class TestCopyComment(unittest.TestCase):
         optiondict = {
             "key_fields": ["a", "b"],
             "internal_copy_fields": [{"src": "d", "dst": "c", "is_blank": True}],
+            'disp_msg': False,
         }
         src_data = [{"a": 1, "b": 2, "c": 3, "d": ""}, {"a": 2, "b": 2, "c": 3, "d": 4}]
         dst_data = [
@@ -937,6 +1216,7 @@ class TestCopyComment(unittest.TestCase):
             "internal_copy_fields": [
                 {"src": "d", "dst": "c", "is_blank": True, "src_not_blank": True}
             ],
+            'disp_msg': False,
         }
         src_data = [{"a": 1, "b": 2, "c": 3, "d": ""}, {"a": 2, "b": 2, "c": 3, "d": 4}]
         dst_data = [
@@ -955,7 +1235,9 @@ class TestCopyComment(unittest.TestCase):
     def test_validate_src_to_dst_actions_f01_missing_key_fields(self):
         with self.assertRaises(Exception) as context:
             # now load the records
-            optiondict = {}
+            optiondict = {
+                'disp_msg': False,
+            }
             src_data = [{"a": 1, "b": 2, "c": 3}, {"a": 2, "b": 2, "c": 3}]
             dst_data = []
             matched_recs, updated_recs, src_lookup = copy_comments.src_to_dst_actions(
@@ -969,7 +1251,10 @@ class TestCopyComment(unittest.TestCase):
     def test_validate_src_to_dst_actions_f02_key_fields_wrong_type(self):
         with self.assertRaises(Exception) as context:
             # now load the records
-            optiondict = {"key_fields": "string"}
+            optiondict = {
+                "key_fields": "string",
+                'disp_msg': False,
+            }
             src_data = [{"a": 1, "b": 2, "c": 3}, {"a": 2, "b": 2, "c": 3}]
             dst_data = []
             matched_recs, updated_recs, src_lookup = copy_comments.src_to_dst_actions(
