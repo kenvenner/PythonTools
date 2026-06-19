@@ -18,7 +18,7 @@ pip install pywin32
 import time
 from pathlib import Path
 import ctypes
-import win32com.client as win32
+import win32com.client as win32  # pip install pywin32
 
 
 def normalize_excel_path(path: str) -> str:
